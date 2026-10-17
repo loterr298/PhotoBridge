@@ -1,0 +1,9 @@
+.build/
+.audit/
+DerivedData/
+build/
+*.xcodeproj/
+*.xcuserstate
+.DS_Store
+private-diagnostics/
+__pycache__/

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "PhotoBridgeAlbumManifestExample",
+  "warning": "虚构演示数据，不属于真实照片；字段和恢复流程必须通过测试完善",
+  "album": {
+    "sourceDeviceAlias": "iPhone",
+    "sourceAlbumLocalIdentifier": "TEST-ALBUM-LOCAL-ID",
+    "sourceAlbumTitle": "鞋图素材",
+    "sourceOrderingMode": "manual-custom-order-PENDING-DEVICE-VERIFICATION",
+    "logicalAssetCount": 2
+  },
+  "timestampPolicy": {
+    "baseUtc": "2026-10-17T12:00:00Z",
+    "intervalSeconds": 5,
+    "applyTo": "macOS-filesystem-timestamps-only",
+    "touchOriginalMediaBytes": false
+  },
+  "assets": [
+    {
+      "ordinal": 1,
+      "resourceGroupId": "group-0001",
+      "sourceAssetLocalIdentifier": "TEST-ASSET-A",
+      "originalPhotoLibraryCreationDate": "2024-03-12T14:03:14Z",
+      "logicalSortTimeUtc": "2026-10-17T12:00:00Z",
+      "resources": [
+        {
+          "role": "photo",
+          "originalFilename": "IMG_3020.HEIC",
+          "storedRelativePath": "0001_IMG_3020.HEIC",
+          "sha256": "REPLACE_WITH_REAL_64_HEX_SHA256",
+          "byteCount": 0,
+          "integrityStatus": "pending"
+        }
+      ]
+    },
+    {
+      "ordinal": 2,
+      "resourceGroupId": "group-0002",
+      "sourceAssetLocalIdentifier": "TEST-ASSET-B",
+      "originalPhotoLibraryCreationDate": "2024-01-03T07:03:12Z",
+      "logicalSortTimeUtc": "2026-10-17T12:00:05Z",
+      "resources": [
+        {
+          "role": "photo",
+          "originalFilename": "IMG_1050.HEIC",
+          "storedRelativePath": "0002_IMG_1050.HEIC",
+          "sha256": "REPLACE_WITH_REAL_64_HEX_SHA256",
+          "byteCount": 0,
+          "integrityStatus": "pending"
+        }
+      ]
+    }
+  ],
+  "restoration": {
+    "targetAlbumTitle": "鞋图素材（恢复）",
+    "originalToImportedAssetMappings": [],
+    "albumOrderVerified": false
+  }
+}

@@ -1,0 +1,57 @@
+[
+  {
+    "repository": "thechandanbhagat/iphone-syncronizer",
+    "commit": "14cf7fc9822c2d2bd43b27af5bb687876bb0cacd",
+    "licenseFiles": [
+      "LICENSE"
+    ],
+    "licenseSHA256": {
+      "LICENSE": "fe25cef7376c09ac493308d0866780642555839e9750a6986d377c6ab010f59d"
+    }
+  },
+  {
+    "repository": "naplesblue/sideroll",
+    "commit": "eddd130bbcb1cdc98d5622212bd2579ac36916f4",
+    "licenseFiles": [
+      "LICENSE"
+    ],
+    "licenseSHA256": {
+      "LICENSE": "959ad80c7329a9ff81bd118d4ba77f2443f824724b911c9bcae43f3fe4ae9b88"
+    }
+  },
+  {
+    "repository": "chris-swift-dev/Media",
+    "commit": "0139f8594061c10c4ce3a1225478d0b3ccabab19",
+    "licenseFiles": [
+      "LICENSE"
+    ],
+    "licenseSHA256": {
+      "LICENSE": "fedb19739c97f8b5cbbaf51691506fe6429e3b1f491da4327b53c64b42f1f5a6"
+    }
+  },
+  {
+    "repository": "doronz88/pymobiledevice3",
+    "commit": "8e2be44e6a97edaa67a6812a806f24965ad181c9",
+    "licenseFiles": [
+      "LICENSE"
+    ],
+    "licenseSHA256": {
+      "LICENSE": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+    }
+  },
+  {
+    "repository": "libimobiledevice/ifuse",
+    "commit": "f7eac74184ff240c8ba9cf9b413eed75968a462a",
+    "licenseFiles": [
+      "COPYING"
+    ],
+    "licenseSHA256": {
+      "COPYING": "e237fa56668030e928551ddd60f05df5fe957f75eab874bbd017e085ed722e7c"
+    }
+  },
+  {
+    "repository": "libimobiledevice/libimobiledevice",
+    "commit": "fa0f79190142bc309307967c058f89c1b36eb6b8",
+    "license": "LGPL-2.1-or-later library; inspect each source/distribution dependency"
+  }
+]

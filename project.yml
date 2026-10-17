@@ -1,0 +1,32 @@
+name: PhotoBridge
+options:
+  minimumXcodeGenVersion: 2.42.0
+  deploymentTarget:
+    iOS: '16.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    PHOTOBRIDGE_BUILD_COMMIT: local-unversioned
+packages:
+  PhotoBridge:
+    path: .
+targets:
+  PhotoBridgeOrderProbe:
+    type: application
+    platform: iOS
+    sources: [apps/iOS]
+    dependencies:
+      - package: PhotoBridge
+        product: PhotoBridgeCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.photobridge.OrderProbe
+        INFOPLIST_FILE: apps/iOS/Info.plist
+        TARGETED_DEVICE_FAMILY: '1,2'
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  PhotoBridgeOrderProbe:
+    build:
+      targets:
+        PhotoBridgeOrderProbe: all

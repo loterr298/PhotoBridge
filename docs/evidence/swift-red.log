@@ -1,0 +1,21 @@
+Building for debugging...
+[0/12] /Users/l/Documents/ChatGPT/New runner.swift
+[1/12] Write sources
+[5/12] Write PhotoBridgeMac-entitlement.plist
+[6/12] Write swift-version--1AB21518FC5DEDBE.txt
+[8/14] Emitting module PhotoBridgeCore
+[9/14] Compiling PhotoBridgeCore OrderSnapshot.swift
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[10/18] Emitting module PhotoBridgeCoreTests
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/Tests/PhotoBridgeCoreTests/DiagnosticsTests.swift:1:8: error: no such module 'XCTest'
+ 1 | import XCTest
+   |        `- error: no such module 'XCTest'
+ 2 | @testable import PhotoBridgeCore
+ 3 | 
+[11/18] Compiling PhotoBridgeCoreTests DiagnosticsTests.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/Tests/PhotoBridgeCoreTests/DiagnosticsTests.swift:1:8: error: no such module 'XCTest'
+ 1 | import XCTest
+   |        `- error: no such module 'XCTest'
+ 2 | @testable import PhotoBridgeCore
+ 3 | 
+error: fatalError

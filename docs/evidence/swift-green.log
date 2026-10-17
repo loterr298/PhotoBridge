@@ -1,0 +1,17 @@
+[0/1] Planning build
+Building for debugging...
+[0/6] Write swift-version--1AB21518FC5DEDBE.txt
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[2/10] Emitting module PhotoBridgeCoreTests
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/Tests/PhotoBridgeCoreTests/DiagnosticsTests.swift:1:8: error: no such module 'XCTest'
+ 1 | import XCTest
+   |        `- error: no such module 'XCTest'
+ 2 | @testable import PhotoBridgeCore
+ 3 | 
+[3/10] Compiling PhotoBridgeCoreTests DiagnosticsTests.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/Tests/PhotoBridgeCoreTests/DiagnosticsTests.swift:1:8: error: no such module 'XCTest'
+ 1 | import XCTest
+   |        `- error: no such module 'XCTest'
+ 2 | @testable import PhotoBridgeCore
+ 3 | 
+error: fatalError

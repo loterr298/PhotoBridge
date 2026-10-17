@@ -1,0 +1,6 @@
+Another instance of SwiftPM is already running using '/Users/l/Documents/ChatGPT/New project/PhotoBridge/.build', waiting until that process has finished execution...[0/1] Planning build
+Building for production...
+[0/2] Write swift-version--1AB21518FC5DEDBE.txt
+Build of product 'PhotoBridgeMac' complete! (0.49s)
+Non-fat file: build/PhotoBridgeMac.app/Contents/MacOS/PhotoBridgeMac is architecture: x86_64
+9e241ac4ea8c9870083739d8f447de0448877b8b9d9c42aaf2c4b9580aebb2bf  build/PhotoBridgeMac-Intel.zip

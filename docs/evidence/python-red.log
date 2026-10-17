@@ -1,0 +1,20 @@
+test_usb_probe (unittest.loader._FailedTest) ... ERROR
+
+======================================================================
+ERROR: test_usb_probe (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_usb_probe
+Traceback (most recent call last):
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_usb_probe.py", line 3, in <module>
+    import usb_probe as p
+ModuleNotFoundError: No module named 'usb_probe'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

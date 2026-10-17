@@ -1,0 +1,7 @@
+{
+  "transportRequested": "USB_ONLY",
+  "physicalWiFiOffEvidence": "NOT_RUN: manual cable/Wi-Fi-off test required",
+  "photosRoundTrip": "NOT_RUN",
+  "status": "BLOCKED",
+  "error": "dlopen(/usr/local/lib/libimobiledevice.dylib, 0x0006): Library not loaded: @loader_path/libusbmuxd.dylib\n  Referenced from: <F9A16B58-8DCC-39F3-9AF0-EED303F2D506> /usr/local/lib/libimobiledevice.dylib\n  Reason: tried: '/usr/local/lib/libusbmuxd.dylib' (no such file), '/usr/local/lib/libusbmuxd.dylib' (no such file), '/usr/lib/libusbmuxd.dylib' (no such file, not in dyld cache)"
+}

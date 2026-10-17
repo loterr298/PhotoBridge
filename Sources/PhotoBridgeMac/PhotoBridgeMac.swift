@@ -1,0 +1,42 @@
+import SwiftUI
+import ImageCaptureCore
+
+final class CameraDiscovery: NSObject, ObservableObject, ICDeviceBrowserDelegate {
+    @Published var devices: [ICDevice] = []
+    private let browser = ICDeviceBrowser()
+    override init() { super.init(); browser.delegate = self }
+    func start() { browser.start() }
+    func deviceBrowser(_ browser: ICDeviceBrowser, didAdd device: ICDevice, moreComing: Bool) { devices.append(device) }
+    func deviceBrowser(_ browser: ICDeviceBrowser, didRemove device: ICDevice, moreGoing: Bool) {
+        devices.removeAll { $0 === device }
+    }
+}
+
+@main struct PhotoBridgeMacApp: App {
+    @StateObject private var discovery = CameraDiscovery()
+    var body: some Scene {
+        WindowGroup("PhotoBridge · 连接诊断") {
+            NavigationSplitView {
+                List { Section("相机目录 · ImageCaptureCore / PTP") {
+                    ForEach(discovery.devices.indices, id: \.self) { i in
+                        VStack(alignment: .leading) {
+                            Text(discovery.devices[i].name ?? "未命名设备")
+                            Text(discovery.devices[i].transportType ?? "未知链路").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    if discovery.devices.isEmpty { Text("未发现相机设备").foregroundStyle(.secondary) }
+                }}
+            } detail: {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("照片传输").font(.largeTitle.bold())
+                    Label("AFC 双向传输待验证", systemImage: "cable.connector")
+                    Text("左侧是相机文件目录，不能用来判断 PhotoKit 相簿成员或手动顺序。")
+                    Text("在终端运行随附 scripts/usb_probe.py。它仅选择 USB 设备，通过已配对的 House Arrest 访问 PhotoBridge Documents；没有连接时会报告 BLOCKED。")
+                    Text("iPhone 相簿顺序由诊断 App 导出，并与系统照片 App 逐项核对。")
+                    Text("M0 诊断版 · 未提供正式照片导出 / 恢复功能").font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                }.padding(32).frame(maxWidth: .infinity, alignment: .leading)
+            }.frame(minWidth: 760, minHeight: 480).onAppear { discovery.start() }
+        }
+    }
+}

@@ -1,0 +1,15 @@
+PASS: API order preserved
+PASS: reading never auto-verifies manual order
+PASS: JSON encodes
+PASS: 20 identical positions
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+[1/4] Write sources
+[3/6] Emitting module PhotoBridgeCore
+[4/6] Compiling PhotoBridgeCore OrderComparison.swift
+[4/7] Write Objects.LinkFileList
+[5/7] Linking CoreChecks
+[6/7] Applying CoreChecks
+Build of product 'CoreChecks' complete! (1.35s)
+FAIL: Error Domain=moved positions detected Code=1 "(null)"

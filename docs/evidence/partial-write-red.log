@@ -1,0 +1,17 @@
+test_generator_hash_size_and_no_clobber (test_usb_probe.USBChecks) ... ok
+test_partial_writes_and_stalled_writes (test_usb_probe.USBChecks) ... FAIL
+test_receipt_validation_rejects_mismatch_filename_and_origin (test_usb_probe.USBChecks) ... ok
+test_uuid_path_rejects_traversal_and_non_probe_paths (test_usb_probe.USBChecks) ... ok
+
+======================================================================
+FAIL: test_partial_writes_and_stalled_writes (test_usb_probe.USBChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_usb_probe.py", line 25, in test_partial_writes_and_stalled_writes
+    self.assertEqual(output,b'abcdefgh')
+AssertionError: bytearray(b'abc') != b'abcdefgh'
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.014s
+
+FAILED (failures=1)
