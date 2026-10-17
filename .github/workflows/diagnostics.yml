@@ -59,19 +59,34 @@ jobs:
             -configuration Release -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO \
             PHOTOBRIDGE_BUILD_COMMIT="$GITHUB_SHA" build 2>&1 | tee build/logs/ios-build.log
+          python3 - <<'PYVALIDATE'
+          import pathlib, plistlib
+          app = pathlib.Path('build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app')
+          info = plistlib.loads((app / 'Info.plist').read_bytes())
+          expected = {'CFBundleShortVersionString': '0.1.0', 'CFBundleVersion': '1', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
+          for key, value in expected.items():
+              assert info.get(key) == value, f'Invalid compiled Info.plist: {key}'
+          assert info.get('NSPhotoLibraryUsageDescription')
+          assert (app / info['CFBundleExecutable']).is_file()
+          print('PASS: compiled iOS installation metadata and privacy keys')
+          PYVALIDATE
           ditto -c -k --keepParent build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/PhotoBridgeOrderProbe-unsigned.app.zip
+          mkdir -p build/ipa/Payload
+          ditto build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/ipa/Payload/PhotoBridgeOrderProbe.app
+          ditto -c -k --keepParent build/ipa/Payload build/PhotoBridgeOrderProbe-0.1.0-unsigned.ipa
       - name: Build Intel macOS App
         run: |
           set -o pipefail
           bash scripts/build-mac.sh 2>&1 | tee build/logs/mac-build.log
       - name: Artifact checksum
-        run: shasum -a 256 build/*.zip > build/SHA256SUMS.txt
+        run: shasum -a 256 build/*.zip build/*.ipa > build/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: PhotoBridge-diagnostics-${{ github.sha }}
           path: |
             build/*.zip
+            build/*.ipa
             build/SHA256SUMS.txt
             build/logs/
             PhotoBridge.xcodeproj/project.pbxproj
