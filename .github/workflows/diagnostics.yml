@@ -19,15 +19,15 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-      - name: Materialize audited source bundle on first run
+      - name: Apply audited source revision
         run: |
-          if [ ! -f Package.swift ]; then
-            echo "6368e1993b34488566a25c0705ced935f1c928279cebd3fd38ecb3bd77bc0188  SourceBundle.zip" | shasum -a 256 -c -
-            unzip -q -o SourceBundle.zip
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add apps Sources tests scripts Package.swift project.yml docs schemas assets AGENTS.md PROJECT_PROMPT.md README.md .gitignore
-            git commit -m 'feat: materialize audited M0 source, tests and documentation [skip ci]'
+          echo "145fcdafadc1103de34fb068e2df05d0433b7e7b6d173b7643a3990461046053  SourceBundle.zip" | shasum -a 256 -c -
+          unzip -q -o SourceBundle.zip
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps Sources tests scripts Package.swift project.yml docs schemas assets AGENTS.md PROJECT_PROMPT.md README.md .gitignore
+          if ! git diff --cached --quiet; then
+            git commit -m 'fix: apply reviewed M0 thumbnail callback isolation and validation evidence [skip ci]'
             git push origin HEAD
           fi
       - name: Record actual toolchain and runner
