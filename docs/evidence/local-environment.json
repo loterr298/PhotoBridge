@@ -1,0 +1,9 @@
+{
+  "localSourceCommit": "0f7f01f12261ad2bd709bc72807536176cf64e67",
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.9\nBuildVersion:\t\t24G830\n",
+  "architecture": "x86_64",
+  "iosSourceParse": "PASS: swiftc -frontend -parse; not a typecheck or iOS build",
+  "xcodegen": "2.44.1 project generation PASS",
+  "macLaunchProcess": "19598 /Users/l/Documents/ChatGPT/New project/PhotoBridge/build/PhotoBridgeMac.app/Contents/MacOS/PhotoBridgeMac\n",
+  "deviceTests": "NOT_RUN"
+}

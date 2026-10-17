@@ -37,3 +37,10 @@
 补充实际执行：XcodeGen 2.44.1 成功生成项目（evidence/xcodegen.log），iOS 源文件通过 Swift parser（非 iOS 类型检查/链接）；两个 plist lint 通过。Intel App 启动后真实进程已存在，未做 GUI/设备功能验收。对“丢弃部分写入”和“忽略相簿错位”分别注入临时回归，检查确实失败后恢复生产代码并重跑通过（partial-write-red.log / order-mutation-red.log）。不是所有单测均按首次 RED→GREEN 编写，原始失败包含环境和缺模块错误，已如实保留。
 
 GitHub 私有仓库已由用户登录的网页建立：https://github.com/loterr298/PhotoBridge 。连接器返回 404（无新仓库安装授权），命令行无凭据。采用网页上传仅包含本项目已提交文件的 SourceBundle.zip，临时 bootstrap CI 展开源码并提交正常目录，然后执行构建；不上传其他工作目录或私人照片。
+
+## 首次云构建与审查修复
+
+- GitHub Actions #1：**SUCCESS**，2026-10-17 22:31 +08:00，运行 https://github.com/loterr298/PhotoBridge/actions/runs/39041117636 ，工作流 commit `8ca4506db746d950b25d12bde9bcec66da0facf4`。实际 Xcode 16.4 / iOS 18.5 SDK；并非 iOS 27.2 SDK。包含 XCTest、11 项核心检查、6 项 Python 检查、iOS arm64 device build、Intel x86_64 App。
+- 云产物：artifact `12103951700`，227 KB，SHA-256 `a73ce905c9aa0373ef0d78e85c387b006b4b336619de1013b32073fda34752ce`，可在上述运行页面下载。尚未签名安装 iPhone。
+- 独立审查发现 P2：缩略图的旧 PhotoKit 回调可能在视图切换后显示错误照片，影响人工标识映射。已补请求取消与 generation token，旧请求/消失视图回调被拒绝；新增检查先编译失败（thumbnail-red.log），实现后通过。最终修复版将再跑 CI。
+- 无其他 Critical / Important 审查发现；无延期 minor。审查不替代真机验收。

@@ -1,7 +1,15 @@
 [0/1] Planning build
 Building for debugging...
-[0/3] Write swift-version--1AB21518FC5DEDBE.txt
-Build of product 'CoreChecks' complete! (0.50s)
+[0/5] Write sources
+[1/5] Write swift-version--1AB21518FC5DEDBE.txt
+[3/7] Emitting module PhotoBridgeCore
+[4/7] Compiling PhotoBridgeCore RequestGeneration.swift
+[5/9] Compiling CoreChecks main.swift
+[6/9] Emitting module CoreChecks
+[6/9] Write Objects.LinkFileList
+[7/9] Linking CoreChecks
+[8/9] Applying CoreChecks
+Build of product 'CoreChecks' complete! (1.88s)
 PASS: API order preserved
 PASS: reading never auto-verifies manual order
 PASS: JSON encodes
@@ -14,3 +22,4 @@ PASS: existing destination never overwritten
 PASS: conflict preserves original bytes
 PASS: SHA-256 known vector
 11 core checks passed; synthetic data only, device tests NOT_RUN
+PASS: thumbnail request generations reject stale and disappeared callbacks

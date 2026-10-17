@@ -1,0 +1,21 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write sources
+[1/4] Write swift-version--1AB21518FC5DEDBE.txt
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[3/6] Emitting module CoreChecks
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:38:19: error: cannot find 'RequestGeneration' in scope
+36 | 
+37 | // A late callback from the previous photo must not replace the current thumbnail.
+38 | var generations = RequestGeneration()
+   |                   `- error: cannot find 'RequestGeneration' in scope
+39 | let oldRequest = generations.begin()
+40 | let newRequest = generations.begin()
+[4/6] Compiling CoreChecks main.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:38:19: error: cannot find 'RequestGeneration' in scope
+36 | 
+37 | // A late callback from the previous photo must not replace the current thumbnail.
+38 | var generations = RequestGeneration()
+   |                   `- error: cannot find 'RequestGeneration' in scope
+39 | let oldRequest = generations.begin()
+40 | let newRequest = generations.begin()

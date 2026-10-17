@@ -21,6 +21,14 @@ final class DiagnosticsTests: XCTestCase {
         XCTAssertThrowsError(try OrderComparison.compare(observed: Array(ids.prefix(19)), expected: ids))
         XCTAssertThrowsError(try OrderComparison.compare(observed: ids, expected: Array(repeating: "same", count: 20)))
     }
+    func testStaleThumbnailCallbacksAreRejected() {
+        var generations = RequestGeneration()
+        let old = generations.begin(); let new = generations.begin()
+        XCTAssertFalse(generations.accepts(old))
+        XCTAssertTrue(generations.accepts(new))
+        generations.invalidate()
+        XCTAssertFalse(generations.accepts(new))
+    }
     func testProbeHashAndNoOverwrite() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

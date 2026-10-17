@@ -131,21 +131,30 @@ struct AssetThumbnail: View {
     let asset: PHAsset?
     @State private var image: UIImage?
     @State private var request: PHImageRequestID = PHInvalidImageRequestID
+    @State private var generations = RequestGeneration()
     var body: some View {
         ZStack {
             Color(uiColor: .secondarySystemBackground)
             if let image { Image(uiImage: image).resizable().scaledToFill() }
             else { Image(systemName: "photo").foregroundStyle(.secondary).accessibilityLabel("缩略图未就绪") }
         }.clipped().task(id: asset?.localIdentifier) {
+            PHImageManager.default().cancelImageRequest(request)
+            let token = generations.begin()
             image = nil
             if let asset {
                 let options = PHImageRequestOptions(); options.isNetworkAccessAllowed = false
                 request = PHImageManager.default().requestImage(for: asset, targetSize: CGSize(width: 240, height: 240),
                     contentMode: .aspectFill, options: options) { result, _ in
-                        DispatchQueue.main.async { image = result }
+                        DispatchQueue.main.async {
+                            guard generations.accepts(token) else { return }
+                            image = result
+                        }
                     }
             }
-        }.onDisappear { PHImageManager.default().cancelImageRequest(request) }
+        }.onDisappear {
+            generations.invalidate()
+            PHImageManager.default().cancelImageRequest(request)
+        }
     }
 }
 

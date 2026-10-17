@@ -33,3 +33,13 @@ do {
     try require(ProbeFiles.inspect(abc).sha256 == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", "SHA-256 known vector")
     print("11 core checks passed; synthetic data only, device tests NOT_RUN")
 } catch { fputs("FAIL: \(error)\n", stderr); exit(1) }
+
+// A late callback from the previous photo must not replace the current thumbnail.
+var generations = RequestGeneration()
+let oldRequest = generations.begin()
+let newRequest = generations.begin()
+precondition(!generations.accepts(oldRequest), "stale thumbnail callback accepted")
+precondition(generations.accepts(newRequest), "current thumbnail callback rejected")
+generations.invalidate()
+precondition(!generations.accepts(newRequest), "disappeared view accepted callback")
+print("PASS: thumbnail request generations reject stale and disappeared callbacks")

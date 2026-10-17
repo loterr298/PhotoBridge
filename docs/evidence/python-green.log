@@ -6,6 +6,6 @@ test_receipt_validation_rejects_mismatch_filename_and_origin (test_usb_probe.USB
 test_uuid_path_rejects_traversal_and_non_probe_paths (test_usb_probe.USBChecks) ... ok
 
 ----------------------------------------------------------------------
-Ran 6 tests in 0.018s
+Ran 6 tests in 0.013s
 
 OK
