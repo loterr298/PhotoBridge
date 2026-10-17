@@ -1,0 +1,90 @@
+name: PhotoBridge diagnostics
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      minimum_ios_sdk:
+        description: 'Optional minimum iOS SDK major version; empty uses installed SDK'
+        required: false
+        default: ''
+permissions:
+  contents: write
+concurrency:
+  group: diagnostics-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  diagnostics:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply audited source revision
+        run: |
+          echo "145fcdafadc1103de34fb068e2df05d0433b7e7b6d173b7643a3990461046053  SourceBundle.zip" | shasum -a 256 -c -
+          unzip -q -o SourceBundle.zip
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps Sources tests scripts Package.swift project.yml docs schemas assets AGENTS.md PROJECT_PROMPT.md README.md .gitignore
+          if ! git diff --cached --quiet; then
+            git commit -m 'fix: apply reviewed M0 thumbnail callback isolation and validation evidence [skip ci]'
+            git push origin HEAD
+          fi
+      - name: Record actual toolchain and runner
+        run: |
+          mkdir -p build/logs
+          {
+            sw_vers
+            uname -m
+            xcodebuild -version
+            xcodebuild -showsdks
+            swift --version
+            xcrun --sdk iphoneos --show-sdk-version
+            ls -d /Applications/Xcode*.app
+          } 2>&1 | tee build/logs/toolchain.log
+      - name: Check requested SDK if supplied
+        env:
+          MINIMUM_SDK: ${{ inputs.minimum_ios_sdk }}
+        run: |
+          if [ -n "$MINIMUM_SDK" ]; then
+            ACTUAL_SDK=$(xcrun --sdk iphoneos --show-sdk-version)
+            python3 -c 'import sys; assert int(sys.argv[1].split(".")[0]) >= int(sys.argv[2]), "Requested SDK unavailable"' "$ACTUAL_SDK" "$MINIMUM_SDK"
+          fi
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee build/logs/swift-test.log
+          swift run CoreChecks 2>&1 | tee build/logs/core-checks.log
+          python3 -m unittest discover -s tests -v 2>&1 | tee build/logs/python-test.log
+      - name: Install pinned XcodeGen and generate project
+        run: |
+          curl --fail --location --retry 3 https://github.com/yonaskolb/XcodeGen/releases/download/2.44.1/xcodegen.zip -o "$RUNNER_TEMP/xcodegen.zip"
+          echo "a2e905fb68446e9bb4008cdfe2e13e3f176d0cbcca828b71770f8e53fca91b73  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP/xcodegen"
+          "$RUNNER_TEMP/xcodegen/xcodegen/bin/xcodegen" --version | tee build/logs/xcodegen-version.log
+          "$RUNNER_TEMP/xcodegen/xcodegen/bin/xcodegen" generate
+      - name: iOS unsigned device build
+        run: |
+          set -o pipefail
+          xcodebuild -project PhotoBridge.xcodeproj -scheme PhotoBridgeOrderProbe \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO \
+            PHOTOBRIDGE_BUILD_COMMIT="$GITHUB_SHA" build 2>&1 | tee build/logs/ios-build.log
+          ditto -c -k --keepParent build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/PhotoBridgeOrderProbe-unsigned.app.zip
+      - name: Build Intel macOS App
+        run: |
+          set -o pipefail
+          bash scripts/build-mac.sh 2>&1 | tee build/logs/mac-build.log
+      - name: Artifact checksum
+        run: shasum -a 256 build/*.zip > build/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: PhotoBridge-diagnostics-${{ github.sha }}
+          path: |
+            build/*.zip
+            build/SHA256SUMS.txt
+            build/logs/
+            PhotoBridge.xcodeproj/project.pbxproj
+          if-no-files-found: error
+          retention-days: 14

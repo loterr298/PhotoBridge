@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/loterr298/PhotoBridge",
+  "private": true,
+  "runID": 39041117636,
+  "workflowCommit": "8ca4506db746d950b25d12bde9bcec66da0facf4",
+  "status": "SUCCESS",
+  "Xcode": "16.4",
+  "iOSSDK": "18.5",
+  "artifactID": 12103951700,
+  "artifactSHA256": "a73ce905c9aa0373ef0d78e85c387b006b4b336619de1013b32073fda34752ce",
+  "evidence": "Observed GitHub Actions UI and job build logs. Browser artifact download did not produce a local file.",
+  "iPhoneInstall": "NOT_RUN",
+  "USB": "NOT_RUN"
+}

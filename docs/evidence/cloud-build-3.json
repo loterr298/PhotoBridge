@@ -1,0 +1,17 @@
+{
+  "runID": 39079880516,
+  "workflowCommit": "af24ce901bd2eb12c5f32ad9ccb8d67de5a45b0b",
+  "materializedSourceCommit": "4e9a33f",
+  "sourceBundleSHA256": "145fcdafadc1103de34fb068e2df05d0433b7e7b6d173b7643a3990461046053",
+  "Xcode": "16.4",
+  "iOSSDK": "18.5",
+  "XCTest": "4 tests, 0 failures",
+  "CoreChecks": "11 base checks plus stale thumbnail generation check",
+  "Python": "6 tests, OK",
+  "iOSDeviceBuild": "BUILD SUCCEEDED (unsigned arm64)",
+  "macArchitecture": "x86_64",
+  "artifactID": 12118711190,
+  "artifactSHA256": "5d51a2610c432505f949c855d2570ee4b2f8bd7ad66bcf7365ce15c52b2af235",
+  "artifactBytes": 238530,
+  "deviceAcceptance": "NOT_RUN"
+}

@@ -1,0 +1,694 @@
+2026-10-17T23:39:51.0691810Z Current runner version: '2.337.0'
+2026-10-17T23:39:51.0707010Z ##[group]Runner Image Provisioner
+2026-10-17T23:39:51.0707520Z Hosted Compute Agent
+2026-10-17T23:39:51.0707990Z Version: 20260828.587
+2026-10-17T23:39:51.0708550Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-10-17T23:39:51.0709080Z Build Date: 2026-08-28T16:44:25Z
+2026-10-17T23:39:51.0709600Z Worker ID: {d9839e1b-7816-43fb-8072-850a15d0131e}
+2026-10-17T23:39:51.0710100Z Azure Region: westus
+2026-10-17T23:39:51.0710460Z ##[endgroup]
+2026-10-17T23:39:51.0711250Z ##[group]Operating System
+2026-10-17T23:39:51.0751800Z macOS
+2026-10-17T23:39:51.0752250Z 15.7.9
+2026-10-17T23:39:51.0752550Z 24G830
+2026-10-17T23:39:51.0752840Z ##[endgroup]
+2026-10-17T23:39:51.0753170Z ##[group]Runner Image
+2026-10-17T23:39:51.0753620Z Image: macos-15-arm64
+2026-10-17T23:39:51.0753950Z Version: 20260907.0337.1
+2026-10-17T23:39:51.0754740Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20260907.0337/images/macos/macos-15-arm64-Readme.md
+2026-10-17T23:39:51.0755710Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
+2026-10-17T23:39:51.0756310Z ##[endgroup]
+2026-10-17T23:39:51.0756990Z ##[group]GITHUB_TOKEN Permissions
+2026-10-17T23:39:51.0758250Z Contents: write
+2026-10-17T23:39:51.0758580Z Metadata: read
+2026-10-17T23:39:51.0758970Z ##[endgroup]
+2026-10-17T23:39:51.0760420Z Secret source: Actions
+2026-10-17T23:39:51.0760940Z Cache mode: write
+2026-10-17T23:39:51.0761370Z Prepare workflow directory
+2026-10-17T23:39:51.0966690Z Prepare all required actions
+2026-10-17T23:39:51.0998480Z Getting action download info
+2026-10-17T23:39:51.2414910Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-17T23:39:51.4375010Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-17T23:39:51.5965910Z Complete job name: diagnostics
+2026-10-17T23:39:51.6410520Z ##[group]Run actions/checkout@v4
+2026-10-17T23:39:51.6411030Z with:
+2026-10-17T23:39:51.6411370Z   repository: loterr298/PhotoBridge
+2026-10-17T23:39:51.6414290Z   token: ***
+2026-10-17T23:39:51.6414590Z   ssh-strict: true
+2026-10-17T23:39:51.6414910Z   ssh-user: git
+2026-10-17T23:39:51.6415330Z   persist-credentials: true
+2026-10-17T23:39:51.6415760Z   clean: true
+2026-10-17T23:39:51.6416110Z   sparse-checkout-cone-mode: true
+2026-10-17T23:39:51.6416480Z   fetch-depth: 1
+2026-10-17T23:39:51.6416790Z   fetch-tags: false
+2026-10-17T23:39:51.6417090Z   show-progress: true
+2026-10-17T23:39:51.6417480Z   lfs: false
+2026-10-17T23:39:51.6417800Z   submodules: false
+2026-10-17T23:39:51.6418100Z   set-safe-directory: true
+2026-10-17T23:39:51.6418450Z   allow-unsafe-pr-checkout: false
+2026-10-17T23:39:51.6418920Z ##[endgroup]
+2026-10-17T23:39:51.7604700Z Syncing repository: loterr298/PhotoBridge
+2026-10-17T23:39:51.7605980Z ##[group]Getting Git version info
+2026-10-17T23:39:51.7606550Z Working directory is '/Users/runner/work/PhotoBridge/PhotoBridge'
+2026-10-17T23:39:51.7607350Z [command]/opt/homebrew/bin/git version
+2026-10-17T23:39:51.8101970Z git version 2.55.0
+2026-10-17T23:39:51.8111450Z ##[endgroup]
+2026-10-17T23:39:51.8117370Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/6a481e6c-61cf-4dcf-99a9-5001311b2bef/.gitconfig'
+2026-10-17T23:39:51.8124180Z Temporarily overriding HOME='/Users/runner/work/_temp/6a481e6c-61cf-4dcf-99a9-5001311b2bef' before making global git config changes
+2026-10-17T23:39:51.8125230Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-17T23:39:51.8127310Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:39:51.8221700Z Deleting the contents of '/Users/runner/work/PhotoBridge/PhotoBridge'
+2026-10-17T23:39:51.8224790Z ##[group]Initializing the repository
+2026-10-17T23:39:51.8228180Z [command]/opt/homebrew/bin/git init /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:39:51.8429960Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-17T23:39:51.8431270Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-17T23:39:51.8431870Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-17T23:39:51.8432540Z hint: call:
+2026-10-17T23:39:51.8432820Z hint:
+2026-10-17T23:39:51.8433180Z hint: 	git config --global init.defaultBranch <name>
+2026-10-17T23:39:51.8433580Z hint:
+2026-10-17T23:39:51.8433970Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-17T23:39:51.8434560Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-17T23:39:51.8435050Z hint:
+2026-10-17T23:39:51.8435340Z hint: 	git branch -m <name>
+2026-10-17T23:39:51.8435660Z hint:
+2026-10-17T23:39:51.8436070Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-17T23:39:51.8436750Z Initialized empty Git repository in /Users/runner/work/PhotoBridge/PhotoBridge/.git/
+2026-10-17T23:39:51.8443450Z [command]/opt/homebrew/bin/git remote add origin https://github.com/loterr298/PhotoBridge
+2026-10-17T23:39:51.8501560Z ##[endgroup]
+2026-10-17T23:39:51.8502210Z ##[group]Disabling automatic garbage collection
+2026-10-17T23:39:51.8504090Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-10-17T23:39:51.8550260Z ##[endgroup]
+2026-10-17T23:39:51.8550810Z ##[group]Setting up auth
+2026-10-17T23:39:51.8553750Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-17T23:39:51.8606860Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-17T23:39:51.9395360Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-17T23:39:51.9446790Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-17T23:39:52.0146930Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-17T23:39:52.0201910Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-17T23:39:52.0911320Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-17T23:39:52.0969860Z ##[endgroup]
+2026-10-17T23:39:52.0970490Z ##[group]Fetching the repository
+2026-10-17T23:39:52.0975380Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +af24ce901bd2eb12c5f32ad9ccb8d67de5a45b0b:refs/remotes/origin/main
+2026-10-17T23:39:53.1578770Z From https://github.com/loterr298/PhotoBridge
+2026-10-17T23:39:53.1580030Z  * [new ref]         af24ce901bd2eb12c5f32ad9ccb8d67de5a45b0b -> origin/main
+2026-10-17T23:39:53.1581680Z ##[endgroup]
+2026-10-17T23:39:53.1582390Z ##[group]Determining the checkout info
+2026-10-17T23:39:53.1583050Z ##[endgroup]
+2026-10-17T23:39:53.1584840Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-10-17T23:39:53.1657520Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-17T23:39:53.1714910Z ##[group]Checking out the ref
+2026-10-17T23:39:53.1717390Z [command]/opt/homebrew/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-10-17T23:39:53.2075300Z Switched to a new branch 'main'
+2026-10-17T23:39:53.2083550Z branch 'main' set up to track 'origin/main'.
+2026-10-17T23:39:53.2088680Z ##[endgroup]
+2026-10-17T23:39:53.2161730Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-10-17T23:39:53.2218290Z af24ce901bd2eb12c5f32ad9ccb8d67de5a45b0b
+2026-10-17T23:39:53.2409150Z ##[group]Run echo "145fcdafadc1103de34fb068e2df05d0433b7e7b6d173b7643a3990461046053  SourceBundle.zip" | shasum -a 256 -c -
+2026-10-17T23:39:53.2412100Z echo "145fcdafadc1103de34fb068e2df05d0433b7e7b6d173b7643a3990461046053  SourceBundle.zip" | shasum -a 256 -c -
+2026-10-17T23:39:53.2413900Z unzip -q -o SourceBundle.zip
+2026-10-17T23:39:53.2414860Z git config user.name 'github-actions[bot]'
+2026-10-17T23:39:53.2416260Z git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+2026-10-17T23:39:53.2418540Z git add apps Sources tests scripts Package.swift project.yml docs schemas assets AGENTS.md PROJECT_PROMPT.md README.md .gitignore
+2026-10-17T23:39:53.2420360Z if ! git diff --cached --quiet; then
+2026-10-17T23:39:53.2421810Z   git commit -m 'fix: apply reviewed M0 thumbnail callback isolation and validation evidence [skip ci]'
+2026-10-17T23:39:53.2423250Z   git push origin HEAD
+2026-10-17T23:39:53.2424110Z fi
+2026-10-17T23:39:53.2477830Z shell: /bin/bash -e {0}
+2026-10-17T23:39:53.2478460Z ##[endgroup]
+2026-10-17T23:39:53.3175340Z SourceBundle.zip: OK
+2026-10-17T23:39:53.4268750Z [main 4e9a33f] fix: apply reviewed M0 thumbnail callback isolation and validation evidence [skip ci]
+2026-10-17T23:39:53.4270300Z  11 files changed, 95 insertions(+), 10 deletions(-)
+2026-10-17T23:39:53.4271540Z  create mode 100644 Sources/PhotoBridgeCore/RequestGeneration.swift
+2026-10-17T23:39:53.4272790Z  create mode 100644 docs/evidence/local-environment.json
+2026-10-17T23:39:53.4273760Z  create mode 100644 docs/evidence/thumbnail-red.log
+2026-10-17T23:39:54.6600650Z To https://github.com/loterr298/PhotoBridge
+2026-10-17T23:39:54.6601380Z    af24ce9..4e9a33f  HEAD -> main
+2026-10-17T23:39:54.6697680Z ##[group]Run mkdir -p build/logs
+2026-10-17T23:39:54.6698430Z mkdir -p build/logs
+2026-10-17T23:39:54.6699150Z {
+2026-10-17T23:39:54.6699830Z   sw_vers
+2026-10-17T23:39:54.6700520Z   uname -m
+2026-10-17T23:39:54.6701190Z   xcodebuild -version
+2026-10-17T23:39:54.6701950Z   xcodebuild -showsdks
+2026-10-17T23:39:54.6702660Z   swift --version
+2026-10-17T23:39:54.6703360Z   xcrun --sdk iphoneos --show-sdk-version
+2026-10-17T23:39:54.6704160Z   ls -d /Applications/Xcode*.app
+2026-10-17T23:39:54.6704930Z } 2>&1 | tee build/logs/toolchain.log
+2026-10-17T23:39:54.6744670Z shell: /bin/bash -e {0}
+2026-10-17T23:39:54.6745320Z ##[endgroup]
+2026-10-17T23:39:54.7124940Z ProductName:		macOS
+2026-10-17T23:39:54.7125790Z ProductVersion:		15.7.9
+2026-10-17T23:39:54.7126450Z BuildVersion:		24G830
+2026-10-17T23:39:54.7154690Z arm64
+2026-10-17T23:39:54.8587340Z Xcode 16.4
+2026-10-17T23:39:54.8601400Z Build version 16F6
+2026-10-17T23:39:55.7933980Z DriverKit SDKs:
+2026-10-17T23:39:55.7934500Z 	DriverKit 24.5                	-sdk driverkit24.5
+2026-10-17T23:39:55.7934780Z 
+2026-10-17T23:39:55.7934910Z iOS SDKs:
+2026-10-17T23:39:55.7935120Z 	iOS 18.5                      	-sdk iphoneos18.5
+2026-10-17T23:39:55.7935310Z 
+2026-10-17T23:39:55.7935480Z iOS Simulator SDKs:
+2026-10-17T23:39:55.7935810Z 	Simulator - iOS 18.5          	-sdk iphonesimulator18.5
+2026-10-17T23:39:55.7936050Z 
+2026-10-17T23:39:55.7936150Z macOS SDKs:
+2026-10-17T23:39:55.7936390Z 	macOS 15.5                    	-sdk macosx15.5
+2026-10-17T23:39:55.7936650Z 	macOS 15.5                    	-sdk macosx15.5
+2026-10-17T23:39:55.7936870Z 
+2026-10-17T23:39:55.7936940Z tvOS SDKs:
+2026-10-17T23:39:55.7937100Z 	tvOS 18.5                     	-sdk appletvos18.5
+2026-10-17T23:39:55.7937280Z 
+2026-10-17T23:39:55.7937350Z tvOS Simulator SDKs:
+2026-10-17T23:39:55.7937560Z 	Simulator - tvOS 18.5         	-sdk appletvsimulator18.5
+2026-10-17T23:39:55.7937770Z 
+2026-10-17T23:39:55.7937900Z visionOS SDKs:
+2026-10-17T23:39:55.7938060Z 	visionOS 2.5                  	-sdk xros2.5
+2026-10-17T23:39:55.7938230Z 
+2026-10-17T23:39:55.7938290Z visionOS Simulator SDKs:
+2026-10-17T23:39:55.7938530Z 	Simulator - visionOS 2.5      	-sdk xrsimulator2.5
+2026-10-17T23:39:55.7938700Z 
+2026-10-17T23:39:55.7939350Z watchOS SDKs:
+2026-10-17T23:39:55.7939530Z 	watchOS 11.5                  	-sdk watchos11.5
+2026-10-17T23:39:55.7939690Z 
+2026-10-17T23:39:55.7939750Z watchOS Simulator SDKs:
+2026-10-17T23:39:55.7940010Z 	Simulator - watchOS 11.5      	-sdk watchsimulator11.5
+2026-10-17T23:39:55.7940200Z 
+2026-10-17T23:39:57.6611350Z swift-driver version: 1.120.5 Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)
+2026-10-17T23:39:57.6611910Z Target: arm64-apple-macosx15.0
+2026-10-17T23:39:58.7984100Z 18.5
+2026-10-17T23:39:58.8025520Z /Applications/Xcode_16.0.0.app
+2026-10-17T23:39:58.8025910Z /Applications/Xcode_16.0.app
+2026-10-17T23:39:58.8026420Z /Applications/Xcode_16.1.0.app
+2026-10-17T23:39:58.8026710Z /Applications/Xcode_16.1.app
+2026-10-17T23:39:58.8026990Z /Applications/Xcode_16.2.0.app
+2026-10-17T23:39:58.8027250Z /Applications/Xcode_16.2.app
+2026-10-17T23:39:58.8027530Z /Applications/Xcode_16.3.0.app
+2026-10-17T23:39:58.8027740Z /Applications/Xcode_16.3.app
+2026-10-17T23:39:58.8028010Z /Applications/Xcode_16.4.0.app
+2026-10-17T23:39:58.8028230Z /Applications/Xcode_16.4.app
+2026-10-17T23:39:58.8028480Z /Applications/Xcode_16.app
+2026-10-17T23:39:58.8028680Z /Applications/Xcode_26.0.1.app
+2026-10-17T23:39:58.8029010Z /Applications/Xcode_26.0.app
+2026-10-17T23:39:58.8029240Z /Applications/Xcode_26.1.1.app
+2026-10-17T23:39:58.8029450Z /Applications/Xcode_26.1.app
+2026-10-17T23:39:58.8029680Z /Applications/Xcode_26.2.0.app
+2026-10-17T23:39:58.8029880Z /Applications/Xcode_26.2.app
+2026-10-17T23:39:58.8030110Z /Applications/Xcode_26.3.0.app
+2026-10-17T23:39:58.8030340Z /Applications/Xcode_26.3.app
+2026-10-17T23:39:58.8030540Z /Applications/Xcode.app
+2026-10-17T23:39:58.8339030Z ##[group]Run if [ -n "$MINIMUM_SDK" ]; then
+2026-10-17T23:39:58.8339510Z if [ -n "$MINIMUM_SDK" ]; then
+2026-10-17T23:39:58.8339780Z   ACTUAL_SDK=$(xcrun --sdk iphoneos --show-sdk-version)
+2026-10-17T23:39:58.8340420Z   python3 -c 'import sys; assert int(sys.argv[1].split(".")[0]) >= int(sys.argv[2]), "Requested SDK unavailable"' "$ACTUAL_SDK" "$MINIMUM_SDK"
+2026-10-17T23:39:58.8340960Z fi
+2026-10-17T23:39:58.8381260Z shell: /bin/bash -e {0}
+2026-10-17T23:39:58.8381430Z env:
+2026-10-17T23:39:58.8381550Z   MINIMUM_SDK: 
+2026-10-17T23:39:58.8381690Z ##[endgroup]
+2026-10-17T23:39:58.8656360Z ##[group]Run set -o pipefail
+2026-10-17T23:39:58.8656720Z set -o pipefail
+2026-10-17T23:39:58.8656960Z swift test 2>&1 | tee build/logs/swift-test.log
+2026-10-17T23:39:58.8657270Z swift run CoreChecks 2>&1 | tee build/logs/core-checks.log
+2026-10-17T23:39:58.8657680Z python3 -m unittest discover -s tests -v 2>&1 | tee build/logs/python-test.log
+2026-10-17T23:39:58.8693760Z shell: /bin/bash -e {0}
+2026-10-17T23:39:58.8693960Z ##[endgroup]
+2026-10-17T23:40:01.5536430Z Building for debugging...
+2026-10-17T23:40:01.5585010Z [0/17] /Users/runner/work/PhotoBridge/PhotoBridge/.build/arm64-apple-macosx/debug/PhotoBridgePackageTests.derived/runner.swift
+2026-10-17T23:40:01.5586830Z [0/17] Write sources
+2026-10-17T23:40:01.5587440Z [4/17] Write CoreChecks-entitlement.plist
+2026-10-17T23:40:01.5588480Z [6/17] Write PhotoBridgeMac-entitlement.plist
+2026-10-17T23:40:01.5589100Z [7/17] Write sources
+2026-10-17T23:40:01.7347310Z [8/17] Write swift-version--79AA4F9932D1E87A.txt
+2026-10-17T23:40:06.7148880Z [10/22] Compiling PhotoBridgeCore OrderSnapshot.swift
+2026-10-17T23:40:06.7149690Z [11/22] Compiling PhotoBridgeCore RequestGeneration.swift
+2026-10-17T23:40:06.7597850Z [12/22] Compiling PhotoBridgeCore OrderComparison.swift
+2026-10-17T23:40:06.7598320Z [13/22] Emitting module PhotoBridgeCore
+2026-10-17T23:40:06.7598580Z [14/22] Compiling PhotoBridgeCore ProbeFiles.swift
+2026-10-17T23:40:07.1396730Z [15/28] Emitting module CoreChecks
+2026-10-17T23:40:07.1397340Z [16/28] Compiling CoreChecks main.swift
+2026-10-17T23:40:07.1444290Z [16/28] Write Objects.LinkFileList
+2026-10-17T23:40:07.5174930Z [17/28] Linking CoreChecks
+2026-10-17T23:40:07.5339430Z [18/28] Applying CoreChecks
+2026-10-17T23:40:10.9775110Z [20/28] Emitting module PhotoBridgeMac
+2026-10-17T23:40:10.9775480Z [21/28] Compiling PhotoBridgeMac PhotoBridgeMac.swift
+2026-10-17T23:40:10.9819330Z [21/28] Write Objects.LinkFileList
+2026-10-17T23:40:11.3899160Z [22/28] Linking PhotoBridgeMac
+2026-10-17T23:40:11.4028810Z [23/28] Applying PhotoBridgeMac
+2026-10-17T23:40:14.2341760Z [25/28] Compiling PhotoBridgeCoreTests DiagnosticsTests.swift
+2026-10-17T23:40:15.8007110Z [26/28] Emitting module PhotoBridgeCoreTests
+2026-10-17T23:40:15.8007510Z [27/30] Compiling PhotoBridgePackageTests runner.swift
+2026-10-17T23:40:15.8007800Z [28/30] Emitting module PhotoBridgePackageTests
+2026-10-17T23:40:15.8035090Z [28/30] Write Objects.LinkFileList
+2026-10-17T23:40:16.0844740Z [29/30] Linking PhotoBridgePackageTests
+2026-10-17T23:40:16.0856270Z Build complete! (14.58s)
+2026-10-17T23:40:16.3473900Z Test Suite 'All tests' started at 2026-10-17 23:40:16.303.
+2026-10-17T23:40:16.3474610Z Test Suite 'PhotoBridgePackageTests.xctest' started at 2026-10-17 23:40:16.303.
+2026-10-17T23:40:16.3475090Z Test Suite 'DiagnosticsTests' started at 2026-10-17 23:40:16.303.
+2026-10-17T23:40:16.3475570Z Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testCapturePreservesAPIOrderRatherThanDatesOrNames]' started.
+2026-10-17T23:40:16.3476270Z Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testCapturePreservesAPIOrderRatherThanDatesOrNames]' passed (0.002 seconds).
+2026-10-17T23:40:16.3476960Z Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testComparisonRejectsMissingDuplicateAndMismatchedTwenty]' started.
+2026-10-17T23:40:16.3477680Z Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testComparisonRejectsMissingDuplicateAndMismatchedTwenty]' passed (0.000 seconds).
+2026-10-17T23:40:16.3478300Z Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testProbeHashAndNoOverwrite]' started.
+2026-10-17T23:40:16.3478840Z Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testProbeHashAndNoOverwrite]' passed (0.004 seconds).
+2026-10-17T23:40:16.3479820Z Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testStaleThumbnailCallbacksAreRejected]' started.
+2026-10-17T23:40:16.3480460Z Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testStaleThumbnailCallbacksAreRejected]' passed (0.000 seconds).
+2026-10-17T23:40:16.3481400Z Test Suite 'DiagnosticsTests' passed at 2026-10-17 23:40:16.311.
+2026-10-17T23:40:16.3481820Z 	 Executed 4 tests, with 0 failures (0 unexpected) in 0.007 (0.007) seconds
+2026-10-17T23:40:16.3482240Z Test Suite 'PhotoBridgePackageTests.xctest' passed at 2026-10-17 23:40:16.311.
+2026-10-17T23:40:16.3482660Z 	 Executed 4 tests, with 0 failures (0 unexpected) in 0.007 (0.007) seconds
+2026-10-17T23:40:16.3483030Z Test Suite 'All tests' passed at 2026-10-17 23:40:16.311.
+2026-10-17T23:40:16.3483340Z 	 Executed 4 tests, with 0 failures (0 unexpected) in 0.007 (0.008) seconds
+2026-10-17T23:40:16.3483960Z ◇ Test run started.
+2026-10-17T23:40:16.3484160Z ↳ Testing Library Version: 124.4
+2026-10-17T23:40:16.3484490Z ↳ Target Platform: arm64e-apple-macos14.0
+2026-10-17T23:40:16.3494270Z ✔ Test run with 0 tests passed after 0.001 seconds.
+2026-10-17T23:40:16.8841200Z [0/1] Planning build
+2026-10-17T23:40:16.8874900Z Building for debugging...
+2026-10-17T23:40:17.0283770Z [0/3] Write swift-version--79AA4F9932D1E87A.txt
+2026-10-17T23:40:17.0296630Z Build of product 'CoreChecks' complete! (0.18s)
+2026-10-17T23:40:17.0414990Z PASS: API order preserved
+2026-10-17T23:40:17.0415250Z PASS: reading never auto-verifies manual order
+2026-10-17T23:40:17.0415500Z PASS: JSON encodes
+2026-10-17T23:40:17.0415670Z PASS: 20 identical positions
+2026-10-17T23:40:17.0415880Z PASS: moved positions detected
+2026-10-17T23:40:17.0416190Z PASS: 19 members cannot pass
+2026-10-17T23:40:17.0416380Z PASS: duplicate baseline cannot pass
+2026-10-17T23:40:17.0416580Z PASS: streamed hash and size round trip
+2026-10-17T23:40:17.0416850Z PASS: existing destination never overwritten
+2026-10-17T23:40:17.0417050Z PASS: conflict preserves original bytes
+2026-10-17T23:40:17.0417220Z PASS: SHA-256 known vector
+2026-10-17T23:40:17.0417840Z 11 core checks passed; synthetic data only, device tests NOT_RUN
+2026-10-17T23:40:17.0418170Z PASS: thumbnail request generations reject stale and disappeared callbacks
+2026-10-17T23:40:17.3068930Z test_missing_limited_duplicates_and_noncontiguous_never_pass (test_order_comparison.ComparisonChecks.test_missing_limited_duplicates_and_noncontiguous_never_pass) ... ok
+2026-10-17T23:40:17.3069910Z test_moved_items_and_twenty_match (test_order_comparison.ComparisonChecks.test_moved_items_and_twenty_match) ... ok
+2026-10-17T23:40:17.3126590Z test_generator_hash_size_and_no_clobber (test_usb_probe.USBChecks.test_generator_hash_size_and_no_clobber) ... ok
+2026-10-17T23:40:17.3127140Z test_partial_writes_and_stalled_writes (test_usb_probe.USBChecks.test_partial_writes_and_stalled_writes) ... ok
+2026-10-17T23:40:17.3127780Z test_receipt_validation_rejects_mismatch_filename_and_origin (test_usb_probe.USBChecks.test_receipt_validation_rejects_mismatch_filename_and_origin) ... ok
+2026-10-17T23:40:17.3128510Z test_uuid_path_rejects_traversal_and_non_probe_paths (test_usb_probe.USBChecks.test_uuid_path_rejects_traversal_and_non_probe_paths) ... ok
+2026-10-17T23:40:17.3128880Z 
+2026-10-17T23:40:17.3128980Z ----------------------------------------------------------------------
+2026-10-17T23:40:17.3129240Z Ran 6 tests in 0.006s
+2026-10-17T23:40:17.3129320Z 
+2026-10-17T23:40:17.3129370Z OK
+2026-10-17T23:40:17.3506220Z ##[group]Run curl --fail --location --retry 3 https://github.com/yonaskolb/XcodeGen/releases/download/2.44.1/xcodegen.zip -o "$RUNNER_TEMP/xcodegen.zip"
+2026-10-17T23:40:17.3507040Z curl --fail --location --retry 3 https://github.com/yonaskolb/XcodeGen/releases/download/2.44.1/xcodegen.zip -o "$RUNNER_TEMP/xcodegen.zip"
+2026-10-17T23:40:17.3507880Z echo "a2e905fb68446e9bb4008cdfe2e13e3f176d0cbcca828b71770f8e53fca91b73  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+2026-10-17T23:40:17.3508490Z unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP/xcodegen"
+2026-10-17T23:40:17.3508930Z "$RUNNER_TEMP/xcodegen/xcodegen/bin/xcodegen" --version | tee build/logs/xcodegen-version.log
+2026-10-17T23:40:17.3509350Z "$RUNNER_TEMP/xcodegen/xcodegen/bin/xcodegen" generate
+2026-10-17T23:40:17.3545690Z shell: /bin/bash -e {0}
+2026-10-17T23:40:17.3545930Z ##[endgroup]
+2026-10-17T23:40:17.3833610Z   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+2026-10-17T23:40:17.3834130Z                                  Dload  Upload   Total   Spent    Left  Speed
+2026-10-17T23:40:17.3834330Z 
+2026-10-17T23:40:17.6806470Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+2026-10-17T23:40:17.6806770Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+2026-10-17T23:40:17.7594140Z 
+2026-10-17T23:40:17.7594370Z 100 4196k  100 4196k    0     0  10.8M      0 --:--:-- --:--:-- --:--:-- 10.8M
+2026-10-17T23:40:17.7872730Z /Users/runner/work/_temp/xcodegen.zip: OK
+2026-10-17T23:40:17.8836760Z Version: 2.44.1
+2026-10-17T23:40:17.8940870Z ⚙️  Generating plists...
+2026-10-17T23:40:17.8941210Z ⚙️  Generating project...
+2026-10-17T23:40:17.8991010Z ⚙️  Writing project...
+2026-10-17T23:40:17.9181540Z Created project at /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:17.9223110Z ##[group]Run set -o pipefail
+2026-10-17T23:40:17.9223380Z set -o pipefail
+2026-10-17T23:40:17.9223670Z xcodebuild -project PhotoBridge.xcodeproj -scheme PhotoBridgeOrderProbe \
+2026-10-17T23:40:17.9224080Z   -configuration Release -destination 'generic/platform=iOS' \
+2026-10-17T23:40:17.9224440Z   -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO \
+2026-10-17T23:40:17.9224900Z   PHOTOBRIDGE_BUILD_COMMIT="$GITHUB_SHA" build 2>&1 | tee build/logs/ios-build.log
+2026-10-17T23:40:17.9225640Z ditto -c -k --keepParent build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/PhotoBridgeOrderProbe-unsigned.app.zip
+2026-10-17T23:40:17.9265470Z shell: /bin/bash -e {0}
+2026-10-17T23:40:17.9265650Z ##[endgroup]
+2026-10-17T23:40:18.7671820Z Command line invocation:
+2026-10-17T23:40:18.7673100Z     /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/xcodebuild -project PhotoBridge.xcodeproj -scheme PhotoBridgeOrderProbe -configuration Release -destination generic/platform=iOS -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO PHOTOBRIDGE_BUILD_COMMIT=af24ce901bd2eb12c5f32ad9ccb8d67de5a45b0b build
+2026-10-17T23:40:18.7674140Z 
+2026-10-17T23:40:18.7674220Z Build settings from command line:
+2026-10-17T23:40:18.7674410Z     CODE_SIGNING_ALLOWED = NO
+2026-10-17T23:40:18.7674660Z     PHOTOBRIDGE_BUILD_COMMIT = af24ce901bd2eb12c5f32ad9ccb8d67de5a45b0b
+2026-10-17T23:40:18.7674890Z 
+2026-10-17T23:40:20.7005550Z Resolve Package Graph
+2026-10-17T23:40:25.9176660Z 
+2026-10-17T23:40:25.9185530Z Resolve Package Graph
+2026-10-17T23:40:25.9270810Z 
+2026-10-17T23:40:25.9272580Z 
+2026-10-17T23:40:25.9273020Z Resolved source packages:
+2026-10-17T23:40:25.9273420Z   PhotoBridge: /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:25.9273900Z 
+2026-10-17T23:40:26.3091520Z ComputePackagePrebuildTargetDependencyGraph
+2026-10-17T23:40:26.3877750Z 
+2026-10-17T23:40:26.3894530Z Prepare packages
+2026-10-17T23:40:26.3895180Z 
+2026-10-17T23:40:26.3905740Z CreateBuildRequest
+2026-10-17T23:40:26.3906050Z 
+2026-10-17T23:40:26.3906350Z SendProjectDescription
+2026-10-17T23:40:26.3980520Z 
+2026-10-17T23:40:26.3980970Z CreateBuildOperation
+2026-10-17T23:40:26.4066130Z 
+2026-10-17T23:40:26.4078310Z ComputeTargetDependencyGraph
+2026-10-17T23:40:26.4281200Z note: Building targets in dependency order
+2026-10-17T23:40:26.4282080Z note: Target dependency graph (3 targets)
+2026-10-17T23:40:26.4282430Z     Target 'PhotoBridgeOrderProbe' in project 'PhotoBridge'
+2026-10-17T23:40:26.4283340Z         ➜ Explicit dependency on target 'PhotoBridgeCore' in project 'PhotoBridge'
+2026-10-17T23:40:26.4283750Z     Target 'PhotoBridgeCore' in project 'PhotoBridge'
+2026-10-17T23:40:26.4284220Z         ➜ Explicit dependency on target 'PhotoBridgeCore' in project 'PhotoBridge'
+2026-10-17T23:40:26.4284760Z     Target 'PhotoBridgeCore' in project 'PhotoBridge' (no dependencies)
+2026-10-17T23:40:26.4289810Z 
+2026-10-17T23:40:26.4290890Z GatherProvisioningInputs
+2026-10-17T23:40:26.4292970Z 
+2026-10-17T23:40:26.4395950Z CreateBuildDescription
+2026-10-17T23:40:26.4661370Z 
+2026-10-17T23:40:26.4661970Z ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+2026-10-17T23:40:26.6232520Z 
+2026-10-17T23:40:26.6233740Z ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -x c -c /dev/null
+2026-10-17T23:40:26.6234550Z 
+2026-10-17T23:40:26.6309160Z ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+2026-10-17T23:40:26.6390790Z 
+2026-10-17T23:40:26.6538940Z Build description signature: 510fd99f296c9845770e18f83f0204b6
+2026-10-17T23:40:26.6546880Z Build description path: /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/XCBuildData/510fd99f296c9845770e18f83f0204b6.xcbuilddata
+2026-10-17T23:40:26.6801570Z ClangStatCache /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache
+2026-10-17T23:40:26.6803030Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:26.6804260Z     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -o /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache
+2026-10-17T23:40:28.0315770Z 
+2026-10-17T23:40:28.0317460Z CreateBuildDirectory /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products
+2026-10-17T23:40:28.0318060Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:28.0318670Z     builtin-create-build-directory /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products
+2026-10-17T23:40:28.0319010Z 
+2026-10-17T23:40:28.0319260Z CreateBuildDirectory /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex
+2026-10-17T23:40:28.0319710Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:28.0320210Z     builtin-create-build-directory /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex
+2026-10-17T23:40:28.0320690Z 
+2026-10-17T23:40:28.0321120Z CreateBuildDirectory /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos
+2026-10-17T23:40:28.0321780Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:28.0322350Z     builtin-create-build-directory /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos
+2026-10-17T23:40:28.0323510Z 
+2026-10-17T23:40:28.0323770Z CreateBuildDirectory /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos
+2026-10-17T23:40:28.0324240Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:28.0325280Z     builtin-create-build-directory /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos
+2026-10-17T23:40:28.0325850Z 
+2026-10-17T23:40:28.0326460Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridge-fc23cc650e8e7bac3ed6a3a68b09d51b-VFS-iphoneos/all-product-headers.yaml
+2026-10-17T23:40:28.0327280Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:28.0328050Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridge-fc23cc650e8e7bac3ed6a3a68b09d51b-VFS-iphoneos/all-product-headers.yaml
+2026-10-17T23:40:28.0328670Z 
+2026-10-17T23:40:28.0328960Z CreateBuildDirectory /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PackageFrameworks
+2026-10-17T23:40:28.0329450Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:28.0330010Z     builtin-create-build-directory /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PackageFrameworks
+2026-10-17T23:40:28.0330410Z 
+2026-10-17T23:40:28.0331580Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe.DependencyStaticMetadataFileList (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0332660Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0333350Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe.DependencyStaticMetadataFileList
+2026-10-17T23:40:28.0334720Z 
+2026-10-17T23:40:28.0337120Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe.hmap (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0338480Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0339130Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe.hmap
+2026-10-17T23:40:28.0339700Z 
+2026-10-17T23:40:28.0340620Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe.DependencyMetadataFileList (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0341860Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0342520Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe.DependencyMetadataFileList
+2026-10-17T23:40:28.0343110Z 
+2026-10-17T23:40:28.0343950Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-project-headers.hmap (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0344920Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0345550Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-project-headers.hmap
+2026-10-17T23:40:28.0346100Z 
+2026-10-17T23:40:28.0346960Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-own-target-headers.hmap (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0347940Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0348570Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-own-target-headers.hmap
+2026-10-17T23:40:28.0349130Z 
+2026-10-17T23:40:28.0349970Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-generated-files.hmap (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0350940Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0351710Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-generated-files.hmap
+2026-10-17T23:40:28.0352260Z 
+2026-10-17T23:40:28.0353110Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-all-target-headers.hmap (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0354080Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0354700Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-all-target-headers.hmap
+2026-10-17T23:40:28.0355450Z 
+2026-10-17T23:40:28.0356380Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-all-non-framework-target-headers.hmap (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0357430Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0358090Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-all-non-framework-target-headers.hmap
+2026-10-17T23:40:28.0358700Z 
+2026-10-17T23:40:28.0359910Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe_const_extract_protocols.json (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0361370Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0362130Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe_const_extract_protocols.json
+2026-10-17T23:40:28.0362900Z 
+2026-10-17T23:40:28.0363870Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.SwiftFileList (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0365220Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0366110Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.SwiftFileList
+2026-10-17T23:40:28.0366910Z 
+2026-10-17T23:40:28.0367940Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.SwiftConstValuesFileList (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0369350Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0370330Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.SwiftConstValuesFileList
+2026-10-17T23:40:28.0371210Z 
+2026-10-17T23:40:28.0372430Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.LinkFileList (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0373670Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0374510Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.LinkFileList
+2026-10-17T23:40:28.0375200Z 
+2026-10-17T23:40:28.0376260Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe-OutputFileMap.json (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0377680Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0378590Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe-OutputFileMap.json
+2026-10-17T23:40:28.0379440Z 
+2026-10-17T23:40:28.0380240Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/PhotoBridgeCore.modulemap (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.0381200Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0381970Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/PhotoBridgeCore.modulemap
+2026-10-17T23:40:28.0382600Z 
+2026-10-17T23:40:28.0383610Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/PhotoBridgeCore.DependencyStaticMetadataFileList (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.0384630Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0385280Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/PhotoBridgeCore.DependencyStaticMetadataFileList
+2026-10-17T23:40:28.0385900Z 
+2026-10-17T23:40:28.0386850Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/PhotoBridgeCore.DependencyMetadataFileList (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.0387830Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0388500Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/PhotoBridgeCore.DependencyMetadataFileList
+2026-10-17T23:40:28.0389160Z 
+2026-10-17T23:40:28.0390240Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore_const_extract_protocols.json (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.0391360Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0392260Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore_const_extract_protocols.json
+2026-10-17T23:40:28.0393010Z 
+2026-10-17T23:40:28.0393880Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.SwiftFileList (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.0394880Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0401640Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.SwiftFileList
+2026-10-17T23:40:28.0402450Z 
+2026-10-17T23:40:28.0403300Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.SwiftConstValuesFileList (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.0404280Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0404920Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.SwiftConstValuesFileList
+2026-10-17T23:40:28.0405500Z 
+2026-10-17T23:40:28.0406280Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.LinkFileList (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.0407230Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0407840Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.LinkFileList
+2026-10-17T23:40:28.0408370Z 
+2026-10-17T23:40:28.0409170Z WriteAuxiliaryFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore-OutputFileMap.json (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.0410110Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0410740Z     write-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore-OutputFileMap.json
+2026-10-17T23:40:28.0411310Z 
+2026-10-17T23:40:28.0412370Z Copy /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/GeneratedModuleMaps-iphoneos/PhotoBridgeCore.modulemap /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/PhotoBridgeCore.modulemap (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.0413560Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0415190Z     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -strip-unsigned-binaries -strip-deterministic -strip-tool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/strip -resolve-src-symlinks /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/PhotoBridgeCore.modulemap /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/GeneratedModuleMaps-iphoneos
+2026-10-17T23:40:28.0416590Z 
+2026-10-17T23:40:28.0417190Z MkDir /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:28.0417920Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:28.0418340Z     /bin/mkdir -p /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app
+2026-10-17T23:40:28.0418690Z 
+2026-10-17T23:40:28.0419120Z SwiftDriver PhotoBridgeCore normal arm64 com.apple.xcode.tools.swift.compiler (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.0419930Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:28.0429830Z     builtin-SwiftDriver -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name PhotoBridgeCore -O -whole-module-optimization -enforce-exclusivity\=checked @/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.SwiftFileList -DSWIFT_PACKAGE -DXcode -plugin-path /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -target arm64-apple-ios16.0 -g -module-cache-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -I /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib -F /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -F /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/Library/Frameworks -F /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/Developer/Library/Frameworks -c -num-threads 5 -Xcc -ivfsstatcache -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache -output-file-map /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -package-name photobridge -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore_const_extract_protocols.json -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/include -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/DerivedSources -Xcc -DSWIFT_PACKAGE -emit-objc-header -emit-objc-header-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore-Swift.h -working-directory /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj -no-emit-module-separately-wmo
+2026-10-17T23:40:28.1567690Z 
+2026-10-17T23:40:28.1583130Z SwiftDriver\ Compilation PhotoBridgeCore normal arm64 com.apple.xcode.tools.swift.compiler (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.1583940Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:28.1595490Z     builtin-Swift-Compilation -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name PhotoBridgeCore -O -whole-module-optimization -enforce-exclusivity\=checked @/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.SwiftFileList -DSWIFT_PACKAGE -DXcode -plugin-path /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -target arm64-apple-ios16.0 -g -module-cache-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -I /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib -F /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -F /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/Library/Frameworks -F /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/Developer/Library/Frameworks -c -num-threads 5 -Xcc -ivfsstatcache -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache -output-file-map /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -package-name photobridge -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore_const_extract_protocols.json -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/include -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/DerivedSources -Xcc -DSWIFT_PACKAGE -emit-objc-header -emit-objc-header-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore-Swift.h -working-directory /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj -no-emit-module-separately-wmo
+2026-10-17T23:40:28.1606760Z 
+2026-10-17T23:40:28.1608420Z SwiftCompile normal arm64 Compiling\ OrderComparison.swift,\ OrderSnapshot.swift,\ ProbeFiles.swift,\ RequestGeneration.swift /Users/runner/work/PhotoBridge/PhotoBridge/Sources/PhotoBridgeCore/OrderComparison.swift /Users/runner/work/PhotoBridge/PhotoBridge/Sources/PhotoBridgeCore/OrderSnapshot.swift /Users/runner/work/PhotoBridge/PhotoBridge/Sources/PhotoBridgeCore/ProbeFiles.swift /Users/runner/work/PhotoBridge/PhotoBridge/Sources/PhotoBridgeCore/RequestGeneration.swift (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.2141090Z 
+2026-10-17T23:40:28.2141620Z CompileSwift normal arm64 (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:28.2142480Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:28.2142730Z     
+2026-10-17T23:40:30.0685600Z 
+2026-10-17T23:40:30.0696130Z SwiftDriverJobDiscovery normal arm64 Compiling OrderComparison.swift, OrderSnapshot.swift, ProbeFiles.swift, RequestGeneration.swift (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:30.0697930Z 
+2026-10-17T23:40:30.0702490Z SwiftDriver\ Compilation\ Requirements PhotoBridgeCore normal arm64 com.apple.xcode.tools.swift.compiler (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:30.0704720Z     cd /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj
+2026-10-17T23:40:30.0735780Z     builtin-Swift-Compilation-Requirements -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name PhotoBridgeCore -O -whole-module-optimization -enforce-exclusivity\=checked @/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.SwiftFileList -DSWIFT_PACKAGE -DXcode -plugin-path /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -target arm64-apple-ios16.0 -g -module-cache-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -I /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib -F /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -F /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/Library/Frameworks -F /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/Developer/Library/Frameworks -c -num-threads 5 -Xcc -ivfsstatcache -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache -output-file-map /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -package-name photobridge -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore_const_extract_protocols.json -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/include -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/DerivedSources -Xcc -DSWIFT_PACKAGE -emit-objc-header -emit-objc-header-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore-Swift.h -working-directory /Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj -no-emit-module-separately-wmo
+2026-10-17T23:40:30.0749990Z 
+2026-10-17T23:40:30.0751260Z SwiftMergeGeneratedHeaders /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/GeneratedModuleMaps-iphoneos/PhotoBridgeCore-Swift.h /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore-Swift.h (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:30.0752910Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:30.0754040Z     builtin-swiftHeaderTool -arch arm64 /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore-Swift.h -o /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/GeneratedModuleMaps-iphoneos/PhotoBridgeCore-Swift.h
+2026-10-17T23:40:30.0755090Z 
+2026-10-17T23:40:30.0756300Z Copy /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.swiftmodule/arm64-apple-ios.swiftmodule /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftmodule (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:30.0757670Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:30.0759720Z     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -strip-unsigned-binaries -strip-deterministic -strip-tool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/strip -resolve-src-symlinks -rename /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftmodule /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.swiftmodule/arm64-apple-ios.swiftmodule
+2026-10-17T23:40:30.0761410Z 
+2026-10-17T23:40:30.0762620Z Copy /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.swiftmodule/arm64-apple-ios.abi.json /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.abi.json (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:30.0764140Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:30.0765860Z     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -strip-unsigned-binaries -strip-deterministic -strip-tool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/strip -resolve-src-symlinks -rename /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.abi.json /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.swiftmodule/arm64-apple-ios.abi.json
+2026-10-17T23:40:30.0767520Z 
+2026-10-17T23:40:30.0768720Z Copy /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.swiftmodule/arm64-apple-ios.swiftdoc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftdoc (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:30.0770060Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:30.0771930Z     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -strip-unsigned-binaries -strip-deterministic -strip-tool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/strip -resolve-src-symlinks -rename /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftdoc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.swiftmodule/arm64-apple-ios.swiftdoc
+2026-10-17T23:40:30.0773590Z 
+2026-10-17T23:40:30.0774850Z Copy /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.swiftmodule/Project/arm64-apple-ios.swiftsourceinfo /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftsourceinfo (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:30.0776270Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:30.0778270Z     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -strip-unsigned-binaries -strip-deterministic -strip-tool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/strip -resolve-src-symlinks -rename /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftsourceinfo /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.swiftmodule/Project/arm64-apple-ios.swiftsourceinfo
+2026-10-17T23:40:30.0780020Z 
+2026-10-17T23:40:30.0780620Z Ld /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.o normal (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:30.0781360Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:30.0788110Z     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios16.0 -r -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -Os -L/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -L/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -L/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib -F/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -F/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -iframework /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/Library/Frameworks -iframework /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/Developer/Library/Frameworks -filelist /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.LinkFileList -nostdlib -Xlinker -object_path_lto -Xlinker /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore_lto.o -Xlinker -dependency_info -Xlinker /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftmodule -o /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.o
+2026-10-17T23:40:30.1029430Z 
+2026-10-17T23:40:30.1030350Z SwiftDriver PhotoBridgeOrderProbe normal arm64 com.apple.xcode.tools.swift.compiler (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:30.1031100Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:30.1044750Z     builtin-SwiftDriver -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name PhotoBridgeOrderProbe -O -whole-module-optimization -enforce-exclusivity\=checked @/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.SwiftFileList -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -target arm64-apple-ios16.0 -g -module-cache-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -F /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PackageFrameworks -F /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -c -num-threads 5 -Xcc -ivfsstatcache -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache -output-file-map /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-generated-files.hmap -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-own-target-headers.hmap -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridge-fc23cc650e8e7bac3ed6a3a68b09d51b-VFS-iphoneos/all-product-headers.yaml -Xcc -iquote -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-project-headers.hmap -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/include -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources -emit-objc-header -emit-objc-header-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe-Swift.h -working-directory /Users/runner/work/PhotoBridge/PhotoBridge -no-emit-module-separately-wmo
+2026-10-17T23:40:30.1058370Z 
+2026-10-17T23:40:30.1059570Z SwiftCompile normal arm64 Compiling\ PhotoBridgeApp.swift,\ USBProbeView.swift /Users/runner/work/PhotoBridge/PhotoBridge/apps/iOS/PhotoBridgeApp.swift /Users/runner/work/PhotoBridge/PhotoBridge/apps/iOS/USBProbeView.swift (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:30.1288900Z 
+2026-10-17T23:40:30.1289470Z CompileSwift normal arm64 (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:30.1290040Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:30.1290240Z     
+2026-10-17T23:40:34.9753280Z 
+2026-10-17T23:40:34.9901490Z SwiftDriver\ Compilation PhotoBridgeOrderProbe normal arm64 com.apple.xcode.tools.swift.compiler (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:34.9904750Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:34.9918810Z     builtin-Swift-Compilation -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name PhotoBridgeOrderProbe -O -whole-module-optimization -enforce-exclusivity\=checked @/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.SwiftFileList -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -target arm64-apple-ios16.0 -g -module-cache-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -F /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PackageFrameworks -F /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -c -num-threads 5 -Xcc -ivfsstatcache -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache -output-file-map /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-generated-files.hmap -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-own-target-headers.hmap -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridge-fc23cc650e8e7bac3ed6a3a68b09d51b-VFS-iphoneos/all-product-headers.yaml -Xcc -iquote -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-project-headers.hmap -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/include -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources -emit-objc-header -emit-objc-header-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe-Swift.h -working-directory /Users/runner/work/PhotoBridge/PhotoBridge -no-emit-module-separately-wmo
+2026-10-17T23:40:34.9933740Z 
+2026-10-17T23:40:34.9934100Z ExtractAppIntentsMetadata (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:34.9934600Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:34.9940800Z     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name PhotoBridgeCore --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier photobridge.PhotoBridgeCore --output /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.appintents --target-triple arm64-apple-ios16.0 --binary-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.o --dependency-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore_dependency_info.dat --stringsdata-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.SwiftFileList --metadata-file-list /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/PhotoBridgeCore.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/PhotoBridgeCore.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.SwiftConstValuesFileList --force --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-17T23:40:34.9947330Z 2026-10-17 23:40:30.149 appintentsmetadataprocessor[33393:89121] Starting appintentsmetadataprocessor export
+2026-10-17T23:40:34.9948890Z 2026-10-17 23:40:30.189 appintentsmetadataprocessor[33393:89121] Extracted no relevant App Intents symbols, skipping writing output
+2026-10-17T23:40:34.9949250Z 
+2026-10-17T23:40:34.9949890Z RegisterExecutionPolicyException /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.o (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:34.9950680Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:34.9951180Z     builtin-RegisterExecutionPolicyException /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeCore.o
+2026-10-17T23:40:34.9951600Z 
+2026-10-17T23:40:34.9952610Z ProcessInfoPlistFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/Info.plist /Users/runner/work/PhotoBridge/PhotoBridge/apps/iOS/Info.plist (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:34.9953610Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:34.9955170Z     builtin-infoPlistUtility /Users/runner/work/PhotoBridge/PhotoBridge/apps/iOS/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/PkgInfo -expandbuildsettings -format binary -platform iphoneos -requiredArchitecture arm64 -o /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/Info.plist
+2026-10-17T23:40:34.9956510Z 
+2026-10-17T23:40:34.9957050Z SwiftDriverJobDiscovery normal arm64 Compiling PhotoBridgeApp.swift, USBProbeView.swift (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:34.9957680Z 
+2026-10-17T23:40:34.9958300Z SwiftDriver\ Compilation\ Requirements PhotoBridgeOrderProbe normal arm64 com.apple.xcode.tools.swift.compiler (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:34.9959030Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:34.9971460Z     builtin-Swift-Compilation-Requirements -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name PhotoBridgeOrderProbe -O -whole-module-optimization -enforce-exclusivity\=checked @/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.SwiftFileList -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -target arm64-apple-ios16.0 -g -module-cache-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -F /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PackageFrameworks -F /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -c -num-threads 5 -Xcc -ivfsstatcache -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache -output-file-map /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-generated-files.hmap -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-own-target-headers.hmap -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridge-fc23cc650e8e7bac3ed6a3a68b09d51b-VFS-iphoneos/all-product-headers.yaml -Xcc -iquote -Xcc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe-project-headers.hmap -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/include -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources -emit-objc-header -emit-objc-header-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe-Swift.h -working-directory /Users/runner/work/PhotoBridge/PhotoBridge -no-emit-module-separately-wmo
+2026-10-17T23:40:34.9983800Z 
+2026-10-17T23:40:34.9985270Z SwiftMergeGeneratedHeaders /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources/PhotoBridgeOrderProbe-Swift.h /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe-Swift.h (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:34.9986830Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:34.9988080Z     builtin-swiftHeaderTool -arch arm64 /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe-Swift.h -o /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/DerivedSources/PhotoBridgeOrderProbe-Swift.h
+2026-10-17T23:40:34.9989550Z 
+2026-10-17T23:40:34.9990810Z Copy /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.swiftmodule/arm64-apple-ios.abi.json /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.abi.json (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:34.9992220Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:34.9993530Z     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.abi.json /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.swiftmodule/arm64-apple-ios.abi.json
+2026-10-17T23:40:34.9994920Z 
+2026-10-17T23:40:34.9996530Z Copy /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.swiftmodule/arm64-apple-ios.swiftmodule /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.swiftmodule (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:34.9998100Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:34.9999510Z     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.swiftmodule /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.swiftmodule/arm64-apple-ios.swiftmodule
+2026-10-17T23:40:35.0000930Z 
+2026-10-17T23:40:35.0002250Z Copy /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.swiftmodule/arm64-apple-ios.swiftdoc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.swiftdoc (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.0003680Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:35.0005060Z     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.swiftdoc /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.swiftmodule/arm64-apple-ios.swiftdoc
+2026-10-17T23:40:35.0006470Z 
+2026-10-17T23:40:35.0007840Z Copy /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.swiftmodule/Project/arm64-apple-ios.swiftsourceinfo /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.swiftsourceinfo (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.0009370Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:35.0010880Z     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.swiftsourceinfo /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.swiftmodule/Project/arm64-apple-ios.swiftsourceinfo
+2026-10-17T23:40:35.0012200Z 
+2026-10-17T23:40:35.0012890Z Ld /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/PhotoBridgeOrderProbe normal (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.0013820Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:35.0020210Z     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios16.0 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -Os -L/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -L/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -F/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -F/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PackageFrameworks -F/Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos -filelist /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.LinkFileList -Xlinker -rpath -Xlinker @executable_path/Frameworks -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe_lto.o -Xlinker -dependency_info -Xlinker /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.swiftmodule -Wl,-no_warn_duplicate_libraries -o /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/PhotoBridgeOrderProbe -Xlinker -add_ast_path -Xlinker /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeCore.build/Objects-normal/arm64/PhotoBridgeCore.swiftmodule
+2026-10-17T23:40:35.2151300Z 
+2026-10-17T23:40:35.2168020Z CopySwiftLibs /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.2169910Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:35.2174380Z     builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/PhotoBridgeOrderProbe --scan-folder /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/Frameworks --scan-folder /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/PlugIns --scan-folder /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/SystemExtensions --scan-folder /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/Extensions --platform iphoneos --toolchain /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+2026-10-17T23:40:35.3187410Z Ignoring --strip-bitcode because --sign was not passed
+2026-10-17T23:40:35.3189660Z 
+2026-10-17T23:40:35.3190300Z ExtractAppIntentsMetadata (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.3190850Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:35.3197910Z     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name PhotoBridgeOrderProbe --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.photobridge.OrderProbe --output /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app --target-triple arm64-apple-ios16.0 --binary-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/PhotoBridgeOrderProbe --dependency-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe_dependency_info.dat --stringsdata-file /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.SwiftFileList --metadata-file-list /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/Objects-normal/arm64/PhotoBridgeOrderProbe.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-17T23:40:35.3205080Z 2026-10-17 23:40:35.228 appintentsmetadataprocessor[33406:89318] Starting appintentsmetadataprocessor export
+2026-10-17T23:40:35.3205860Z 2026-10-17 23:40:35.229 appintentsmetadataprocessor[33406:89318] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-10-17T23:40:35.3206250Z 
+2026-10-17T23:40:35.3207370Z GenerateDSYMFile /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app.dSYM /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/PhotoBridgeOrderProbe (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.3208620Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:35.3209720Z     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/PhotoBridgeOrderProbe -o /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app.dSYM
+2026-10-17T23:40:35.3211010Z 
+2026-10-17T23:40:35.3211390Z AppIntentsSSUTraining (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.3211910Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:35.3214820Z     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/Info.plist --temp-dir-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/ssu --bundle-id com.photobridge.OrderProbe --product-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app --extracted-metadata-path /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app/Metadata.appintents --metadata-file-list /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Intermediates.noindex/PhotoBridge.build/Release-iphoneos/PhotoBridgeOrderProbe.build/PhotoBridgeOrderProbe.DependencyMetadataFileList --archive-ssu-assets
+2026-10-17T23:40:35.3218110Z 2026-10-17 23:40:35.255 appintentsnltrainingprocessor[33408:89322] Parsing options for appintentsnltrainingprocessor
+2026-10-17T23:40:35.3218720Z 2026-10-17 23:40:35.256 appintentsnltrainingprocessor[33408:89322] No AppShortcuts found - Skipping.
+2026-10-17T23:40:35.3218990Z 
+2026-10-17T23:40:35.3219730Z RegisterExecutionPolicyException /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.3220730Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:35.3221300Z     builtin-RegisterExecutionPolicyException /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app
+2026-10-17T23:40:35.3236680Z 
+2026-10-17T23:40:35.3238940Z Validate /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.3239840Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:35.3240480Z     builtin-validationUtility /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app -infoplist-subpath Info.plist
+2026-10-17T23:40:35.3241960Z 
+2026-10-17T23:40:35.3244250Z Touch /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.3245100Z     cd /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:35.3245660Z     /usr/bin/touch -c /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app
+2026-10-17T23:40:35.3268490Z 
+2026-10-17T23:40:35.3337760Z note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+2026-10-17T23:40:35.3339200Z note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-Owholemodule, expected -Onone (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+2026-10-17T23:40:35.3340220Z ** BUILD SUCCEEDED **
+2026-10-17T23:40:35.3340320Z 
+2026-10-17T23:40:35.3723860Z ##[group]Run set -o pipefail
+2026-10-17T23:40:35.3724090Z set -o pipefail
+2026-10-17T23:40:35.3724310Z bash scripts/build-mac.sh 2>&1 | tee build/logs/mac-build.log
+2026-10-17T23:40:35.3889680Z shell: /bin/bash -e {0}
+2026-10-17T23:40:35.3889870Z ##[endgroup]
+2026-10-17T23:40:36.4604680Z Building for production...
+2026-10-17T23:40:36.4618190Z [0/5] Write sources
+2026-10-17T23:40:36.6073230Z [2/5] Write swift-version--79AA4F9932D1E87A.txt
+2026-10-17T23:40:39.2252710Z [4/6] Compiling PhotoBridgeCore OrderComparison.swift
+2026-10-17T23:40:41.5411210Z [5/7] Compiling PhotoBridgeMac PhotoBridgeMac.swift
+2026-10-17T23:40:41.5448250Z [5/7] Write Objects.LinkFileList
+2026-10-17T23:40:41.9820530Z [6/7] Linking PhotoBridgeMac
+2026-10-17T23:40:41.9834880Z Build of product 'PhotoBridgeMac' complete! (5.55s)
+2026-10-17T23:40:43.1970030Z Non-fat file: build/PhotoBridgeMac.app/Contents/MacOS/PhotoBridgeMac is architecture: x86_64
+2026-10-17T23:40:43.2333140Z 80fba661f33f40e0b479995f1133698660b29f8d3d07d48f1b548501723f5d92  build/PhotoBridgeMac-Intel.zip
+2026-10-17T23:40:43.2362920Z ##[group]Run shasum -a 256 build/*.zip > build/SHA256SUMS.txt
+2026-10-17T23:40:43.2363230Z shasum -a 256 build/*.zip > build/SHA256SUMS.txt
+2026-10-17T23:40:43.2392300Z shell: /bin/bash -e {0}
+2026-10-17T23:40:43.2392440Z ##[endgroup]
+2026-10-17T23:40:43.2777270Z ##[group]Run actions/upload-artifact@v4
+2026-10-17T23:40:43.2777500Z with:
+2026-10-17T23:40:43.2777740Z   name: PhotoBridge-diagnostics-af24ce901bd2eb12c5f32ad9ccb8d67de5a45b0b
+2026-10-17T23:40:43.2778170Z   path: build/*.zip
+build/SHA256SUMS.txt
+build/logs/
+PhotoBridge.xcodeproj/project.pbxproj
+
+2026-10-17T23:40:43.2781760Z   if-no-files-found: error
+2026-10-17T23:40:43.2781990Z   retention-days: 14
+2026-10-17T23:40:43.2782150Z   compression-level: 6
+2026-10-17T23:40:43.2782300Z   overwrite: false
+2026-10-17T23:40:43.2782440Z   include-hidden-files: false
+2026-10-17T23:40:43.2782610Z ##[endgroup]
+2026-10-17T23:40:43.4134090Z (node:33739) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-17T23:40:43.4134680Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-17T23:40:43.4189390Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-10-17T23:40:43.4191650Z The least common ancestor is /Users/runner/work/PhotoBridge/PhotoBridge. This will be the root directory of the artifact
+2026-10-17T23:40:43.4192210Z With the provided path, there will be 11 files uploaded
+2026-10-17T23:40:43.4193430Z Artifact name is valid!
+2026-10-17T23:40:43.4193810Z Root directory input is valid!
+2026-10-17T23:40:43.6480670Z Beginning upload of artifact content to blob storage
+2026-10-17T23:40:43.6817750Z (node:33739) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-17T23:40:43.7561040Z Uploaded bytes 238530
+2026-10-17T23:40:43.7726640Z Finished uploading artifact content to blob storage!
+2026-10-17T23:40:43.7728360Z SHA256 digest of uploaded artifact zip is 5d51a2610c432505f949c855d2570ee4b2f8bd7ad66bcf7365ce15c52b2af235
+2026-10-17T23:40:43.7729350Z Finalizing artifact upload
+2026-10-17T23:40:43.9599300Z Artifact PhotoBridge-diagnostics-af24ce901bd2eb12c5f32ad9ccb8d67de5a45b0b.zip successfully finalized. Artifact ID 12118711190
+2026-10-17T23:40:43.9633220Z Artifact PhotoBridge-diagnostics-af24ce901bd2eb12c5f32ad9ccb8d67de5a45b0b has been successfully uploaded! Final size is 238530 bytes. Artifact ID is 12118711190
+2026-10-17T23:40:43.9645090Z Artifact download URL: https://github.com/loterr298/PhotoBridge/actions/runs/39079880516/artifacts/12118711190
+2026-10-17T23:40:43.9752550Z Post job cleanup.
+2026-10-17T23:40:44.0533740Z [command]/opt/homebrew/bin/git version
+2026-10-17T23:40:44.0601910Z git version 2.55.0
+2026-10-17T23:40:44.0623200Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/140bef81-b28a-4d48-8d9f-2f35af005345/.gitconfig'
+2026-10-17T23:40:44.0628900Z Temporarily overriding HOME='/Users/runner/work/_temp/140bef81-b28a-4d48-8d9f-2f35af005345' before making global git config changes
+2026-10-17T23:40:44.0630930Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-17T23:40:44.0631870Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/PhotoBridge/PhotoBridge
+2026-10-17T23:40:44.0688470Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-17T23:40:44.0743120Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-17T23:40:44.1448580Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-17T23:40:44.1494060Z http.https://github.com/.extraheader
+2026-10-17T23:40:44.1500400Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-17T23:40:44.1565290Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-17T23:40:44.2226870Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-17T23:40:44.2276820Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-17T23:40:44.3180500Z Cleaning up orphan processes
+2026-10-17T23:40:44.6804120Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

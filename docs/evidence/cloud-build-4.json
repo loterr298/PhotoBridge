@@ -1,0 +1,20 @@
+{
+  "runID": 39080022210,
+  "commit": "66dae157b690f6023309444db4423e191d399ced",
+  "status": "SUCCESS",
+  "buildMode": "direct checkout, read-only contents permission, no source unpacking",
+  "Xcode": "16.4",
+  "iOSSDK": "18.5",
+  "XCTest": {
+    "tests": 4,
+    "failures": 0
+  },
+  "CoreChecks": 12,
+  "PythonTests": 6,
+  "iOSBuild": "unsigned arm64 BUILD SUCCEEDED",
+  "macArchitecture": "x86_64",
+  "artifactID": 12118895251,
+  "artifactBytes": 238535,
+  "artifactSHA256": "be560da205b8d48994fa712a62115620a90f51a2e377dd658f45d736f642d870",
+  "deviceAcceptance": "NOT_RUN"
+}

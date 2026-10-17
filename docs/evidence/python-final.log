@@ -1,0 +1,11 @@
+test_missing_limited_duplicates_and_noncontiguous_never_pass (test_order_comparison.ComparisonChecks) ... ok
+test_moved_items_and_twenty_match (test_order_comparison.ComparisonChecks) ... ok
+test_generator_hash_size_and_no_clobber (test_usb_probe.USBChecks) ... ok
+test_partial_writes_and_stalled_writes (test_usb_probe.USBChecks) ... ok
+test_receipt_validation_rejects_mismatch_filename_and_origin (test_usb_probe.USBChecks) ... ok
+test_uuid_path_rejects_traversal_and_non_probe_paths (test_usb_probe.USBChecks) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.015s
+
+OK
