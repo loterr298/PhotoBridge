@@ -1,0 +1,10 @@
+{
+  "status": "SUCCESS",
+  "run": "https://github.com/loterr298/PhotoBridge/actions/runs/39129847063",
+  "sourceCommit": "c094ab75c1bbd1f373b4ab15e8ec830b821ba2a8",
+  "artifact": "12137229230",
+  "artifactSHA256": "c4f4224893509b9cde031cdc965f6ce2811af74116ffcea9789de8cecce0ec6c",
+  "localDownloadHashVerified": true,
+  "zipCRCVerified": true,
+  "internalSHA256SUMSVerified": true
+}

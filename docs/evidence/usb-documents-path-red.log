@@ -1,0 +1,29 @@
+test_missing_limited_duplicates_and_noncontiguous_never_pass (test_order_comparison.ComparisonChecks) ... ok
+test_moved_items_and_twenty_match (test_order_comparison.ComparisonChecks) ... ok
+test_container_escape_and_ambiguous_paths_are_rejected (test_usb_probe.DocumentsRootChecks) ... ERROR
+test_house_arrest_paths_are_beneath_documents (test_usb_probe.DocumentsRootChecks) ... ERROR
+test_generator_hash_size_and_no_clobber (test_usb_probe.USBChecks) ... ok
+test_partial_writes_and_stalled_writes (test_usb_probe.USBChecks) ... ok
+test_receipt_validation_rejects_mismatch_filename_and_origin (test_usb_probe.USBChecks) ... ok
+test_uuid_path_rejects_traversal_and_non_probe_paths (test_usb_probe.USBChecks) ... ok
+
+======================================================================
+ERROR: test_container_escape_and_ambiguous_paths_are_rejected (test_usb_probe.DocumentsRootChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_usb_probe.py", line 42, in test_container_escape_and_ambiguous_paths_are_rejected
+    with self.assertRaises(ValueError): p.documents_path(path)
+AttributeError: module 'usb_probe' has no attribute 'documents_path'
+
+======================================================================
+ERROR: test_house_arrest_paths_are_beneath_documents (test_usb_probe.DocumentsRootChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_usb_probe.py", line 38, in test_house_arrest_paths_are_beneath_documents
+    self.assertEqual(p.documents_path('.'), '/Documents')
+AttributeError: module 'usb_probe' has no attribute 'documents_path'
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.014s
+
+FAILED (errors=2)

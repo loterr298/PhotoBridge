@@ -1,0 +1,17 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+Build of product 'CoreChecks' complete! (0.29s)
+PASS: API order preserved
+PASS: reading never auto-verifies manual order
+PASS: JSON encodes
+PASS: 20 identical positions
+PASS: moved positions detected
+PASS: 19 members cannot pass
+PASS: duplicate baseline cannot pass
+PASS: streamed hash and size round trip
+PASS: existing destination never overwritten
+PASS: conflict preserves original bytes
+PASS: SHA-256 known vector
+11 core checks passed; synthetic data only, device tests NOT_RUN
+PASS: thumbnail request generations reject stale and disappeared callbacks
