@@ -81,3 +81,23 @@ do {
     }
     print("7 export checks passed; synthetic only, PhotoKit export NOT_RUN")
 } catch { fputs("FAIL export: \(error)\n", stderr); exit(1) }
+
+// AFC on the target phone rejects multiply-linked files: native staging must leave one link.
+do {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let final = dir.appendingPathComponent("original.bin")
+    let part = final.appendingPathExtension("part")
+    try Data("untouched bytes".utf8).write(to: part, options: .withoutOverwriting)
+    try StagingFiles.commit(part: part, destination: final)
+    let attributes = try FileManager.default.attributesOfItem(atPath: final.path)
+    try require((attributes[.referenceCount] as? NSNumber)?.intValue == 1 && !FileManager.default.fileExists(atPath: part.path), "native commit leaves one AFC-readable hard link")
+    try Data("new bytes".utf8).write(to: part, options: .withoutOverwriting)
+    try rejects("native commit refuses existing destination") { try StagingFiles.commit(part: part, destination: final) }
+    try require(Data(contentsOf: final) == Data("untouched bytes".utf8) && Data(contentsOf: part) == Data("new bytes".utf8), "failed commit preserves destination and partial bytes")
+    let symlinkPart = dir.appendingPathComponent("symlink.bin.part")
+    try FileManager.default.createSymbolicLink(at: symlinkPart, withDestinationURL: final)
+    try rejects("native commit rejects symbolic links") { try StagingFiles.commit(part: symlinkPart, destination: dir.appendingPathComponent("symlink.bin")) }
+    print("4 exclusive native commit checks passed")
+} catch { fputs("FAIL native commit: \(error)\n", stderr); exit(1) }
