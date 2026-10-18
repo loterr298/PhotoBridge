@@ -1,0 +1,28 @@
+{
+  "status": "BYTE_AND_FILESYSTEM_TIMES_VERIFIED_SAMPLE_BACKUP",
+  "sourceBuild": "403aae1e2139e107c103744399f3ce7839409bb0",
+  "assets": 20,
+  "resources": 30,
+  "bytes": 77450231,
+  "independentShasumMatches": 30,
+  "creationTimesVerified": 30,
+  "modificationTimesVerified": 30,
+  "consecutiveAssetIntervalSeconds": 5,
+  "allResourcesWithinAssetShareTime": true,
+  "resourceTypes": {
+    "1": 20,
+    "7": 5,
+    "5": 5
+  },
+  "uniformTypeIdentifiers": {
+    "public.jpeg": 25,
+    "com.apple.property-list": 5
+  },
+  "transferSecondsIncludingVerification": 1.443679891,
+  "MiBPerSecondIncludingVerification": 51.162516403320296,
+  "originalMediaInternalMetadataWritten": false,
+  "sourcePhoneOriginalsDeleted": false,
+  "originalMedia100MiBTest": "NOT_RUN: sample smaller than 100 MiB",
+  "restoration": "NOT_RUN",
+  "scope": "Actual USB-only AFC; JPEG originals plus edited JPEG/plist resources; no Live/HEIC/RAW or round-trip acceptance"
+}
