@@ -5,8 +5,8 @@
 <key>CFBundleIdentifier</key><string>com.photobridge.MacDiagnostics</string>
 <key>CFBundleName</key><string>PhotoBridge</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.1.0</string>
-<key>CFBundleVersion</key><string>1</string>
+<key>CFBundleShortVersionString</key><string>0.2.0</string>
+<key>CFBundleVersion</key><string>2</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>NSHighResolutionCapable</key><true/>
 <key>NSCameraUsageDescription</key><string>发现 USB 相机目录用于诊断，不代表相簿手动顺序。</string>
