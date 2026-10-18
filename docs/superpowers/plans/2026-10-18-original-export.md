@@ -46,7 +46,7 @@ Files: apps/iOS/OriginalExportView.swift; apps/iOS/PhotoBridgeApp.swift.
 - [x] Add native export sheet to selected album; full permission, current count, default-off iCloud toggle, start, true completed resource count, stop-after-current-resource.
 - [x] Use PHAssetResource.assetResources and writeData sequentially to unique .part paths. On successful callback hash file, exclusive commit, record originalFilename/UTI/type and grouping.
 - [x] Working manifest/journal survives failure; final staged manifest only after all resources and fresh source identifiers match initial order.
-- [ ] Cloud compile against actual SDK and record failure/repair. Device photo export stays NOT_RUN until newly built App installed and run.
+- [x] Cloud compile against actual SDK and record failure/repair. Device photo export stays NOT_RUN until newly built App installed and run.
 
 ### 3: USB album download with integrity and filesystem times
 
@@ -54,13 +54,17 @@ Files: scripts/album_export.py; tests/test_album_export.py; optional native time
 
 - [x] Write failing synthetic tests for manifest rejection, unknown roles, same filenames, successful stream copy, truncated/corrupt data, existing local target and failure before completion.
 - [x] Implement CLI list/download under Exports/UUID with bounded manifest and streaming resource reads, exclusive local paths, full hash before completion and final transfer report.
-- [x] Apply 5-second mtime only on new copies; record original and logical FS attributes, creation-time unsupported status if unavailable. Re-hash after attributes.
+- [x] Apply 5-second mtime and Darwin creation time only on new copies; record old/new FS attributes, verify actual fields and report unsupported creation-time setters explicitly. Re-hash after attributes.
 - [x] Run complete Python and Swift checks and rebuild Intel app; commit.
 
 ### 4: Cloud, delivery and truthful status
 
-- [ ] Upload exact committed source to private GitHub using existing authorized session; run existing CI and inspect actual tests/iOS/Intel output.
-- [ ] Verify downloadable archive CRC and checksums. Deliver updated unsigned IPA and Mac app with signing/install instructions.
-- [ ] Update IMPLEMENTATION_STATUS with actual evidence, remaining original-media/Live Photo/metadata/restore/continuation gaps. Do not mark M1 passed from compilation alone.
+- [x] Upload exact committed source to private GitHub using existing authorized session; run existing CI and inspect actual tests/iOS/Intel output.
+- [x] Verify downloadable archive CRC and checksums. Deliver updated unsigned IPA and Mac app with signing/install instructions.
+- [x] Update IMPLEMENTATION_STATUS with actual evidence, remaining original-media/Live Photo/metadata/restore/continuation gaps. Do not mark M1 passed from compilation alone.
 
 Primary API references: https://developer.apple.com/documentation/photos/phassetresourcemanager and https://developer.apple.com/documentation/photos/phassetresource . Underlying resource bytes are the preservation target; binary PhotoKit reimport is a later separate check.
+
+## Acceptance remaining
+
+This checklist covers implemented software, regression checks and verified cloud payloads. 0.2.1 installed-device export and USB copy verified a 20-asset / 30-resource JPEG/edited-plist sample, including all bytes and both Mac filesystem times. Live Photo/HEIC/PNG/DNG, iCloud/error cases and original-media 100 MiB acceptance remain NOT_RUN. Original reimport, album restoration, recovery and bulk performance remain unfinished. See sanitized device evidence and the current implementation status.
