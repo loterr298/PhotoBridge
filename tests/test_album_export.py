@@ -82,6 +82,11 @@ class AlbumExportChecks(unittest.TestCase):
             report = json.loads((target / 'transfer-manifest.json').read_text())
             self.assertEqual(report['resourcesVerified'], 2)
             self.assertEqual(len(report['filesystemAttributeChanges']), 2)
+            if sys.platform == 'darwin':
+                for change in report['filesystemAttributeChanges']:
+                    self.assertEqual(change['creationTimeStatus'], 'SET_AND_VERIFIED')
+                    self.assertAlmostEqual((target / change['path']).stat().st_birthtime,
+                                           (target / change['path']).stat().st_mtime, places=3)
             progress = json.loads((target / 'transfer-progress.json').read_text())
             self.assertNotIn('filesystemAttributeChanges', progress)
             self.assertEqual(len((target / 'filesystem-attributes.jsonl').read_text().splitlines()), 2)
@@ -98,5 +103,15 @@ class AlbumExportChecks(unittest.TestCase):
             self.assertFalse((target / 'transfer-manifest.json').exists())
             self.assertEqual(json.loads((target / 'transfer-progress.json').read_text())['status'], 'FAILED')
             self.assertTrue(list(target.rglob('*.part')))
+
+    @unittest.skipUnless(sys.platform == 'darwin', 'Darwin creation-time API')
+    def test_creation_time_never_follows_a_symbolic_link(self):
+        with tempfile.TemporaryDirectory() as d:
+            original = pathlib.Path(d) / 'original'; original.write_bytes(b'untouched')
+            before = original.stat().st_birthtime
+            link = pathlib.Path(d) / 'link'; link.symlink_to(original)
+            with self.assertRaises(OSError): self.module.set_copy_creation_time(link, 1_700_000_000_000_000_000)
+            self.assertEqual(original.stat().st_birthtime, before)
+            self.assertEqual(original.read_bytes(), b'untouched')
 
 if __name__ == '__main__': unittest.main()
