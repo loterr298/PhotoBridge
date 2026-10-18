@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Copy PhotoBridge original-resource sessions through USB-only AFC; never touches Photos originals."""
 import argparse
+import ctypes as C
 import datetime as dt
 import hashlib
 import io
@@ -8,10 +9,36 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import stat
 import sys
 import time
 import uuid
 from usb_probe import AFC, inspect
+
+
+def set_copy_creation_time(path, nanoseconds):
+    """Public Darwin fsetattrlist; called only for our newly verified local copies."""
+    if sys.platform != 'darwin': return 'NOT_SET: platform has no Darwin creation-time API'
+    class AttrList(C.Structure):
+        _fields_ = [('bitmapcount', C.c_uint16), ('reserved', C.c_uint16),
+                    ('commonattr', C.c_uint32), ('volattr', C.c_uint32), ('dirattr', C.c_uint32),
+                    ('fileattr', C.c_uint32), ('forkattr', C.c_uint32)]
+    class Timespec(C.Structure):
+        _fields_ = [('seconds', C.c_long), ('nanoseconds', C.c_long)]
+    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode): raise ValueError('Creation time requires a regular new copy')
+        attributes = AttrList(5, 0, 0x00000200, 0, 0, 0, 0)  # ATTR_CMN_CRTIME, public sys/attr.h
+        timestamp = Timespec(nanoseconds // 1_000_000_000, nanoseconds % 1_000_000_000)
+        system = C.CDLL(None, use_errno=True)
+        system.fsetattrlist.argtypes = [C.c_int, C.POINTER(AttrList), C.c_void_p, C.c_size_t, C.c_uint]
+        system.fsetattrlist.restype = C.c_int
+        if system.fsetattrlist(descriptor, C.byref(attributes), C.byref(timestamp), C.sizeof(timestamp), 0):
+            return 'NOT_SET: Darwin errno ' + str(C.get_errno())
+        actual = getattr(os.fstat(descriptor), 'st_birthtime', None)
+        return 'SET_AND_VERIFIED' if actual is not None and abs(actual - nanoseconds / 1e9) < .001 else 'NOT_VERIFIED'
+    finally:
+        os.close(descriptor)
 
 
 def validate_manifest(m):
@@ -96,7 +123,7 @@ def download_album(client, remote, local):
     raw = io.BytesIO(); client.read(remote + '/album-order.json', raw.write, 64 * 1024 * 1024)
     m = json.loads(raw.getvalue()); validate_manifest(m)
     if m['sessionID'].lower() != remote.split('/')[1].lower(): raise ValueError('Session identity mismatch')
-    local.mkdir(parents=True, exist_ok=False)
+    local.mkdir(mode=0o700, parents=True, exist_ok=False)
     progress = {'status': 'DOWNLOADING', 'resourcesVerified': 0, 'bytesVerified': 0,
                 'sourceManifestSHA256': hashlib.sha256(raw.getvalue()).hexdigest(),
                 'restoration': 'NOT_RUN', 'filesystemAttributeLog': 'filesystem-attributes.jsonl'}
@@ -121,6 +148,7 @@ def download_album(client, remote, local):
                 # Exclusive local commit. The .part hard link stays as a diagnostic trace, not a second copy.
                 os.link(part, destination)
                 os.utime(destination, ns=(before.st_atime_ns, int(logical.timestamp() * 1_000_000_000)), follow_symlinks=False)
+                creation_status = set_copy_creation_time(destination, int(logical.timestamp() * 1_000_000_000))
                 after = destination.stat(); verified = inspect(destination)
                 if verified['sha256'] != resource['sha256'] or abs(after.st_mtime - logical.timestamp()) > .001:
                     raise ValueError('Post-attribute byte/time verification failed')
@@ -128,7 +156,7 @@ def download_album(client, remote, local):
                     'oldMtimeNs': before.st_mtime_ns, 'newMtimeNs': after.st_mtime_ns,
                     'oldBirthtime': getattr(before, 'st_birthtime', None),
                     'newBirthtime': getattr(after, 'st_birthtime', None),
-                    'creationTimeStatus': 'NOT_SET: creation-time API not implemented',
+                    'creationTimeStatus': creation_status,
                     'logicalSortTimeUtc': logical.isoformat(), 'contentSHA256Unchanged': True}
                 attribute_log.write(json.dumps(change) + '\n'); attribute_log.flush(); os.fsync(attribute_log.fileno())
                 changes.append(change)
