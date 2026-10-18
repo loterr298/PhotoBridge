@@ -147,7 +147,7 @@ struct OriginalExportView: View {
                     if let session = exporter.sessionName {
                         Text("Mac 读取路径：Exports/\(session)").font(.caption.monospaced()).textSelection(.enabled)
                     }
-                    Text("Mac 校验后仅为新副本设置 5 秒间隔的文件系统修改时间；不改媒体内部时间。创建时间设置尚未实现。")
+                    Text("Mac 校验后为新副本设置 5 秒间隔的文件系统时间；创建时间按磁盘支持情况验证并记录，不改媒体内部时间。")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }.navigationTitle("原始资源导出")
