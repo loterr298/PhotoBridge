@@ -43,3 +43,41 @@ precondition(generations.accepts(newRequest), "current thumbnail callback reject
 generations.invalidate()
 precondition(!generations.accepts(newRequest), "disappeared view accepted callback")
 print("PASS: thumbnail request generations reject stale and disappeared callbacks")
+
+// Export manifests must not certify incomplete bytes or silently change membership.
+do {
+    let source = OrderSnapshot(albumName: "synthetic", albumIdentifier: "album", authorization: "full",
+        fetchMode: "nil-options", identifiers: ["a", "b"], systemVersion: "test", build: "test",
+        capturedAt: Date(timeIntervalSince1970: 1_700_000_000))
+    func resource(_ ordinal: Int, hash: String = String(repeating: "a", count: 64)) -> ExportResource {
+        ExportResource(resourceIndex: 1, resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic",
+            storedRelativePath: ResourcePaths.make(ordinal: ordinal, resourceIndex: 1, originalFilename: "same.HEIC"), sha256: hash, byteCount: 3)
+    }
+    func asset(_ ordinal: Int, id: String, resources: [ExportResource]) -> ExportAsset {
+        ExportAsset(ordinal: ordinal, resourceGroupId: UUID().uuidString, sourceAssetLocalIdentifier: id,
+            originalPhotoLibraryCreationDate: nil, pixelWidth: 10, pixelHeight: 10, mediaType: 1,
+            mediaSubtypes: 0, resources: resources)
+    }
+    let assets = [asset(1, id: "a", resources: [resource(1)]), asset(2, id: "b", resources: [resource(2)])]
+    let manifest = AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source, assets: assets)
+    try manifest.validate()
+    try require(!manifest.json().isEmpty && manifest.restorationStatus.hasPrefix("NOT_RUN"), "export groups encode without claiming restore")
+    try require(manifest.logicalTime(ordinal: 2).timeIntervalSince(manifest.logicalTime(ordinal: 1)) == 5, "logical times use five seconds without media rewrite")
+    try require(ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "../../bad.weird!ext").hasSuffix(".bin"), "untrusted filename extension never enters path")
+    try rejects("incomplete export groups cannot validate") {
+        try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source, assets: [assets[0]]).validate()
+    }
+    try rejects("missing hash cannot validate") {
+        try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source,
+            assets: [asset(1, id: "a", resources: [resource(1, hash: "bad")]),assets[1]]).validate()
+    }
+    try rejects("member replacement cannot validate") {
+        try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source,
+            assets: [asset(1, id: "replacement", resources: [resource(1)]),assets[1]]).validate()
+    }
+    try rejects("empty resource group cannot validate") {
+        try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source,
+            assets: [asset(1, id: "a", resources: []),assets[1]]).validate()
+    }
+    print("7 export checks passed; synthetic only, PhotoKit export NOT_RUN")
+} catch { fputs("FAIL export: \(error)\n", stderr); exit(1) }
