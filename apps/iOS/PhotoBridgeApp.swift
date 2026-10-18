@@ -9,18 +9,12 @@ import PhotoBridgeCore
             TabView {
                 AlbumsView().tabItem { Label("相册", systemImage: "photo.on.rectangle") }
                 USBProbeView().tabItem { Label("传输", systemImage: "arrow.left.arrow.right") }
-                NavigationStack {
-                    VStack(spacing: 16) {
-                        Image(systemName: "clock.arrow.circlepath").font(.largeTitle)
-                        Text("恢复功能尚未启用").font(.title2)
-                        Text("当前支持原始资源暂存与 USB 校验；照片库导回和恢复尚未实现。")
-                    }.padding().navigationTitle("恢复")
-                }.tabItem { Label("恢复", systemImage: "clock.arrow.circlepath") }
+                RestoreView().tabItem { Label("恢复", systemImage: "clock.arrow.circlepath") }
                 NavigationStack {
                     Form {
-                        Section("当前版本 · M1 导出验证") {
-                            Text("只读取相簿，不修改或删除照片")
-                            Text("不改 EXIF、GPS、MakerNotes 或照片显示时间")
+                        Section("当前版本 · 导出与恢复诊断") {
+                            Text("导出只读；恢复仅向新相簿添加副本，不修改或删除原照片")
+                            Text("不改媒体 EXIF/GPS/MakerNotes；恢复副本保留清单原拍摄日期")
                             Text("清单和资源仅本地暂存，可经已信任 Mac 的 USB 文件共享复制")
                         }
                         Section("原始资源导出策略") {
