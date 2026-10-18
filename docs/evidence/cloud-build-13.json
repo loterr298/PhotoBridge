@@ -1,0 +1,23 @@
+{
+  "status": "SUCCESS",
+  "run": "https://github.com/loterr298/PhotoBridge/actions/runs/39149841441",
+  "sourceCommit": "3768816d24b1dfceceeb3c5b0b24e96816018632",
+  "artifact": "12144548414",
+  "artifactSHA256": "a0fff1ee6f21116d22e4bd15b43eda0b139d0c6d37ec36c3600e87cc82602a38",
+  "localCRCAndChecksumsVerified": true,
+  "version": "0.3.0",
+  "build": "4",
+  "tests": {
+    "XCTest": 4,
+    "CoreChecks": 32,
+    "Python": 18
+  },
+  "ipaArm64AndModeVerified": true,
+  "MacBundledScriptsMatchReviewedSource": true,
+  "files": {
+    "PhotoBridgeMac-Intel.zip": "31bbc1d4876d1f248208ed55d2ce12e3878803e3f456d32fbee565f145cbff33",
+    "PhotoBridgeOrderProbe-0.3.0-unsigned.ipa": "3419cfc9893e575ab1cb76e37aa653ca51db44b61e38db164959e78feb10f0f3"
+  },
+  "phonePhotosRestore": "NOT_RUN: 0.3.0 not yet installed; verified original resources already in App RestoreInbox",
+  "resumeAndBulkAcceptance": "NOT_RUN"
+}

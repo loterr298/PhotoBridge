@@ -1,0 +1,40 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--79AA4F9932D1E87A.txt
+Build of product 'CoreChecks' complete! (0.20s)
+PASS: API order preserved
+PASS: reading never auto-verifies manual order
+PASS: JSON encodes
+PASS: 20 identical positions
+PASS: moved positions detected
+PASS: 19 members cannot pass
+PASS: duplicate baseline cannot pass
+PASS: streamed hash and size round trip
+PASS: existing destination never overwritten
+PASS: conflict preserves original bytes
+PASS: SHA-256 known vector
+11 core checks passed; synthetic data only, device tests NOT_RUN
+PASS: thumbnail request generations reject stale and disappeared callbacks
+PASS: export groups encode without claiming restore
+PASS: restore decode binds hash to exact decoded manifest bytes
+PASS: logical times use five seconds without media rewrite
+PASS: untrusted filename extension never enters path
+PASS: incomplete export groups cannot validate
+PASS: missing hash cannot validate
+PASS: member replacement cannot validate
+PASS: empty resource group cannot validate
+8 export checks passed; synthetic only, PhotoKit export NOT_RUN
+PASS: native commit leaves one AFC-readable hard link
+PASS: native commit refuses existing destination
+PASS: failed commit preserves destination and partial bytes
+PASS: native commit rejects symbolic links
+4 exclusive native commit checks passed
+PASS: restore verification reads untouched resource bytes
+PASS: changed restore resource cannot pass
+PASS: restore rejects symbolic link ancestors
+PASS: restore never replays a prior Photos attempt
+PASS: restore resource comparison retains duplicate multiplicity
+PASS: missing resource cannot be hidden by set comparison
+PASS: restore detects mapped order mismatch
+PASS: restore rejects duplicate new identifiers
+8 restore safety checks passed; Photos import NOT_RUN
