@@ -1,0 +1,27 @@
+test_corrupt_download_never_commits_and_keeps_failure_journal (test_album_export.AlbumExportChecks) ... ok
+test_download_checks_real_bytes_then_assigns_five_second_mtimes (test_album_export.AlbumExportChecks) ... ok
+test_hidden_original_filename_uses_bin_extension_like_foundation (test_album_export.AlbumExportChecks) ... ERROR
+test_manifest_preserves_unknown_roles_but_rejects_incomplete_and_unsafe_paths (test_album_export.AlbumExportChecks) ... FAIL
+
+======================================================================
+ERROR: test_hidden_original_filename_uses_bin_extension_like_foundation (test_album_export.AlbumExportChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_export.py", line 43, in test_hidden_original_filename_uses_bin_extension_like_foundation
+    self.module.validate_manifest(m)
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/scripts/album_export.py", line 46, in validate_manifest
+    raise ValueError('Invalid resource path, size, type or SHA-256')
+ValueError: Invalid resource path, size, type or SHA-256
+
+======================================================================
+FAIL: test_manifest_preserves_unknown_roles_but_rejects_incomplete_and_unsafe_paths (test_album_export.AlbumExportChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_export.py", line 37, in test_manifest_preserves_unknown_roles_but_rejects_incomplete_and_unsafe_paths
+    with self.assertRaises(ValueError): self.module.validate_manifest(x)
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.046s
+
+FAILED (failures=1, errors=1)

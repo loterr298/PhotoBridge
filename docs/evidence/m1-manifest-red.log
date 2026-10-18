@@ -1,0 +1,149 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+[1/4] Write sources
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[3/6] Emitting module CoreChecks
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:52:88: error: cannot find type 'ExportResource' in scope
+50 |         fetchMode: "nil-options", identifiers: ["a", "b"], systemVersion: "test", build: "test",
+51 |         capturedAt: Date(timeIntervalSince1970: 1_700_000_000))
+52 |     func resource(_ ordinal: Int, hash: String = String(repeating: "a", count: 64)) -> ExportResource {
+   |                                                                                        `- error: cannot find type 'ExportResource' in scope
+53 |         ExportResource(resourceIndex: 1, resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic",
+54 |             storedRelativePath: ResourcePaths.make(ordinal: ordinal, resourceIndex: 1, originalFilename: "same.HEIC"), sha256: hash, byteCount: 3)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:56:76: error: cannot find type 'ExportAsset' in scope
+54 |             storedRelativePath: ResourcePaths.make(ordinal: ordinal, resourceIndex: 1, originalFilename: "same.HEIC"), sha256: hash, byteCount: 3)
+55 |     }
+56 |     func asset(_ ordinal: Int, id: String, resources: [ExportResource]) -> ExportAsset {
+   |                                                                            `- error: cannot find type 'ExportAsset' in scope
+57 |         ExportAsset(ordinal: ordinal, resourceGroupId: UUID().uuidString, sourceAssetLocalIdentifier: id,
+58 |             originalPhotoLibraryCreationDate: nil, pixelWidth: 10, pixelHeight: 10, mediaType: 1,
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:56:56: error: cannot find type 'ExportResource' in scope
+54 |             storedRelativePath: ResourcePaths.make(ordinal: ordinal, resourceIndex: 1, originalFilename: "same.HEIC"), sha256: hash, byteCount: 3)
+55 |     }
+56 |     func asset(_ ordinal: Int, id: String, resources: [ExportResource]) -> ExportAsset {
+   |                                                        `- error: cannot find type 'ExportResource' in scope
+57 |         ExportAsset(ordinal: ordinal, resourceGroupId: UUID().uuidString, sourceAssetLocalIdentifier: id,
+58 |             originalPhotoLibraryCreationDate: nil, pixelWidth: 10, pixelHeight: 10, mediaType: 1,
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:62:20: error: cannot find 'AlbumExportManifest' in scope
+60 |     }
+61 |     let assets = [asset(1, id: "a", resources: [resource(1)]), asset(2, id: "b", resources: [resource(2)])]
+62 |     let manifest = AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source, assets: assets)
+   |                    `- error: cannot find 'AlbumExportManifest' in scope
+63 |     try manifest.validate()
+64 |     try require(!manifest.json().isEmpty && manifest.restorationStatus.hasPrefix("NOT_RUN"), "export groups encode without claiming restore")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:66:17: error: cannot find 'ResourcePaths' in scope
+64 |     try require(!manifest.json().isEmpty && manifest.restorationStatus.hasPrefix("NOT_RUN"), "export groups encode without claiming restore")
+65 |     try require(manifest.logicalTime(ordinal: 2).timeIntervalSince(manifest.logicalTime(ordinal: 1)) == 5, "logical times use five seconds without media rewrite")
+66 |     try require(ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "../../bad.weird!ext").hasSuffix(".bin"), "untrusted filename extension never enters path")
+   |                 `- error: cannot find 'ResourcePaths' in scope
+67 |     try rejects("incomplete export groups cannot validate") {
+68 |         try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source, assets: [assets[0]]).validate()
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:68:13: error: cannot find 'AlbumExportManifest' in scope
+66 |     try require(ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "../../bad.weird!ext").hasSuffix(".bin"), "untrusted filename extension never enters path")
+67 |     try rejects("incomplete export groups cannot validate") {
+68 |         try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source, assets: [assets[0]]).validate()
+   |             `- error: cannot find 'AlbumExportManifest' in scope
+69 |     }
+70 |     try rejects("missing hash cannot validate") {
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:71:13: error: cannot find 'AlbumExportManifest' in scope
+69 |     }
+70 |     try rejects("missing hash cannot validate") {
+71 |         try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source,
+   |             `- error: cannot find 'AlbumExportManifest' in scope
+72 |             assets: [asset(1, id: "a", resources: [resource(1, hash: "bad")]),assets[1]]).validate()
+73 |     }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:75:13: error: cannot find 'AlbumExportManifest' in scope
+73 |     }
+74 |     try rejects("member replacement cannot validate") {
+75 |         try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source,
+   |             `- error: cannot find 'AlbumExportManifest' in scope
+76 |             assets: [asset(1, id: "replacement", resources: [resource(1)]),assets[1]]).validate()
+77 |     }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:79:13: error: cannot find 'AlbumExportManifest' in scope
+77 |     }
+78 |     try rejects("empty resource group cannot validate") {
+79 |         try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source,
+   |             `- error: cannot find 'AlbumExportManifest' in scope
+80 |             assets: [asset(1, id: "a", resources: []),assets[1]]).validate()
+81 |     }
+[4/6] Compiling CoreChecks main.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:52:88: error: cannot find type 'ExportResource' in scope
+50 |         fetchMode: "nil-options", identifiers: ["a", "b"], systemVersion: "test", build: "test",
+51 |         capturedAt: Date(timeIntervalSince1970: 1_700_000_000))
+52 |     func resource(_ ordinal: Int, hash: String = String(repeating: "a", count: 64)) -> ExportResource {
+   |                                                                                        `- error: cannot find type 'ExportResource' in scope
+53 |         ExportResource(resourceIndex: 1, resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic",
+54 |             storedRelativePath: ResourcePaths.make(ordinal: ordinal, resourceIndex: 1, originalFilename: "same.HEIC"), sha256: hash, byteCount: 3)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:56:76: error: cannot find type 'ExportAsset' in scope
+54 |             storedRelativePath: ResourcePaths.make(ordinal: ordinal, resourceIndex: 1, originalFilename: "same.HEIC"), sha256: hash, byteCount: 3)
+55 |     }
+56 |     func asset(_ ordinal: Int, id: String, resources: [ExportResource]) -> ExportAsset {
+   |                                                                            `- error: cannot find type 'ExportAsset' in scope
+57 |         ExportAsset(ordinal: ordinal, resourceGroupId: UUID().uuidString, sourceAssetLocalIdentifier: id,
+58 |             originalPhotoLibraryCreationDate: nil, pixelWidth: 10, pixelHeight: 10, mediaType: 1,
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:56:56: error: cannot find type 'ExportResource' in scope
+54 |             storedRelativePath: ResourcePaths.make(ordinal: ordinal, resourceIndex: 1, originalFilename: "same.HEIC"), sha256: hash, byteCount: 3)
+55 |     }
+56 |     func asset(_ ordinal: Int, id: String, resources: [ExportResource]) -> ExportAsset {
+   |                                                        `- error: cannot find type 'ExportResource' in scope
+57 |         ExportAsset(ordinal: ordinal, resourceGroupId: UUID().uuidString, sourceAssetLocalIdentifier: id,
+58 |             originalPhotoLibraryCreationDate: nil, pixelWidth: 10, pixelHeight: 10, mediaType: 1,
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:62:20: error: cannot find 'AlbumExportManifest' in scope
+60 |     }
+61 |     let assets = [asset(1, id: "a", resources: [resource(1)]), asset(2, id: "b", resources: [resource(2)])]
+62 |     let manifest = AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source, assets: assets)
+   |                    `- error: cannot find 'AlbumExportManifest' in scope
+63 |     try manifest.validate()
+64 |     try require(!manifest.json().isEmpty && manifest.restorationStatus.hasPrefix("NOT_RUN"), "export groups encode without claiming restore")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:66:17: error: cannot find 'ResourcePaths' in scope
+64 |     try require(!manifest.json().isEmpty && manifest.restorationStatus.hasPrefix("NOT_RUN"), "export groups encode without claiming restore")
+65 |     try require(manifest.logicalTime(ordinal: 2).timeIntervalSince(manifest.logicalTime(ordinal: 1)) == 5, "logical times use five seconds without media rewrite")
+66 |     try require(ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "../../bad.weird!ext").hasSuffix(".bin"), "untrusted filename extension never enters path")
+   |                 `- error: cannot find 'ResourcePaths' in scope
+67 |     try rejects("incomplete export groups cannot validate") {
+68 |         try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source, assets: [assets[0]]).validate()
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:68:13: error: cannot find 'AlbumExportManifest' in scope
+66 |     try require(ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "../../bad.weird!ext").hasSuffix(".bin"), "untrusted filename extension never enters path")
+67 |     try rejects("incomplete export groups cannot validate") {
+68 |         try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source, assets: [assets[0]]).validate()
+   |             `- error: cannot find 'AlbumExportManifest' in scope
+69 |     }
+70 |     try rejects("missing hash cannot validate") {
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:71:13: error: cannot find 'AlbumExportManifest' in scope
+69 |     }
+70 |     try rejects("missing hash cannot validate") {
+71 |         try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source,
+   |             `- error: cannot find 'AlbumExportManifest' in scope
+72 |             assets: [asset(1, id: "a", resources: [resource(1, hash: "bad")]),assets[1]]).validate()
+73 |     }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:75:13: error: cannot find 'AlbumExportManifest' in scope
+73 |     }
+74 |     try rejects("member replacement cannot validate") {
+75 |         try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source,
+   |             `- error: cannot find 'AlbumExportManifest' in scope
+76 |             assets: [asset(1, id: "replacement", resources: [resource(1)]),assets[1]]).validate()
+77 |     }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:79:13: error: cannot find 'AlbumExportManifest' in scope
+77 |     }
+78 |     try rejects("empty resource group cannot validate") {
+79 |         try AlbumExportManifest(sessionID: UUID().uuidString, sourceOrder: source,
+   |             `- error: cannot find 'AlbumExportManifest' in scope
+80 |             assets: [asset(1, id: "a", resources: []),assets[1]]).validate()
+81 |     }

@@ -1,0 +1,9 @@
+{
+  "version": "0.2.0",
+  "build": "2",
+  "source": "cloud build 9 verified artifact",
+  "priorInstalledAppBackedUp": true,
+  "adHocSignatureVerified": true,
+  "launchRequested": true,
+  "originalMediaTest": "NOT_RUN"
+}

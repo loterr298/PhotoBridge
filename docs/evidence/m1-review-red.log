@@ -1,0 +1,26 @@
+test_corrupt_download_never_commits_and_keeps_failure_journal (test_album_export.AlbumExportChecks) ... ok
+test_download_checks_real_bytes_then_assigns_five_second_mtimes (test_album_export.AlbumExportChecks) ... FAIL
+test_hidden_original_filename_uses_bin_extension_like_foundation (test_album_export.AlbumExportChecks) ... ok
+test_manifest_preserves_unknown_roles_but_rejects_incomplete_and_unsafe_paths (test_album_export.AlbumExportChecks) ... ok
+test_required_metadata_missing_or_wrong_type_cannot_commit (test_album_export.AlbumExportChecks) ... FAIL
+
+======================================================================
+FAIL: test_download_checks_real_bytes_then_assigns_five_second_mtimes (test_album_export.AlbumExportChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_export.py", line 86, in test_download_checks_real_bytes_then_assigns_five_second_mtimes
+    self.assertNotIn('filesystemAttributeChanges', progress)
+AssertionError: 'filesystemAttributeChanges' unexpectedly found in {'status': 'COMMITTED', 'resourcesVerified': 2, 'bytesVerified': 44, 'sourceManifestSHA256': '6294107500188cd5c88fe2dea6b4f5abf30bef2fa6a326d04ae6e81f0084e358', 'restoration': 'NOT_RUN', 'filesystemAttributeChanges': [{'path': 'Resources/000001/0001.HEIC', 'oldMtimeNs': 1792329703721711294, 'newMtimeNs': 1792324800000000000, 'oldBirthtime': 1792329703.7216125, 'newBirthtime': 1792324800.0, 'creationTimeStatus': 'NOT_SET: creation-time API not implemented', 'logicalSortTimeUtc': '2026-10-18T12:00:00+00:00', 'contentSHA256Unchanged': True}, {'path': 'Resources/000002/0001.HEIC', 'oldMtimeNs': 1792329703724135474, 'newMtimeNs': 1792324805000000000, 'oldBirthtime': 1792329703.7240322, 'newBirthtime': 1792324805.0, 'creationTimeStatus': 'NOT_SET: creation-time API not implemented', 'logicalSortTimeUtc': '2026-10-18T12:00:05+00:00', 'contentSHA256Unchanged': True}], 'seconds': 0.0055862339999999955, 'MiBPerSecondIncludingVerification': 0.007511620516053397}
+
+======================================================================
+FAIL: test_required_metadata_missing_or_wrong_type_cannot_commit (test_album_export.AlbumExportChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_export.py", line 59, in test_required_metadata_missing_or_wrong_type_cannot_commit
+    with self.assertRaises((ValueError, KeyError, TypeError)): self.module.validate_manifest(bad)
+AssertionError: (<class 'ValueError'>, <class 'KeyError'>, <class 'TypeError'>) not raised
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.033s
+
+FAILED (failures=2)

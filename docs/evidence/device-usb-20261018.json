@@ -1,0 +1,138 @@
+{
+  "recordedAtUTC": "2026-10-18T13:02:16.397928+00:00",
+  "sourceRevision": "c08895d plus Documents-path fix",
+  "iPhoneBuild": "775ce274e36893f44957de5fc4f0fc22c64acd5f",
+  "iOS": "27.2",
+  "hardware": "iPhone16,1",
+  "macOS": "15.7.9",
+  "transportLookup": "USBMUX_ONLY (2); no NETWORK flags",
+  "phoneWireless": "User attested Wi-Fi/hotspot off; no settings screenshot",
+  "macWireless": "Remained online for agent/CI; both-ends-off runbook NOT_RUN",
+  "data": "Two independently generated random synthetic files; no original photos",
+  "transfers": [
+    {
+      "direction": "iPhone-to-Mac",
+      "result": "HASH_PASS",
+      "byteCount": 104857600,
+      "sha256": "b5ed6c5c25529fec2a8288cc046a4fd3569deea898a5eed40cceafb6c0ffe680",
+      "seconds": 2.6601702709999997,
+      "MiBPerSecondIncludingVerification": 37.59157866327423
+    },
+    {
+      "direction": "Mac-to-iPhone",
+      "result": "AFC_READBACK_HASH_PASS",
+      "byteCount": 104857600,
+      "sha256": "425cd8f5530f2f594b2b20524227587f335550b23c15dbff0ba9b02dc1d10490",
+      "seconds": 3.782275345,
+      "MiBPerSecondIncludingVerification": 26.439111613646944
+    }
+  ],
+  "iPhoneAppIndependentReadback": [
+    {
+      "result": "HASH_PASS",
+      "byteCount": 104857600,
+      "sha256": "425cd8f5530f2f594b2b20524227587f335550b23c15dbff0ba9b02dc1d10490",
+      "matchesMac": true
+    },
+    {
+      "result": "HASH_PASS",
+      "byteCount": 104857600,
+      "sha256": "425cd8f5530f2f594b2b20524227587f335550b23c15dbff0ba9b02dc1d10490",
+      "matchesMac": true
+    },
+    {
+      "result": "HASH_PASS",
+      "byteCount": 104857600,
+      "sha256": "425cd8f5530f2f594b2b20524227587f335550b23c15dbff0ba9b02dc1d10490",
+      "matchesMac": true
+    }
+  ],
+  "cableDisconnectReconnect": {
+    "status": "CABLE_TRANSITION_OBSERVED",
+    "events": [
+      {
+        "timeUTC": "2026-10-18T13:00:01.927143+00:00",
+        "usbOnlyDevicePresent": true
+      },
+      {
+        "timeUTC": "2026-10-18T13:02:01.354952+00:00",
+        "usbOnlyDevicePresent": false
+      },
+      {
+        "timeUTC": "2026-10-18T13:02:06.573985+00:00",
+        "usbOnlyDevicePresent": true
+      }
+    ],
+    "lookupPolicy": "USBMUX_ONLY_2"
+  },
+  "photosOrder": {
+    "authorization": "full",
+    "fetchMode": "nil-options",
+    "memberCount": 19335,
+    "snapshotRead": "PASS",
+    "independent20Comparison": "NOT_RUN",
+    "moveFiveRepeat": "NOT_RUN"
+  },
+  "gate": "G1 TARGET_DEVICE_MANUAL_PASS: full permission, nil-options, this specific album/build/iOS only. G2 SYNTHETIC_USB_PASS under phone-wireless-off/Mac-online scope. Strict both-wireless-off, original media, import and restoration NOT_RUN.",
+  "privacy": "Album name, album/asset/device identifiers and raw device logs excluded; local-only private-diagnostics",
+  "afterReconnectDownload": {
+    "status": "HASH_VERIFIED_PHYSICAL_TEST_PENDING",
+    "result": "HASH_PASS",
+    "byteCount": 104857600,
+    "sha256": "b5ed6c5c25529fec2a8288cc046a4fd3569deea898a5eed40cceafb6c0ffe680",
+    "seconds": 2.574786473
+  },
+  "twentyMemberCandidate": {
+    "memberCount": 20,
+    "authorization": "full",
+    "fetchMode": "nil-options",
+    "capturedAt": "2026-10-18T13:04:05Z",
+    "independentPhotosComparison": {
+      "status": "MANUAL_OBSERVER_PASS",
+      "observer": "user",
+      "method": "User was asked to visually compare all positions 1–20 against Photos custom sort and replied 一致",
+      "recordedAtUTC": "2026-10-18T13:06:32.805033+00:00",
+      "limitation": "User attestation; no independent CSV or Photos screenshots collected; no automated source-order equality claim"
+    },
+    "moveFiveRepeat": {
+      "status": "MANUAL_OBSERVER_PASS",
+      "baselineCapturedAt": "2026-10-18T13:08:10Z",
+      "retestCapturedAt": "2026-10-18T13:10:12Z",
+      "countBefore": 20,
+      "countAfter": 20,
+      "sameTwentyMemberSet": true,
+      "sameAlbum": true,
+      "changedPositions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        19,
+        20
+      ],
+      "observer": "user",
+      "statement": "一致",
+      "method": "User explicitly instructed to drag at least five within unchanged current twenty-member album and independently compare all positions again",
+      "limitation": "Human observer attestation, not automated Photos baseline; no Photos screenshot or independent CSV; changed ordinal count does not prove drag-operation count"
+    },
+    "baselineCapturedAt": "2026-10-18T13:08:10Z",
+    "rejectedAttempts": [
+      {
+        "count": 15,
+        "reason": "Member removal, not reorder"
+      },
+      {
+        "count": 20,
+        "commonMembersWithFirstBaseline": 15,
+        "reason": "Member replacement; restarted baseline"
+      }
+    ]
+  }
+}

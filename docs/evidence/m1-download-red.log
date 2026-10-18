@@ -1,0 +1,14 @@
+ERROR
+
+======================================================================
+ERROR: setUpClass (test_album_export.AlbumExportChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_export.py", line 7, in setUpClass
+    import album_export
+ModuleNotFoundError: No module named 'album_export'
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.001s
+
+FAILED (errors=1)
