@@ -93,7 +93,7 @@ struct AlbumsView: View {
                         Text("先核对相簿顺序，再导出原始资源").foregroundStyle(.secondary)
                         Button("读取照片相簿") { Task { await library.request() } }
                             .buttonStyle(.borderedProminent).controlSize(.large)
-                        Text("进入相簿可导出原始资源；导回尚未启用").font(.caption).foregroundStyle(.secondary)
+                        Text("进入相簿导出原始资源；USB 收件可在恢复页预检").font(.caption).foregroundStyle(.secondary)
                     }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
                         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 24))
                     Text("相簿").font(.title.bold())
@@ -177,7 +177,7 @@ struct AlbumProbeView: View {
                 Text("在系统照片中选自定义顺序。用有醒目编号的 20 张测试照片核对下方位置与编号，独立填比较表。移动五张后重新读取。两种读取方式分别测试。")
                 Text("受限权限、智能/共享相簿和系统图库视图不属于全相簿通过范围。")
             }
-            Section("原始资源 · M1 设备待验证") {
+            Section("原始资源 · 以本次校验结果为准") {
                 Button("导出原始资源到本机暂存") { showOriginalExport = true }
                     .disabled(library.authorization != .authorized)
                 Text("全部资源逐项 SHA-256；不转码、不改内部元数据。完整照片往返尚未验证。")
