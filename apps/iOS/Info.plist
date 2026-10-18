@@ -2,9 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleDisplayName</key><string>PhotoBridge 诊断</string>
-<key>CFBundleShortVersionString</key><string>0.1.0</string>
-<key>CFBundleVersion</key><string>1</string>
-<key>NSPhotoLibraryUsageDescription</key><string>读取你授权的相簿及成员位置，用于与系统照片的手动顺序逐项核对；诊断版不会修改照片。</string>
+<key>CFBundleShortVersionString</key><string>0.2.0</string>
+<key>CFBundleVersion</key><string>2</string>
+<key>NSPhotoLibraryUsageDescription</key><string>读取授权相簿的顺序及原始资源，用于本机暂存和 USB 备份，不修改或删除原照片。</string>
 <key>UIFileSharingEnabled</key><true/>
 <key>LSSupportsOpeningDocumentsInPlace</key><true/>
 <key>UILaunchScreen</key><dict/>

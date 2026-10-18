@@ -13,17 +13,17 @@ import PhotoBridgeCore
                     VStack(spacing: 16) {
                         Image(systemName: "clock.arrow.circlepath").font(.largeTitle)
                         Text("恢复功能尚未启用").font(.title2)
-                        Text("需先完成系统照片顺序与双向 USB 真机验证。M0 不写入照片库。")
+                        Text("当前支持原始资源暂存与 USB 校验；照片库导回和恢复尚未实现。")
                     }.padding().navigationTitle("恢复")
                 }.tabItem { Label("恢复", systemImage: "clock.arrow.circlepath") }
                 NavigationStack {
                     Form {
-                        Section("当前版本 · M0 诊断") {
+                        Section("当前版本 · M1 导出验证") {
                             Text("只读取相簿，不修改或删除照片")
                             Text("不改 EXIF、GPS、MakerNotes 或照片显示时间")
-                            Text("诊断清单含本机照片标识，仅在你主动分享时离开 App")
+                            Text("清单和资源仅本地暂存，可经已信任 Mac 的 USB 文件共享复制")
                         }
-                        Section("后续导出策略 · 尚未启用") {
+                        Section("原始资源导出策略") {
                             Text("原始资源字节 + SHA-256")
                             Text("5 秒步长仅用于 Mac 文件系统时间")
                         }
@@ -93,13 +93,13 @@ struct AlbumsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    Text("未连接 · USB 尚未验证").foregroundStyle(.secondary)
+                    Text("USB 链路状态由 Mac 端检测").foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 16) {
                         Label("Mac 连接诊断", systemImage: "laptopcomputer").font(.headline)
-                        Text("M0 先核对相簿顺序和 USB 通道").foregroundStyle(.secondary)
+                        Text("先核对相簿顺序，再导出原始资源").foregroundStyle(.secondary)
                         Button("读取照片相簿") { Task { await library.request() } }
                             .buttonStyle(.borderedProminent).controlSize(.large)
-                        Text("正式原图导出与导回尚未启用").font(.caption).foregroundStyle(.secondary)
+                        Text("进入相簿可导出原始资源；导回尚未启用").font(.caption).foregroundStyle(.secondary)
                     }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
                         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 24))
                     Text("相簿").font(.title.bold())
@@ -167,6 +167,7 @@ struct AlbumProbeView: View {
     @State private var assets: [PHAsset] = []
     @State private var exportURL: URL?
     @State private var error: String?
+    @State private var showOriginalExport = false
     var body: some View {
         List {
             Section("读取方式 · 不指定排序字段") {
@@ -182,6 +183,11 @@ struct AlbumProbeView: View {
                 Text("在系统照片中选自定义顺序。用有醒目编号的 20 张测试照片核对下方位置与编号，独立填比较表。移动五张后重新读取。两种读取方式分别测试。")
                 Text("受限权限、智能/共享相簿和系统图库视图不属于全相簿通过范围。")
             }
+            Section("原始资源 · M1 设备待验证") {
+                Button("导出原始资源到本机暂存") { showOriginalExport = true }
+                    .disabled(library.authorization != .authorized)
+                Text("全部资源逐项 SHA-256；不转码、不改内部元数据。完整照片往返尚未验证。")
+            }
             Section("相簿标识") { Text(collection.localIdentifier).font(.caption.monospaced()).textSelection(.enabled) }
             ForEach(Array(assets.enumerated()), id: \.element.localIdentifier) { index, asset in
                 HStack(alignment: .top) {
@@ -194,6 +200,7 @@ struct AlbumProbeView: View {
                 }.accessibilityElement(children: .combine)
             }
         }.navigationTitle(collection.localizedTitle ?? "相簿诊断")
+            .sheet(isPresented: $showOriginalExport) { OriginalExportView(collection: collection) }
             .task { reload() }.onChange(of: mode) { _ in reload() }
             .onChange(of: scene) { if $0 == .active { reload() } }
     }

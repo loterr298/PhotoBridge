@@ -8,7 +8,7 @@ struct USBProbeView: View {
         NavigationStack {
             Form {
                 Section("USB / AFC 真机探针") {
-                    Text("未连接验证 · 本页不推断链路状态")
+                    Text("链路由 Mac 检测 · 本页不显示实时连接状态")
                     Text("生成的是随机测试数据，不读取照片。每次约占 100 MiB，测试文件保留，可在文件 App 手动清理。")
                     Button("生成 iPhone → Mac 100 MiB 文件") { generate() }.disabled(busy)
                     Button("校验 Mac → iPhone 收件文件") { validate() }.disabled(busy)
