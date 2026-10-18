@@ -31,4 +31,13 @@ class USBChecks(unittest.TestCase):
         for key,value in [('filename','../../original.jpg'),('sha256','bad'),('byteCount',10),('origin','Mac')]:
             with self.assertRaises(ValueError): p.validate_receipt(dict(good,**{key:value}), 'iPhone')
 
+
+class DocumentsRootChecks(unittest.TestCase):
+    def test_house_arrest_paths_are_beneath_documents(self):
+        self.assertEqual(p.documents_path('.'), '/Documents')
+        self.assertEqual(p.documents_path('USBProbe/Outbox/session/probe.bin'), '/Documents/USBProbe/Outbox/session/probe.bin')
+    def test_container_escape_and_ambiguous_paths_are_rejected(self):
+        for path in ['../Library','/Documents','USBProbe/../Library','USBProbe//file','USBProbe/./file','USBProbe\\file','USBProbe/\x00file','']:
+            with self.assertRaises(ValueError): p.documents_path(path)
+
 if __name__ == '__main__': unittest.main()
