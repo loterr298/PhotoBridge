@@ -177,3 +177,28 @@ New regression genuinely failed against the prior link implementation, then pass
 - 第二次真实 USB 下载到另一个新目录，30 份资源全部校验，含校验 **1.444 秒 / 51.163 MiB/s**。另用系统 shasum 独立复核 30/30，实际创建时间和修改时间均 30/30 符合 capturedAt UTC + (ordinal−1)×5 秒，附件不占新序号。证据 m1-device-filesystem-times-verified.json。该速度仅为此约 73.86 MiB 小样本，不推广到其他数据量或设备。
 - 当前结论为 **限定 JPEG 与编辑附件样本的原图备份及文件系统时间通过**。样本未达原图 100 MiB，Live Photo/HEIC/PNG/RAW/iCloud/权限和磁盘中断验收尚未执行；M1 全格式验收仍未完成。照片库导回、相簿恢复、断点续传及万张压力测试未实现/未通过。未删除或修改手机原图，未写入媒体内部 EXIF/GPS/MakerNotes/私人字段。
 - 当前 Mac 创建时间代码已在本机实测，新增云编译与打包结果待下文记录。已安装的手机 0.2.1 无需为了 Mac 时间功能再次更新。
+
+
+### Live Photo / HEIC 新样本与第 11 次云构建
+
+用户另外暂存 3 张 Live Photo，实际读取为 3 组、6 份资源（3×public.heic / photo 类型 1，3×QuickTime MOV / pairedVideo 类型 9）。USB-only AFC 下载 19,968,426 bytes，COMMITTED；系统 shasum 独立复核 6/6，创建与修改时间均 6/6 按组 5 秒通过。记录 m1-device-live-resources-verified.json。这里只证明关联资源完整下载及 bytes 保留，不声称已经验证嵌入配对标识、导回后动态播放或往返完整性。PNG/RAW/iCloud/错误注入仍未执行。
+
+[Actions #11](https://github.com/loterr298/PhotoBridge/actions/runs/39147856877) SUCCESS，源码 fb7c4086822a731501998bcf6d63870d8c52a0f2；实际 4 XCTest / 23 CoreChecks / 14 Python，iOS arm64 与 Intel x86_64 构建通过。产物 12144375229 SHA-256 cd80a5ae4ed92f3cfc5776edd135959a3ed9b2ff624d4298a640d904707ce536 已下载，CRC、内部校验、IPA 编译版本/commit/架构/权限及 Mac 包内源码全部核对通过。
+
+更新 Mac 包位于 build/PhotoBridge-0.2.1-M1-times/PhotoBridgeMac-Intel.zip（SHA-256 4da058a9d747df9f60913e7e8140931a98661ee8dc271ef3f3e8b372ba318798），本机旧 App 已完整备份后更新并验签启动，记录 m1-mac-filesystem-time-install.json。手机当前 0.2.1 可继续使用，无需为了 Mac 时间功能重装。新云构建证据 cloud-build-11.json / cloud-11-*.log。
+
+
+## USB 回传与新相簿恢复首版（0.3.0 / build4，2026-10-19）
+
+按原要求继续进入回传/恢复模块，设计与验证计划见 superpowers/plans/2026-10-19-verified-restore.md。不因缺少 PNG/RAW 样本虚构全格式通过。
+
+- 新增 RestoreSafety：逐资源大小/hash、路径及符号链接拒绝、永久一次尝试标记、保留重复数量的资源集合比较、严格来源→新标识顺序核对。新增 8 检查，本地总 **32 CoreChecks** 通过。先运行真实缺失 API 编译失败，再实现通过；不把编译 RED 说成设备行为失败。m2-restore-core-{red,green}.log。
+- 新增 album_restore.py：仅接受已 COMMITTED 且清单 hash/数量/总大小匹配的本地备份，先逐文件复核再写手机。只创建 RestoreInbox/新UUID；流式写入.part、USB 回读大小/hash 后重命名，完整 ready 请求最后发布。错误保留日志和部分文件，不能把单个上传成功当成照片库已恢复。
+- 文件系统边界测试覆盖完整资源含未知类型、损坏/未提交本地备份无手机写入、USB 损坏无 ready、符号链接拒绝。新增 4 测试，本地总 **18 Python tests / 0 failures**；日志 m2-usb-return-{red,green}.log。
+- 实际通过 USB 回传先前校验的 3 张 Live Photo（6 份 HEIC/MOV，19,968,426 bytes），AFC 回读全部一致，含校验约 0.546 秒 / 34.889 MiB/s。只写入 App 新收件目录，未写照片库，未删除任何原件。m2-live-usb-return-verified.json。
+- 新 iOS RestoreView：完整资源/清单预检，全部资源组合先询问 PhotoKit supportsAssetResourceTypes；不支持就拒绝整个恢复，不剔除附件。用户点击后只创建新相簿，每资产一笔事务添加全部资源，shouldMoveFile=false，并按 ordinal 插入。使用清单记录的原照片库日期（现有清单 ISO8601 秒精度），不写入 Mac 5 秒逻辑日期。
+- 事务前永久标记防止崩溃后自动重复导入；逐资产记录映射、真实进度、失败及回读资源。新资产通过 PHAssetResourceManager 再导出，核对完整资源的类型/名称/UTI/大小/hash 多重集，重新读取相簿位置和最后编辑时间；只有全部匹配才生成 restore-report。系统照片人工自定义顺序与 Live 播放字段仍固定 NOT_RUN，待独立观察。
+- 本机 macOS SDK 已对 RestoreView 做真实类型检查（仅兼容旧系统保留的 onChange 弃用提示）；不把它当 iOS 实编译或真机导入通过。新版云编译与 IPA 交付待后文记录。手机仍是 0.2.1，预检、照片库写入、资源往返和 Live 播放均 **NOT_RUN**。
+- 首版不自动恢复已尝试的照片库事务，不做失败后删除、不提供无证据的续传/万张性能承诺。最终产品化 UI 和恢复健壮性继续后续阶段。
+
+独立审查指出预检解析与 hash 使用两次文件读取可能产生时序差异。已改为 RestoreSafety.decodeManifest 对同一 Data 验 hash 后再解析，并在恢复启动及最终提交前逐字节确认 manifest/request 与预检时完全一致。增加错误 hash 拒绝检查；修复两个遗漏 try 的真实本地类型检查错误后再次类型检查通过。完整 32 核心 / 18 Python 通过，无剩余 Critical/Important 审查项。
