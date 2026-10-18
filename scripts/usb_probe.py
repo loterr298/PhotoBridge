@@ -19,6 +19,16 @@ CHUNK = 1024 * 1024
 SIZE = 100 * CHUNK
 
 
+def documents_path(value):
+    """VendDocuments exposes the app container with access restricted to /Documents."""
+    if value == '.': return '/Documents'
+    if not value or value.startswith('/') or '\\' in value or '\x00' in value:
+        raise ValueError('Expected a relative Documents path')
+    if any(part in ('', '.', '..') for part in value.split('/')):
+        raise ValueError('Documents path traversal or ambiguous component')
+    return '/Documents/' + value
+
+
 def probe_directory(value):
     parts = value.split('/')
     if len(parts) != 3 or parts[:2] not in [['USBProbe', 'Outbox'], ['USBProbe', 'Inbox']]:
@@ -120,7 +130,7 @@ class AFC:
 
     def list(self, path):
         names = C.POINTER(C.c_char_p)()
-        self.check(self.lib.afc_read_directory(self.afc, path.encode(), C.byref(names)), 'AFC list')
+        self.check(self.lib.afc_read_directory(self.afc, documents_path(path).encode(), C.byref(names)), 'AFC list')
         try:
             result = []; index = 0
             while names[index]:
@@ -129,13 +139,13 @@ class AFC:
         finally: self.lib.afc_dictionary_free(names)
 
     def mkdir(self, path, exclusive=False):
-        code = self.lib.afc_make_directory(self.afc, path.encode())
+        code = self.lib.afc_make_directory(self.afc, documents_path(path).encode())
         if not exclusive and code == 16: return  # AFC_E_OBJECT_EXISTS
         self.check(code, 'AFC mkdir (existing session is never reused)')
 
     def read(self, path, sink, maximum=None):
         handle = C.c_uint64()
-        self.check(self.lib.afc_file_open(self.afc, path.encode(), 1, C.byref(handle)), 'AFC open read')
+        self.check(self.lib.afc_file_open(self.afc, documents_path(path).encode(), 1, C.byref(handle)), 'AFC open read')
         total = 0
         try:
             while True:
@@ -152,7 +162,7 @@ class AFC:
         parent, name = path.rsplit('/', 1)
         if name in self.list(parent): raise FileExistsError(path)
         handle = C.c_uint64()
-        self.check(self.lib.afc_file_open(self.afc, path.encode(), 3, C.byref(handle)), 'AFC open write')
+        self.check(self.lib.afc_file_open(self.afc, documents_path(path).encode(), 3, C.byref(handle)), 'AFC open write')
         def writer(data):
             count = C.c_uint32(); buffer = C.create_string_buffer(data)
             self.check(self.lib.afc_file_write(self.afc, handle, buffer, len(data), C.byref(count)), 'AFC write')
@@ -163,6 +173,12 @@ class AFC:
                 if not data: break
                 write_all(writer, data)
         finally: self.check(self.lib.afc_file_close(self.afc, handle), 'AFC close write')
+
+    def commit_new(self, source, destination):
+        parent, name = destination.rsplit('/', 1)
+        if source.rsplit('/', 1)[0] != parent: raise ValueError('Commit must stay in the same session directory')
+        if name in self.list(parent): raise FileExistsError(destination)
+        self.check(self.lib.afc_rename_path(self.afc, documents_path(source).encode(), documents_path(destination).encode()), 'AFC commit')
 
     def close(self):
         if self.afc: self.lib.afc_client_free(self.afc); self.afc = C.c_void_p()
@@ -204,8 +220,7 @@ def upload(client, local):
     client.read(remote + '/probe.bin.part', consume, receipt['byteCount'])
     if h.hexdigest() != receipt['sha256'] or count != receipt['byteCount']:
         raise ValueError('AFC readback HASH_FAIL; partial preserved')
-    if 'probe.bin' in client.list(remote): raise FileExistsError(remote)
-    client.check(client.lib.afc_rename_path(client.afc, (remote + '/probe.bin.part').encode(), (remote + '/probe.bin').encode()), 'AFC commit')
+    client.commit_new(remote + '/probe.bin.part', remote + '/probe.bin')
     client.write_new(remote + '/receipt.json', io.BytesIO(json.dumps(receipt).encode()))
     return {'direction': 'Mac-to-iPhone', 'result': 'AFC_READBACK_HASH_PASS', 'iPhoneAppVerification': 'NOT_RUN: tap verify in iPhone app', 'remote': remote, **receipt}
 
