@@ -29,11 +29,12 @@ final class CameraDiscovery: NSObject, ObservableObject, ICDeviceBrowserDelegate
             } detail: {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("照片传输").font(.largeTitle.bold())
-                    Label("AFC 双向传输待验证", systemImage: "cable.connector")
+                    Label("USB / AFC · 以实际校验报告为准", systemImage: "cable.connector")
                     Text("左侧是相机文件目录，不能用来判断 PhotoKit 相簿成员或手动顺序。")
                     Text("在终端运行随附 scripts/usb_probe.py。它仅选择 USB 设备，通过已配对的 House Arrest 访问 PhotoBridge Documents；没有连接时会报告 BLOCKED。")
+                    Text("原始资源：iPhone 在相簿内完成暂存后，运行 scripts/album_export.py list，再 download 到全新本地目录。所有资源逐一核对大小和 SHA-256，结果写入 transfer-manifest.json。")
                     Text("iPhone 相簿顺序由诊断 App 导出，并与系统照片 App 逐项核对。")
-                    Text("M0 诊断版 · 未提供正式照片导出 / 恢复功能").font(.caption).foregroundStyle(.secondary)
+                    Text("M1 导出验证版 · 照片库导回与相簿恢复尚未实现").font(.caption).foregroundStyle(.secondary)
                     Spacer()
                 }.padding(32).frame(maxWidth: .infinity, alignment: .leading)
             }.frame(minWidth: 760, minHeight: 480).onAppear { discovery.start() }
