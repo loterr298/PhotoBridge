@@ -1,0 +1,16 @@
+{
+  "status": "SUCCESS",
+  "run": "https://github.com/loterr298/PhotoBridge/actions/runs/39146581328",
+  "sourceCommit": "403aae1e2139e107c103744399f3ce7839409bb0",
+  "artifact": "12143961459",
+  "artifactSHA256": "6270aa5b22dc23e1ab9db1f4ade7197cabf8f46a51dbb563bc403961353e2a31",
+  "localCRCAndChecksumsVerified": true,
+  "version": "0.2.1",
+  "build": "3",
+  "ipaArm64AndModeVerified": true,
+  "deviceOriginalUSB": "NOT_RUN after hotfix; 0.2.0 failed",
+  "files": {
+    "PhotoBridgeOrderProbe-0.2.1-unsigned.ipa": "a10a87d891b312c2e5a844db95566bf70eddb8d945bac8c34bd0619810033508",
+    "PhotoBridgeMac-Intel.zip": "e3863e968a10b877c3126d19794b48c4bbb1eb50f5938f6e8a21ecff8ea0aec9"
+  }
+}

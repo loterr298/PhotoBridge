@@ -1,0 +1,14 @@
+{
+  "data": "New synthetic file only, no original media",
+  "events": [
+    {
+      "stage": "one-link-before",
+      "read": "PASS",
+      "bytes": 41
+    },
+    {
+      "stage": "create-synthetic-hardlink",
+      "code": 15
+    }
+  ]
+}

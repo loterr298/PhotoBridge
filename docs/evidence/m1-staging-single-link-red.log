@@ -1,0 +1,34 @@
+[0/1] Planning build
+Building for debugging...
+[0/6] Write sources
+[2/6] Write swift-version--1AB21518FC5DEDBE.txt
+[4/8] Compiling PhotoBridgeCore StagingFiles.swift
+[5/8] Emitting module PhotoBridgeCore
+[6/10] Emitting module CoreChecks
+[7/10] Compiling CoreChecks main.swift
+[7/10] Write Objects.LinkFileList
+[8/10] Linking CoreChecks
+[9/10] Applying CoreChecks
+Build of product 'CoreChecks' complete! (2.03s)
+FAIL native commit: Error Domain=native commit leaves one AFC-readable hard link Code=1 "(null)"
+PASS: API order preserved
+PASS: reading never auto-verifies manual order
+PASS: JSON encodes
+PASS: 20 identical positions
+PASS: moved positions detected
+PASS: 19 members cannot pass
+PASS: duplicate baseline cannot pass
+PASS: streamed hash and size round trip
+PASS: existing destination never overwritten
+PASS: conflict preserves original bytes
+PASS: SHA-256 known vector
+11 core checks passed; synthetic data only, device tests NOT_RUN
+PASS: thumbnail request generations reject stale and disappeared callbacks
+PASS: export groups encode without claiming restore
+PASS: logical times use five seconds without media rewrite
+PASS: untrusted filename extension never enters path
+PASS: incomplete export groups cannot validate
+PASS: missing hash cannot validate
+PASS: member replacement cannot validate
+PASS: empty resource group cannot validate
+7 export checks passed; synthetic only, PhotoKit export NOT_RUN

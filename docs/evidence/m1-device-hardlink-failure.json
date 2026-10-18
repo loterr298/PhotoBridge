@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "originalPhotoLibraryModified": false,
+  "scope": "Read-only metadata/reads of our generated export files",
+  "files": [
+    {
+      "name": "source-order.json",
+      "read": "OK",
+      "type": "S_IFREG",
+      "size": "3517",
+      "hardLinkCount": "1"
+    },
+    {
+      "name": "export-progress.json",
+      "read": "OK",
+      "type": "S_IFREG",
+      "size": "177",
+      "hardLinkCount": "1"
+    },
+    {
+      "name": "album-order.json.part",
+      "read": "AFC open read: error 1",
+      "type": "S_IFREG",
+      "size": "23291",
+      "hardLinkCount": "2"
+    },
+    {
+      "name": "album-order.json",
+      "read": "AFC open read: error 1",
+      "type": "S_IFREG",
+      "size": "23291",
+      "hardLinkCount": "2"
+    }
+  ],
+  "finding": "Single-link files readable; both two-link manifest paths reject AFC open. Native link commit incompatible with target AFC. Exclusive rename fix pending new device verification."
+}
