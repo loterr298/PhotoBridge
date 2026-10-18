@@ -1,0 +1,14 @@
+{
+  "state": "USB_VERIFIED",
+  "resourcesVerified": 6,
+  "bytesVerified": 19968426,
+  "photosImport": "NOT_RUN",
+  "seconds": 0.5458203670000001,
+  "MiBPerSecondIncludingVerification": 34.889454785146896,
+  "assets": 3,
+  "resources": 6,
+  "content": "3 HEIC + 3 paired MOV from the verified Live Photo backup",
+  "originalsDeleted": false,
+  "phoneAppPreflight": "NOT_RUN",
+  "PhotosImport": "NOT_RUN"
+}

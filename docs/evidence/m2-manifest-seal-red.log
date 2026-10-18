@@ -1,0 +1,21 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+[1/4] Write sources
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[3/6] Emitting module CoreChecks
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:66:31: error: type 'RestoreSafety' has no member 'decodeManifest'
+ 64 |     try require(!manifest.json().isEmpty && manifest.restorationStatus.hasPrefix("NOT_RUN"), "export groups encode without claiming restore")
+ 65 |     try rejects("restore decode binds hash to exact decoded manifest bytes") {
+ 66 |         _ = try RestoreSafety.decodeManifest(data: manifest.json(), expectedSHA256: String(repeating: "0", count: 64))
+    |                               `- error: type 'RestoreSafety' has no member 'decodeManifest'
+ 67 |     }
+ 68 |     try require(manifest.logicalTime(ordinal: 2).timeIntervalSince(manifest.logicalTime(ordinal: 1)) == 5, "logical times use five seconds without media rewrite")
+[4/6] Compiling CoreChecks main.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:66:31: error: type 'RestoreSafety' has no member 'decodeManifest'
+ 64 |     try require(!manifest.json().isEmpty && manifest.restorationStatus.hasPrefix("NOT_RUN"), "export groups encode without claiming restore")
+ 65 |     try rejects("restore decode binds hash to exact decoded manifest bytes") {
+ 66 |         _ = try RestoreSafety.decodeManifest(data: manifest.json(), expectedSHA256: String(repeating: "0", count: 64))
+    |                               `- error: type 'RestoreSafety' has no member 'decodeManifest'
+ 67 |     }
+ 68 |     try require(manifest.logicalTime(ordinal: 2).timeIntervalSince(manifest.logicalTime(ordinal: 1)) == 5, "logical times use five seconds without media rewrite")

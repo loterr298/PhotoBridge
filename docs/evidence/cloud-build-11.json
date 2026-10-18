@@ -1,0 +1,22 @@
+{
+  "status": "SUCCESS",
+  "run": "https://github.com/loterr298/PhotoBridge/actions/runs/39147856877",
+  "sourceCommit": "fb7c4086822a731501998bcf6d63870d8c52a0f2",
+  "artifact": "12144375229",
+  "artifactSHA256": "cd80a5ae4ed92f3cfc5776edd135959a3ed9b2ff624d4298a640d904707ce536",
+  "localCRCAndChecksumsVerified": true,
+  "version": "0.2.1",
+  "build": "3",
+  "tests": {
+    "XCTest": 4,
+    "CoreChecks": 23,
+    "Python": 14
+  },
+  "ipaArm64AndModeVerified": true,
+  "MacBundledScriptsMatchReviewedSource": true,
+  "files": {
+    "PhotoBridgeOrderProbe-0.2.1-unsigned.ipa": "33caea4830cfb52387db6be695dea0410aa1d07a2ff373ccdc98aeca41e5266d",
+    "PhotoBridgeMac-Intel.zip": "4da058a9d747df9f60913e7e8140931a98661ee8dc271ef3f3e8b372ba318798"
+  },
+  "deviceScope": "Phone source build 403aae1e tested JPEG/edited and 3 HEIC+MOV Live pairs. Mac latest source tested both filesystem times. No Photos reimport or Live playback acceptance."
+}

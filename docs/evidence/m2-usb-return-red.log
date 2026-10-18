@@ -1,0 +1,41 @@
+test_corrupt_or_uncommitted_local_backup_writes_nothing_to_phone (test_album_restore.RestoreChecks) ... ERROR
+test_corrupt_usb_readback_never_publishes_ready_request (test_album_restore.RestoreChecks) ... ERROR
+test_local_resource_symlink_is_rejected_before_remote_writes (test_album_restore.RestoreChecks) ... ERROR
+test_upload_preserves_every_resource_and_publishes_request_last (test_album_restore.RestoreChecks) ... ERROR
+
+======================================================================
+ERROR: test_corrupt_or_uncommitted_local_backup_writes_nothing_to_phone (test_album_restore.RestoreChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_restore.py", line 8, in setUp
+    import album_restore
+ModuleNotFoundError: No module named 'album_restore'
+
+======================================================================
+ERROR: test_corrupt_usb_readback_never_publishes_ready_request (test_album_restore.RestoreChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_restore.py", line 8, in setUp
+    import album_restore
+ModuleNotFoundError: No module named 'album_restore'
+
+======================================================================
+ERROR: test_local_resource_symlink_is_rejected_before_remote_writes (test_album_restore.RestoreChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_restore.py", line 8, in setUp
+    import album_restore
+ModuleNotFoundError: No module named 'album_restore'
+
+======================================================================
+ERROR: test_upload_preserves_every_resource_and_publishes_request_last (test_album_restore.RestoreChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_restore.py", line 8, in setUp
+    import album_restore
+ModuleNotFoundError: No module named 'album_restore'
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+FAILED (errors=4)

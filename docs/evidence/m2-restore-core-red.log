@@ -1,0 +1,165 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+[1/4] Write sources
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[3/6] Emitting module CoreChecks
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:114:9: error: cannot find 'RestoreSafety' in scope
+112 |     let r = ExportResource(resourceIndex: 1, resourceType: 1, originalFilename: "source.HEIC", uniformTypeIdentifier: "public.heic",
+113 |         storedRelativePath: path, sha256: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", byteCount: 3)
+114 |     try RestoreSafety.verifyResource(r, in: dir)
+    |         `- error: cannot find 'RestoreSafety' in scope
+115 |     try require(Data(contentsOf: file) == Data("abc".utf8), "restore verification reads untouched resource bytes")
+116 |     try Data("abd".utf8).write(to: file)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:117:63: error: cannot find 'RestoreSafety' in scope
+115 |     try require(Data(contentsOf: file) == Data("abc".utf8), "restore verification reads untouched resource bytes")
+116 |     try Data("abd".utf8).write(to: file)
+117 |     try rejects("changed restore resource cannot pass") { try RestoreSafety.verifyResource(r, in: dir) }
+    |                                                               `- error: cannot find 'RestoreSafety' in scope
+118 |     let linked = dir.appendingPathComponent("linked")
+119 |     try FileManager.default.createSymbolicLink(at: linked, withDestinationURL: dir)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:120:66: error: cannot find 'RestoreSafety' in scope
+118 |     let linked = dir.appendingPathComponent("linked")
+119 |     try FileManager.default.createSymbolicLink(at: linked, withDestinationURL: dir)
+120 |     try rejects("restore rejects symbolic link ancestors") { try RestoreSafety.verifyResource(r, in: linked) }
+    |                                                                  `- error: cannot find 'RestoreSafety' in scope
+121 |     try RestoreSafety.claimOnce(in: dir)
+122 |     try rejects("restore never replays a prior Photos attempt") { try RestoreSafety.claimOnce(in: dir) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:121:9: error: cannot find 'RestoreSafety' in scope
+119 |     try FileManager.default.createSymbolicLink(at: linked, withDestinationURL: dir)
+120 |     try rejects("restore rejects symbolic link ancestors") { try RestoreSafety.verifyResource(r, in: linked) }
+121 |     try RestoreSafety.claimOnce(in: dir)
+    |         `- error: cannot find 'RestoreSafety' in scope
+122 |     try rejects("restore never replays a prior Photos attempt") { try RestoreSafety.claimOnce(in: dir) }
+123 |     try require(RestoreSafety.sameResources(expected: [r, r], observed: [r, r]), "restore resource comparison retains duplicate multiplicity")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:122:71: error: cannot find 'RestoreSafety' in scope
+120 |     try rejects("restore rejects symbolic link ancestors") { try RestoreSafety.verifyResource(r, in: linked) }
+121 |     try RestoreSafety.claimOnce(in: dir)
+122 |     try rejects("restore never replays a prior Photos attempt") { try RestoreSafety.claimOnce(in: dir) }
+    |                                                                       `- error: cannot find 'RestoreSafety' in scope
+123 |     try require(RestoreSafety.sameResources(expected: [r, r], observed: [r, r]), "restore resource comparison retains duplicate multiplicity")
+124 |     try require(!RestoreSafety.sameResources(expected: [r, r], observed: [r]), "missing resource cannot be hidden by set comparison")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:123:17: error: cannot find 'RestoreSafety' in scope
+121 |     try RestoreSafety.claimOnce(in: dir)
+122 |     try rejects("restore never replays a prior Photos attempt") { try RestoreSafety.claimOnce(in: dir) }
+123 |     try require(RestoreSafety.sameResources(expected: [r, r], observed: [r, r]), "restore resource comparison retains duplicate multiplicity")
+    |                 `- error: cannot find 'RestoreSafety' in scope
+124 |     try require(!RestoreSafety.sameResources(expected: [r, r], observed: [r]), "missing resource cannot be hidden by set comparison")
+125 |     try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-x", "new-y"])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:124:18: error: cannot find 'RestoreSafety' in scope
+122 |     try rejects("restore never replays a prior Photos attempt") { try RestoreSafety.claimOnce(in: dir) }
+123 |     try require(RestoreSafety.sameResources(expected: [r, r], observed: [r, r]), "restore resource comparison retains duplicate multiplicity")
+124 |     try require(!RestoreSafety.sameResources(expected: [r, r], observed: [r]), "missing resource cannot be hidden by set comparison")
+    |                  `- error: cannot find 'RestoreSafety' in scope
+125 |     try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-x", "new-y"])
+126 |     try rejects("restore detects mapped order mismatch") {
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:125:9: error: cannot find 'RestoreSafety' in scope
+123 |     try require(RestoreSafety.sameResources(expected: [r, r], observed: [r, r]), "restore resource comparison retains duplicate multiplicity")
+124 |     try require(!RestoreSafety.sameResources(expected: [r, r], observed: [r]), "missing resource cannot be hidden by set comparison")
+125 |     try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-x", "new-y"])
+    |         `- error: cannot find 'RestoreSafety' in scope
+126 |     try rejects("restore detects mapped order mismatch") {
+127 |         try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-y", "new-x"])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:127:13: error: cannot find 'RestoreSafety' in scope
+125 |     try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-x", "new-y"])
+126 |     try rejects("restore detects mapped order mismatch") {
+127 |         try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-y", "new-x"])
+    |             `- error: cannot find 'RestoreSafety' in scope
+128 |     }
+129 |     try rejects("restore rejects duplicate new identifiers") {
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:130:13: error: cannot find 'RestoreSafety' in scope
+128 |     }
+129 |     try rejects("restore rejects duplicate new identifiers") {
+130 |         try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-x"], observed: ["new-x", "new-x"])
+    |             `- error: cannot find 'RestoreSafety' in scope
+131 |     }
+132 |     print("8 restore safety checks passed; Photos import NOT_RUN")
+[4/6] Compiling CoreChecks main.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:114:9: error: cannot find 'RestoreSafety' in scope
+112 |     let r = ExportResource(resourceIndex: 1, resourceType: 1, originalFilename: "source.HEIC", uniformTypeIdentifier: "public.heic",
+113 |         storedRelativePath: path, sha256: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", byteCount: 3)
+114 |     try RestoreSafety.verifyResource(r, in: dir)
+    |         `- error: cannot find 'RestoreSafety' in scope
+115 |     try require(Data(contentsOf: file) == Data("abc".utf8), "restore verification reads untouched resource bytes")
+116 |     try Data("abd".utf8).write(to: file)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:117:63: error: cannot find 'RestoreSafety' in scope
+115 |     try require(Data(contentsOf: file) == Data("abc".utf8), "restore verification reads untouched resource bytes")
+116 |     try Data("abd".utf8).write(to: file)
+117 |     try rejects("changed restore resource cannot pass") { try RestoreSafety.verifyResource(r, in: dir) }
+    |                                                               `- error: cannot find 'RestoreSafety' in scope
+118 |     let linked = dir.appendingPathComponent("linked")
+119 |     try FileManager.default.createSymbolicLink(at: linked, withDestinationURL: dir)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:120:66: error: cannot find 'RestoreSafety' in scope
+118 |     let linked = dir.appendingPathComponent("linked")
+119 |     try FileManager.default.createSymbolicLink(at: linked, withDestinationURL: dir)
+120 |     try rejects("restore rejects symbolic link ancestors") { try RestoreSafety.verifyResource(r, in: linked) }
+    |                                                                  `- error: cannot find 'RestoreSafety' in scope
+121 |     try RestoreSafety.claimOnce(in: dir)
+122 |     try rejects("restore never replays a prior Photos attempt") { try RestoreSafety.claimOnce(in: dir) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:121:9: error: cannot find 'RestoreSafety' in scope
+119 |     try FileManager.default.createSymbolicLink(at: linked, withDestinationURL: dir)
+120 |     try rejects("restore rejects symbolic link ancestors") { try RestoreSafety.verifyResource(r, in: linked) }
+121 |     try RestoreSafety.claimOnce(in: dir)
+    |         `- error: cannot find 'RestoreSafety' in scope
+122 |     try rejects("restore never replays a prior Photos attempt") { try RestoreSafety.claimOnce(in: dir) }
+123 |     try require(RestoreSafety.sameResources(expected: [r, r], observed: [r, r]), "restore resource comparison retains duplicate multiplicity")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:122:71: error: cannot find 'RestoreSafety' in scope
+120 |     try rejects("restore rejects symbolic link ancestors") { try RestoreSafety.verifyResource(r, in: linked) }
+121 |     try RestoreSafety.claimOnce(in: dir)
+122 |     try rejects("restore never replays a prior Photos attempt") { try RestoreSafety.claimOnce(in: dir) }
+    |                                                                       `- error: cannot find 'RestoreSafety' in scope
+123 |     try require(RestoreSafety.sameResources(expected: [r, r], observed: [r, r]), "restore resource comparison retains duplicate multiplicity")
+124 |     try require(!RestoreSafety.sameResources(expected: [r, r], observed: [r]), "missing resource cannot be hidden by set comparison")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:123:17: error: cannot find 'RestoreSafety' in scope
+121 |     try RestoreSafety.claimOnce(in: dir)
+122 |     try rejects("restore never replays a prior Photos attempt") { try RestoreSafety.claimOnce(in: dir) }
+123 |     try require(RestoreSafety.sameResources(expected: [r, r], observed: [r, r]), "restore resource comparison retains duplicate multiplicity")
+    |                 `- error: cannot find 'RestoreSafety' in scope
+124 |     try require(!RestoreSafety.sameResources(expected: [r, r], observed: [r]), "missing resource cannot be hidden by set comparison")
+125 |     try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-x", "new-y"])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:124:18: error: cannot find 'RestoreSafety' in scope
+122 |     try rejects("restore never replays a prior Photos attempt") { try RestoreSafety.claimOnce(in: dir) }
+123 |     try require(RestoreSafety.sameResources(expected: [r, r], observed: [r, r]), "restore resource comparison retains duplicate multiplicity")
+124 |     try require(!RestoreSafety.sameResources(expected: [r, r], observed: [r]), "missing resource cannot be hidden by set comparison")
+    |                  `- error: cannot find 'RestoreSafety' in scope
+125 |     try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-x", "new-y"])
+126 |     try rejects("restore detects mapped order mismatch") {
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:125:9: error: cannot find 'RestoreSafety' in scope
+123 |     try require(RestoreSafety.sameResources(expected: [r, r], observed: [r, r]), "restore resource comparison retains duplicate multiplicity")
+124 |     try require(!RestoreSafety.sameResources(expected: [r, r], observed: [r]), "missing resource cannot be hidden by set comparison")
+125 |     try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-x", "new-y"])
+    |         `- error: cannot find 'RestoreSafety' in scope
+126 |     try rejects("restore detects mapped order mismatch") {
+127 |         try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-y", "new-x"])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:127:13: error: cannot find 'RestoreSafety' in scope
+125 |     try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-x", "new-y"])
+126 |     try rejects("restore detects mapped order mismatch") {
+127 |         try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-y"], observed: ["new-y", "new-x"])
+    |             `- error: cannot find 'RestoreSafety' in scope
+128 |     }
+129 |     try rejects("restore rejects duplicate new identifiers") {
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:130:13: error: cannot find 'RestoreSafety' in scope
+128 |     }
+129 |     try rejects("restore rejects duplicate new identifiers") {
+130 |         try RestoreSafety.verifyOrder(sourceIDs: ["old-a", "old-b"], mapping: ["old-a": "new-x", "old-b": "new-x"], observed: ["new-x", "new-x"])
+    |             `- error: cannot find 'RestoreSafety' in scope
+131 |     }
+132 |     print("8 restore safety checks passed; Photos import NOT_RUN")
