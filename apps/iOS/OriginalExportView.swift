@@ -73,7 +73,7 @@ import PhotoBridgeCore
                     // Hash on a utility worker; media is never decoded/re-encoded.
                     let receipt = try await Task.detached(priority: .utility) { try ProbeFiles.inspect(part) }.value
                     guard receipt.byteCount > 0 else { throw ExportError.invalidManifest("原始资源为空，不能完成") }
-                    try FileManager.default.linkItem(at: part, to: destination)
+                    try StagingFiles.commit(part: part, destination: destination)
                     exported.append(ExportResource(resourceIndex: resourceIndex + 1, resourceType: resource.type.rawValue,
                         originalFilename: resource.originalFilename, uniformTypeIdentifier: resource.uniformTypeIdentifier,
                         storedRelativePath: relative, sha256: receipt.sha256, byteCount: receipt.byteCount))
@@ -99,7 +99,7 @@ import PhotoBridgeCore
             try journal("STAGED")
             let manifestPart = dir.appendingPathComponent("album-order.json.part")
             try manifest.json().write(to: manifestPart, options: .withoutOverwriting)
-            try FileManager.default.linkItem(at: manifestPart, to: dir.appendingPathComponent("album-order.json"))
+            try StagingFiles.commit(part: manifestPart, destination: dir.appendingPathComponent("album-order.json"))
             message = "本机暂存完成：\(assets.count) 项、\(resourcesCompleted) 个资源。Mac USB 复制与校验尚未执行；此操作不代表相簿恢复成功。"
         } catch {
             let e = error as NSError
