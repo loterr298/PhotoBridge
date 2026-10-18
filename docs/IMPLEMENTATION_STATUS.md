@@ -202,3 +202,18 @@ New regression genuinely failed against the prior link implementation, then pass
 - 首版不自动恢复已尝试的照片库事务，不做失败后删除、不提供无证据的续传/万张性能承诺。最终产品化 UI 和恢复健壮性继续后续阶段。
 
 独立审查指出预检解析与 hash 使用两次文件读取可能产生时序差异。已改为 RestoreSafety.decodeManifest 对同一 Data 验 hash 后再解析，并在恢复启动及最终提交前逐字节确认 manifest/request 与预检时完全一致。增加错误 hash 拒绝检查；修复两个遗漏 try 的真实本地类型检查错误后再次类型检查通过。完整 32 核心 / 18 Python 通过，无剩余 Critical/Important 审查项。
+
+
+### 0.3.0 实际云构建、安装包与当前验收边界
+
+[Actions #12](https://github.com/loterr298/PhotoBridge/actions/runs/39149748307) 与修正过时界面说明后的最终 [Actions #13](https://github.com/loterr298/PhotoBridge/actions/runs/39149841441) 均 SUCCESS。交付使用最终源码 **3768816d24b1dfceceeb3c5b0b24e96816018632**，实际 **4 XCTest / 32 CoreChecks / 18 Python** 通过，iOS BUILD SUCCEEDED，Intel App x86_64 编译和 ad-hoc 验签通过。实际 Xcode 16.4 / iOS 18.5 SDK，未假称使用 iOS 27 SDK。
+
+[云产物](https://github.com/loterr298/PhotoBridge/actions/runs/39149841441/artifacts/12144548414) 已下载并逐个验证，整体 SHA-256 a0fff1ee6f21116d22e4bd15b43eda0b139d0c6d37ec36c3600e87cc82602a38，ZIP CRC / 内部 SHA256SUMS 通过。IPA 编译后版本 **0.3.0/build4**、稳定 bundle ID、arm64 Mach-O、执行权限和源码 commit 已核对；Intel 包内 3 份 USB 脚本与本地审查源码逐字节相同。
+
+- `build/PhotoBridge-0.3.0-M2/PhotoBridgeOrderProbe-0.3.0-unsigned.ipa`：SHA-256 3419cfc9893e575ab1cb76e37aa653ca51db44b61e38db164959e78feb10f0f3。已提供用户按原个人签名方式覆盖安装；不能直接安装未签名 IPA，不卸载旧 App。
+- `build/PhotoBridge-0.3.0-M2/PhotoBridgeMac-Intel.zip`：SHA-256 31bbc1d4876d1f248208ed55d2ce12e3878803e3f456d32fbee565f145cbff33。本机旧 App 完整备份后更新、验签并启动；`m2-mac-install.json`。
+- `build/PhotoBridge-0.3.0-M2-Apps.zip`：双端包、SHA256SUMS 和具体真机流程。云日志/成功截图/校验记录在 cloud-build-13.json、cloud-13-*.log、cloud-build-13-success.png。
+
+**当前已实测：** 限定样本真实 USB 原图/编辑附件/Live HEIC-MOV 导出和 5 秒 Mac 创建/修改时间；Live 资源 USB 反向回读 hash。
+**设备待验证：** 新版手机收件预检、PhotoKit 完整资源导入、导入后资源 bytes/顺序、系统照片人工顺序及 Live 动态播放。已请用户使用预先回传的 3 项/6 资源完成该验证，未把云编译或 AFC 收件标为 Photos 恢复通过。
+**未完成：** PNG/DNG/复杂编辑/iCloud/权限与空间故障验收、原图单次 100 MiB 场景、可靠断点续传/事务恢复、万张稳定性能、最终极简产品 UI。原图和私人清单仅本机保存，不进云端。
