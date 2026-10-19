@@ -16,6 +16,6 @@
 - [x] Implement and test pure recovery model plus immutable native ledger/atomic metadata; never infer a failed transaction from an absent asset.
 - [x] Integrate new/restored paths with per-run readback, immutable mappings, actual counters, final report and an explicit one-asset post-commit/pre-verification diagnostic stop.
 - [x] Run full local suites and Intel build, independent review and regression fixes, commit/status update; build0.3.6/build10 in Actions and verify artifacts.
-- [ ] After user installs signed iPhone update, new3-Live inbox: stop after1 committed copy before verification, capture ledger, user restart, resume; audit6 resources and same first created ID with only2 further creations. Device result stays NOT_RUN until actual evidence. User checks playback/order separately.
+- [x] After user installs signed iPhone update, new3-Live inbox: stop after1 committed copy before verification, capture ledger, user restart, resume; audit6 resources and same first created ID with only2 further creations. Device result stays NOT_RUN until actual evidence. User checks playback/order separately.
 
 Source: https://developer.apple.com/documentation/photos/phobjectplaceholder . Power-loss durability and arbitrary destruction of App journal files are not claimed; missing/corrupt/ambiguous durable intent data fail closed.
