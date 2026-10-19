@@ -97,6 +97,7 @@ class AFC:
             'afc_file_open': ([ptr, C.c_char_p, C.c_int, C.POINTER(u64)], C.c_int),
             'afc_file_close': ([ptr, u64], C.c_int),
             'afc_file_read': ([ptr, u64, ptr, u32, C.POINTER(u32)], C.c_int),
+            'afc_file_seek': ([ptr, u64, C.c_int64, C.c_int], C.c_int),
             'afc_file_write': ([ptr, u64, ptr, u32, C.POINTER(u32)], C.c_int),
             'afc_make_directory': ([ptr, C.c_char_p], C.c_int),
             'afc_rename_path': ([ptr, C.c_char_p, C.c_char_p], C.c_int),
@@ -143,11 +144,15 @@ class AFC:
         if not exclusive and code == 16: return  # AFC_E_OBJECT_EXISTS
         self.check(code, 'AFC mkdir (existing session is never reused)')
 
-    def read(self, path, sink, maximum=None):
+    def read(self, path, sink, maximum=None, offset=0):
+        if type(offset) is not int or not 0 <= offset <= 2**63 - 1 or (maximum is not None and offset > maximum):
+            raise ValueError('Invalid AFC resume offset')
         handle = C.c_uint64()
         self.check(self.lib.afc_file_open(self.afc, documents_path(path).encode(), 1, C.byref(handle)), 'AFC open read')
-        total = 0
+        total = offset
         try:
+            if offset:
+                self.check(self.lib.afc_file_seek(self.afc, handle, offset, os.SEEK_SET), 'AFC seek for resume')
             while True:
                 buffer = C.create_string_buffer(CHUNK); count = C.c_uint32()
                 self.check(self.lib.afc_file_read(self.afc, handle, buffer, CHUNK, C.byref(count)), 'AFC read')
