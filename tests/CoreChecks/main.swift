@@ -170,5 +170,29 @@ do {
             _ = try ResourceRoundTripComparison.verify(expected: [r(before)], observed: [r(after)], allowAdjustmentTimestampRewrite: true, loadOriginal: { _ in before }, loadObserved: { _ in after })
         }
     }
-    print("9 authorized adjustment timestamp checks passed; new device policy NOT_RUN")
+    let unknownBefore = Data("<plist version=\"1.0\"><dict><unknown>BAD</unknown><key>adjustmentTimestamp</key><date>2020-01-01T00:00:00Z</date></dict></plist>".utf8)
+    let unknownAfter = Data("<plist version=\"1.0\"><dict><unknown>XYZ</unknown><key>adjustmentTimestamp</key><date>2026-01-01T00:00:00Z</date></dict></plist>".utf8)
+    try rejects("unknown XML elements cannot conceal changed payload") {
+        _ = try ResourceRoundTripComparison.verify(expected: [r(unknownBefore)], observed: [r(unknownAfter)], allowAdjustmentTimestampRewrite: true, loadOriginal: { _ in unknownBefore }, loadObserved: { _ in unknownAfter })
+    }
+    for leaf in ["<data>YQ==PAYLOAD</data>", "<date>2001-01-01T00:00:00ZPAYLOAD</date>"] {
+        func scalar(_ payload: String, year: String) -> Data {
+            Data(("<plist version=\"1.0\"><dict><key>payload</key>" + leaf.replacingOccurrences(of: "PAYLOAD", with: payload) + "<key>adjustmentTimestamp</key><date>\(year)-01-01T00:00:00Z</date></dict></plist>").utf8)
+        }
+        let before = scalar("BAD", year: "2020"); let after = scalar("XYZ", year: "2026")
+        try rejects("ignored scalar text cannot conceal changed payload: \(leaf)") {
+            _ = try ResourceRoundTripComparison.verify(expected: [r(before)], observed: [r(after)], allowAdjustmentTimestampRewrite: true, loadOriginal: { _ in before }, loadObserved: { _ in after })
+        }
+    }
+    for (oldLeaf, newLeaf) in [("<date>2020-02-31T00:00:00Z</date>", "<date>2020-03-02T00:00:00Z</date>"),
+                               ("<real>1e999</real>", "<real>2e999</real>"), ("<real>1e-999</real>", "<real>2e-999</real>")] {
+        func scalar(_ leaf: String, year: String) -> Data {
+            Data(("<plist version=\"1.0\"><dict><key>payload</key>" + leaf + "<key>adjustmentTimestamp</key><date>\(year)-01-01T00:00:00Z</date></dict></plist>").utf8)
+        }
+        let before = scalar(oldLeaf, year: "2020"); let after = scalar(newLeaf, year: "2026")
+        try rejects("scalar normalization cannot conceal changed payload: \(oldLeaf)") {
+            _ = try ResourceRoundTripComparison.verify(expected: [r(before)], observed: [r(after)], allowAdjustmentTimestampRewrite: true, loadOriginal: { _ in before }, loadObserved: { _ in after })
+        }
+    }
+    print("15 authorized adjustment timestamp checks passed; device results require separate evidence")
 } catch { fputs("FAIL timestamp policy: \(error)\n", stderr); exit(1) }
