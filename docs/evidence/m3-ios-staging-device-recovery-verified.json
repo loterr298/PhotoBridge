@@ -1,0 +1,39 @@
+{
+  "status": "IOS_STAGING_RESOURCE_BOUNDARY_RECOVERY_VERIFIED",
+  "resourcesVerified": 30,
+  "bytesVerified": 77450231,
+  "reusedVerifiedResources": 1,
+  "photoKitResourcesRead": 29,
+  "partialResourceBytesReused": 0,
+  "independentMacShasumMatches": 30,
+  "newSession": true,
+  "oldPhoneFilesBytesAndAvailableAttributesUnchanged": true,
+  "phoneBirthtimeAvailable": true,
+  "userConfirmedAppRelaunch": true,
+  "phoneFilesWrittenByAudit": false,
+  "photosImport": "NOT_RUN",
+  "forcedTerminationDuringResourceWrite": "NOT_RUN",
+  "sourceReferenceByteIdentity": true,
+  "downloadStatus": "COMMITTED",
+  "runtimeBuild": "37798f7ae000fadffab9949ad684b0ee5691ef18",
+  "counterEvidence": "App runtime journal; output bytes independently verified",
+  "frozenSourceAndFinalManifestBound": true,
+  "oldPhoneDirectoryAttributes": "NOT_AUDITED",
+  "sourceAssets": 20,
+  "preservedOldPhoneFileCount": 6,
+  "oldPhoneFileAttributeKeysVerified": [
+    "st_birthtime",
+    "st_mtime",
+    "st_nlink",
+    "st_size"
+  ],
+  "sourceSnapshotSystemVersion": "27.2",
+  "userRelaunchAttestation": "以重启继续",
+  "observedAt": "2026-10-19T07:52:37.645997+00:00",
+  "scope": "Actual target-build one-resource boundary stop, user-confirmed App relaunch and new-session staging recovery; no forced termination during resource write or Photos transaction claim",
+  "auditSourceSHA256": {
+    "tests/device_staging_recovery.py": "b6f603e0c80d06fa9e2136d1d5a8ef2e407081a659e4ae7ce4273c38d1daaeb6",
+    "scripts/album_export.py": "2a82495d478ebf2e4c9a6bf33616a8fbef1b72b168978a99bdb61fd88e3e3b72",
+    "scripts/usb_probe.py": "a0d93a0277c7221de9a206a482e49e31c9d0c8df48de3e64398f930108a65ca2"
+  }
+}

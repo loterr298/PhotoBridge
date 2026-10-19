@@ -1,0 +1,14 @@
+{
+  "status": "STOPPED_SOURCE_BASELINE_CAPTURED",
+  "runtimeBuild": "37798f7ae000fadffab9949ad684b0ee5691ef18",
+  "completeResources": 1,
+  "completeManifestPublished": false,
+  "preservedPhoneFileCount": 6,
+  "actualDeviceFileAttributesAvailable": [
+    "st_birthtime",
+    "st_mtime",
+    "st_nlink",
+    "st_size"
+  ],
+  "phoneFilesWrittenByAudit": false
+}

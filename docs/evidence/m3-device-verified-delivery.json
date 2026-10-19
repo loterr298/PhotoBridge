@@ -1,0 +1,9 @@
+{
+  "bundle": "PhotoBridge-0.3.5-M3-Apps.zip",
+  "sha256": "9b53fc7109df10282b876797f59e673ef8b7a63c65c72e6b7c802608f02f6041",
+  "priorBundlePreserved": true,
+  "crcAndInternalHashesVerified": true,
+  "appBinariesChanged": false,
+  "privateMediaOrIdentifiersIncluded": false,
+  "deviceAcceptanceAdded": true
+}

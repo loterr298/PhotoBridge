@@ -1,0 +1,14 @@
+test_manifest_is_bound_to_source_plan_and_current_session (test_device_staging_recovery.StagingAuditBindingChecks) ... ERROR
+
+======================================================================
+ERROR: test_manifest_is_bound_to_source_plan_and_current_session (test_device_staging_recovery.StagingAuditBindingChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_device_staging_recovery.py", line 17, in test_manifest_is_bound_to_source_plan_and_current_session
+    audit.bind_plan_manifest(plan, manifest)
+AttributeError: module 'device_staging_recovery' has no attribute 'bind_plan_manifest'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (errors=1)
