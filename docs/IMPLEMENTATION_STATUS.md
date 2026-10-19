@@ -450,3 +450,15 @@ RestoreService 从视图拆出，真实流程支持重新预检已记录新协�
 仅更新交付说明并加入脱敏DEVICE_ACCEPTANCE.json，iPhone/Mac二进制与云19完全相同，无需重装。旧9c7045a4…包保留为before-device-audit，当前双端ZIP精确hash见m3-photos-recovery-device-verified-delivery.json，CRC/内部SHA及两二进制hash再次通过。源代码/证据真实提交，新的7项审计测试属于云19之后本地检查，当前51 Python通过；云19仍44。
 
 下一步待验证：Photos提交中/资源写入中终止、权限/空间/iCloud故障、PNG/RAW及更多编辑资源、规模性能；Mac当前GUI仍是诊断入口，真实传输由随附CLI完成，最终极简可操作双端UI仍未实现。本阶段通过仅覆盖该3-Live样本受控提交边界恢复，不宣称全产品完成。
+
+### 恢复权限和空间前置保护（0.3.7/build11，设备待测）
+
+新增 OperationPreconditions：full/limited/denied/restricted/notDetermined/unknown明确区分，仅full接受；恢复写预算为剩余新Photos副本+本轮所有未完成回读+128MiB余量，未知/负容量、大小/计数异常及溢出拒绝。恢复前、创建相簿/资产前及每份回读资源前重新检查权限和真实容量（清除URL缓存）。容量未预留，不保证系统开销/其他写入后仍够；失败保留旧数据和部分文件。导出仅共享权限检查，因资源长度未知，不宣称导出完整空间估算。
+
+先缺失类型RED，首批17新检查通过。独立审查发现当前资产全量预算在每份资源前重复计算，会把已经占用的资源再次算入，同时遗漏后续资产预算；补RED后改成全局预算扣除实际已inspect/提交的当前资源bytes，并保留未来创建和回读。增加精确边界、外部空间下降、无有效当前资产等回归。最终57 RecoveryChecks（含24新增）通过；47 CoreChecks/23 StagingChecks/51 Python及Intel构建另按实际日志记录。iOS本机仅parse，完整SDK/XCTest待云端，不把模拟当真机故障通过。
+
+新增“仅预检：模拟零可用空间”，只替换本次预检输入，保存实际容量和模拟值，ready=false，不创建填充文件或Photos请求、不占用恢复声明；下一次须正常预检。预检失败/成功均留独立UUID报告；修复已有恢复会话却提示“尚未导入”的文案，明确已有副本数量。容量诊断默认存在ApplicationSupport私有目录，手机显著展示容量/估算/模拟及报告范围，用户每次点击“允许Mac读取这份诊断报告”才复制到共享Documents。共享恢复日志不保存实际容量，仅保留源清单计算的预算和错误代码。独立复审无剩余Critical/Important；服务层写报告/共享失败注入尚未测。
+
+新增PrivacyInfo.xcprivacy公开所用API用途及工程资源/CI包内检查，不宣称完整商店审查完成。操作及验收边界见RESTORE_PRECONDITIONS_RUNBOOK.md；计划新3-Live收件仅预检：模拟0→真实权限无→恢复全部权限正常预检，用户逐份查看并共享诊断，Mac比较收件原字节/属性没有变化。当前此新二进制、真实撤权预检、容量模拟真机均NOT_RUN；真实磁盘耗尽/事务中撤权/提交中强杀仍NOT_RUN。
+
+实际本机最终57 RecoveryChecks /47 CoreChecks /23 StagingChecks /51 Python通过，Intel x86_64 release编译、严格签名检查成功（0.3.7/build11）；m3-preconditions-{green,core,staging,python,mac-build}.log。iOS完整编译/7 XCTest仍待云端；已准备0.3.7/build11及PrivacyInfo包内断言。
