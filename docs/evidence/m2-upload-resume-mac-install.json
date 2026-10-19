@@ -1,0 +1,12 @@
+{
+  "installedVersion": "0.3.4",
+  "build": "8",
+  "previousVersion": "0.3.3",
+  "previousAppPreservedAsDirectoryAndZIP": true,
+  "codesignStrictVerified": true,
+  "architecture": "x86_64",
+  "installedScriptsMatchExactTestedSource": true,
+  "installedUploadCLIHelpExecuted": true,
+  "runningGUIProcessVersion": "NOT_OBSERVED",
+  "scope": "Cloud bundle installed and verified; existing GUI process restart or final UI acceptance not claimed"
+}

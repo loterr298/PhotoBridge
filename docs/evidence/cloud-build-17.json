@@ -1,0 +1,23 @@
+{
+  "status": "SUCCESS",
+  "runURL": "https://github.com/loterr298/PhotoBridge/actions/runs/39214737400",
+  "sourceCommit": "103996d252a11d7c43ad98cab5f74e92833d3572",
+  "artifactID": 12168289317,
+  "outerSHA256": "400ccf1f6466229e0b29b4bb1170eefb4de580692bb585916fc41d0d276a8964",
+  "crcAndInternalSHA256Verified": true,
+  "version": "0.3.4",
+  "build": "8",
+  "iOSArchitecture": "arm64",
+  "macOSArchitecture": "x86_64",
+  "xctestPassed": 4,
+  "coreChecksPassed": 47,
+  "pythonTestsPassed": 41,
+  "bundledScriptsMatchLocalSource": true,
+  "pythonBytecodeCachePackaged": false,
+  "products": {
+    "PhotoBridgeOrderProbe-0.3.4-unsigned.ipa": "b71981abb804e8c780d80baa86a6faec2e73774ad0781bbd95561a1a0ce80219",
+    "PhotoBridgeMac-Intel.zip": "f54bfd9bff1e0844c91e9ce88602a0fc52fc176c1ecad98167af60739dfaf920"
+  },
+  "deviceRuntimeOfThisIOSBuild": "NOT_RUN",
+  "scope": "Mac upload continuation was physically tested with exact local scripts and installed iPhone0.3.3; new iOS0.3.4 installation not required for host upload feature"
+}
