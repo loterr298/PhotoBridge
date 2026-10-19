@@ -1,6 +1,6 @@
 # Mac USB 下载继续执行
 
-当前支持 **App 已完整暂存 → Mac 下载** 的继续执行。尚不支持 iPhone 暂存续传、Mac 上传续传或不确定的照片库事务重放。
+当前支持 **App 已完整暂存 → Mac 下载** 的继续执行。Mac 上传继续执行见 [独立说明](USB_UPLOAD_RESUME_RUNBOOK.md)。尚不支持 iPhone 暂存续传或不确定的照片库事务重放。
 
 ```bash
 python3 scripts/album_resume.py --remote Exports/实际UUID \

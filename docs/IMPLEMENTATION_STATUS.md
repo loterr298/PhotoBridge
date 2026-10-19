@@ -320,3 +320,20 @@ dw 的新会话已通过真实 USB 发送并回读 20 项/30 份资源/77,450,23
 本机原 `/Applications/PhotoBridgeMac.app`（0.3.1）先完整保存 ZIP 及目录备份，再装入干净的0.3.3云包；严格验签、Intel架构及安装后脚本源码均核对，`m2-afc-fix-mac-install.json`。没有宣称现有GUI进程已重启或界面已验收。iPhone0.3.3运行时仍 **NOT_RUN**；不要求为Mac下载修复重复导入照片。下一次手机恢复前沿用原个人签名方式覆盖更新，不卸载旧App。
 
 当前可信范围：目标设备自建相簿20项手动顺序及改位复测；限定 JPEG/编辑附件与3组Live的往返，编辑附件仅明确授权时间例外；双向USB样本；Mac文件系统5秒时间；受控和真实物理拔线后的Mac下载继续。尚未完成：上传/iPhone暂存/Photos事务安全恢复、PNG/DNG/更多编辑/iCloud与权限空间故障、大规模及最终极简双端操作UI。原始媒体、全部失败现场和私人数据保持在本机。
+
+
+### 0.3.3 手机实际运行确认；Mac 上传续传（0.3.4/build8）
+
+用户完成覆盖安装并保存诊断后，经 USB 取回新 JSON，capturedAt=2026-10-19T06:58:31Z，运行源码 c786f22119a320bebbb6b76a518616a3e567494c，full/nil-options/20项，符合云16的0.3.3。只证明该版已运行并读取相簿；没有把旧0.3.1 Photos恢复结果挪用为新恢复通过。公开 m2-ios-0.3.3-runtime-album-read.json 不包含标识。
+
+新增 scripts/upload_resume.py；复用已 COMMITTED 本机备份的全量字节验证。不可变 owner 绑定 session/nonce/精确清单 hash，原生 AFC 排他锁限定合作写入者，所有父目录和文件类型检查，拒绝 symlink/多链接/歧义文件、已发布请求及 Photos 尝试。完整资源实际回读核验后只读复用；部分资源逐字节比对前缀，以非截断 RW 模式打开并校验 EOF 后追加。全量 USB hash 后提交，ready 请求最后；旧日志保留、每次生成新日志。仅限新收件目录，不重放 Photos。旧版无 owner 的会话拒绝续传。
+
+已先记录缺失模块 RED，实现后完整测试通过。独立复审发现新会话父目录 symlink 绕过，已增加父目录及新 session 检查，移除防护后回归确实失败，修复后通过；m2-upload-symlink-red.log。另一处验收边界：完整大小 .part 可能因回执丢失而存在，不能冒充实际续写；新增回归 RED，再要求严格部分 0<size<expected，并观察正数后缀实际追加，m2-upload-full-part-red.log。最终独立复核无剩余 Critical/Important。
+
+真实 USB-only 两客户端验证原生排他锁：第二客户端 error19，首客户端关闭后可重新获得；m2-upload-native-afc-lock.json。实际 Live 3项/6资源受控读取中断后新 AFC 继续：复用1份、保留3,024,889 bytes、实际上传15,582,759 bytes；独立系统 shasum 6/6、原备份字节/mtime/birthtime、旧日志及已完成手机文件均不变。此受控测试没有拔线，m2-usb-upload-controlled-resume-verified.json。
+
+用户同意物理上传测试，提示后拔插并回复“已连接”。真实 dw 上传记录 **IOUSB消失14.0832秒 / AFC write error30 14.7056秒**，没有提前发布请求。重连新 USB-only AFC，严格部分 **3,145,728 bytes** 通过前缀检查并实际追加 **1,284,958 bytes**，复用3份已完成文件，本次新上传资源总 **65,413,565 bytes**；全部 **30份 / 77,450,231 bytes** USB 回读和系统 shasum 30/30通过，源字节/mtime/birthtime、旧日志、已完成手机文件不变，ready最后。**本机此样本物理USB上传续传通过，Photos NOT_RUN**。源读取为人工操作限速1MiB/s，不能当性能基准。m2-physical-usb-upload-resume-verified.json；私有文件及会话留本地。
+
+本轮实际 **41 Python / 47 CoreChecks** 通过，m2-upload-full-tests.log / m2-upload-core-checks.log；Intel x86_64 App 本地编译、严格签名检查完成，m2-upload-mac-build.log。0.3.4/build8 元数据及上传工具准备完毕，新云编译/产物尚未核对（下文另记）。手机现有0.3.3无需为纯Mac上传工具再安装；没有要求重复导入。
+
+继续待办：iPhone暂存恢复、Photos事务不确定状态协调、PNG/DNG/更多编辑/iCloud/权限和空间故障、万张压力与速度优化、可实际操作的最终极简双端UI。当前 Mac GUI 仍是诊断入口，实际传输由随附CLI执行，未冒充最终产品。原媒体内部 EXIF/GPS/MakerNotes 等未写入；唯一额外Photos编辑记录时间授权边界不变。
