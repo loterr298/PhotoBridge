@@ -1,0 +1,71 @@
+test_audit_requires_actual_bytes_even_when_phone_report_says_pass (test_restore_audit.IndependentAuditChecks) ... ok
+test_bad_order_unapproved_policy_and_unsafe_paths_cannot_pass (test_restore_audit.IndependentAuditChecks) ... ok
+test_fresh_verification_attempt_directory_is_independently_downloaded (test_restore_audit.IndependentAuditChecks) ... ERROR
+test_phone_verification_directory_cannot_escape_a_named_attempt (test_restore_audit.IndependentAuditChecks) ... test_unknown_xml_change_cannot_pass_the_complete_audit (test_restore_audit.IndependentAuditChecks) ... ok
+
+======================================================================
+ERROR: test_fresh_verification_attempt_directory_is_independently_downloaded (test_restore_audit.IndependentAuditChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_restore_audit.py", line 68, in test_fresh_verification_attempt_directory_is_independently_downloaded
+    result = audit(client, 'RestoreInbox/' + manifest['sessionID'], source, root / 'audit')
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/device_restore_audit.py", line 53, in audit
+    data = read(relative); (output / Path(relative).name).write_bytes(data)
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/device_restore_audit.py", line 31, in read
+    data = io.BytesIO(); client.read(remote + '/' + relative, data.write, maximum)
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_restore_audit.py", line 28, in read
+    data = json.dumps(report).encode() if name == 'restore-report.json' else files[name]
+KeyError: 'verification/000001-resources.json'
+
+======================================================================
+FAIL: test_phone_verification_directory_cannot_escape_a_named_attempt (test_restore_audit.IndependentAuditChecks) (path='../outside')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_restore_audit.py", line 79, in test_phone_verification_directory_cannot_escape_a_named_attempt
+    audit(client, 'RestoreInbox/' + manifest['sessionID'], source, root / 'audit')
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_phone_verification_directory_cannot_escape_a_named_attempt (test_restore_audit.IndependentAuditChecks) (path='/absolute')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_restore_audit.py", line 79, in test_phone_verification_directory_cannot_escape_a_named_attempt
+    audit(client, 'RestoreInbox/' + manifest['sessionID'], source, root / 'audit')
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_phone_verification_directory_cannot_escape_a_named_attempt (test_restore_audit.IndependentAuditChecks) (path='verification/../other')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_restore_audit.py", line 79, in test_phone_verification_directory_cannot_escape_a_named_attempt
+    audit(client, 'RestoreInbox/' + manifest['sessionID'], source, root / 'audit')
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_phone_verification_directory_cannot_escape_a_named_attempt (test_restore_audit.IndependentAuditChecks) (path='verification-attempts/not-a-uuid')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_restore_audit.py", line 79, in test_phone_verification_directory_cannot_escape_a_named_attempt
+    audit(client, 'RestoreInbox/' + manifest['sessionID'], source, root / 'audit')
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_phone_verification_directory_cannot_escape_a_named_attempt (test_restore_audit.IndependentAuditChecks) (path='verification-attempts/../verification')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_restore_audit.py", line 79, in test_phone_verification_directory_cannot_escape_a_named_attempt
+    audit(client, 'RestoreInbox/' + manifest['sessionID'], source, root / 'audit')
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_phone_verification_directory_cannot_escape_a_named_attempt (test_restore_audit.IndependentAuditChecks) (path='verification-attempts/BD0AC183-7BB7-456E-9469-32FF1ECCEE3A/extra')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_restore_audit.py", line 79, in test_phone_verification_directory_cannot_escape_a_named_attempt
+    audit(client, 'RestoreInbox/' + manifest['sessionID'], source, root / 'audit')
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.565s
+
+FAILED (failures=6, errors=1)

@@ -1,0 +1,29 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+[1/4] Write sources
+[3/6] Emitting module RecoveryChecks
+[4/6] Compiling RecoveryChecks main.swift
+[4/7] Write Objects.LinkFileList
+[5/7] Linking RecoveryChecks
+[6/7] Applying RecoveryChecks
+Build of product 'RecoveryChecks' complete! (1.34s)
+FAIL recovery: invalidManifest("duplicate newly-created identity refused before journal write")
+PASS: new durable plan has no Photos objects
+PASS: second native writer lock refused
+PASS: native lock released for a later invocation
+PASS: album intent without placeholder is ambiguous, never recreated
+PASS: durable album placeholder reconstructed after restart
+PASS: missing actual album does not authorize another album
+PASS: wrong actual album refused
+PASS: asset intent without placeholder is ambiguous, never recreated
+PASS: committed-but-unverified explicit identity is preserved
+PASS: invisible recorded object never permits replay
+PASS: visible object outside expected album refused
+PASS: pending identity adopted only after actual album membership matches
+PASS: next create cannot precede prior resource verification
+PASS: verified modification date keeps subsecond precision
+PASS: changed verified asset version refused
+PASS: existing intent cannot be overwritten or replayed
+PASS: extreme negative ordinal is rejected without underflow
+PASS: source originals cannot be adopted as newly created copies

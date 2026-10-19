@@ -1,0 +1,11 @@
+[0/1] Planning build
+Building for production...
+[0/4] Write sources
+[1/4] Write swift-version--1AB21518FC5DEDBE.txt
+[3/5] Compiling PhotoBridgeCore AlbumManifest.swift
+[4/6] Compiling PhotoBridgeMac PhotoBridgeMac.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking PhotoBridgeMac
+Build of product 'PhotoBridgeMac' complete! (10.79s)
+Non-fat file: build/PhotoBridgeMac.app/Contents/MacOS/PhotoBridgeMac is architecture: x86_64
+1332838439593ac37cd837d9fd3e3468570b69adbe11b5e1b57540a8664e6419  build/PhotoBridgeMac-Intel.zip

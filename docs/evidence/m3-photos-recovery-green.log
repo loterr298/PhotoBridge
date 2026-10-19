@@ -1,0 +1,44 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+[1/4] Write sources
+[3/6] Emitting module RecoveryChecks
+[4/6] Compiling RecoveryChecks main.swift
+[4/7] Write Objects.LinkFileList
+[5/7] Linking RecoveryChecks
+[6/7] Applying RecoveryChecks
+Build of product 'RecoveryChecks' complete! (1.97s)
+PASS: new durable plan has no Photos objects
+PASS: second native writer lock refused
+PASS: native lock released for a later invocation
+PASS: album intent without placeholder is ambiguous, never recreated
+PASS: durable album placeholder reconstructed after restart
+PASS: missing actual album does not authorize another album
+PASS: wrong actual album refused
+PASS: asset intent without placeholder is ambiguous, never recreated
+PASS: committed-but-unverified explicit identity is preserved
+PASS: invisible recorded object never permits replay
+PASS: visible object outside expected album refused
+PASS: pending identity adopted only after actual album membership matches
+PASS: next create cannot precede prior resource verification
+PASS: verified modification date keeps subsecond precision
+PASS: changed verified asset version refused
+PASS: existing intent cannot be overwritten or replayed
+PASS: extreme negative ordinal is rejected without underflow
+PASS: source originals cannot be adopted as newly created copies
+PASS: duplicate newly-created identity refused before journal write
+PASS: reordered target membership refused
+PASS: extra target member refused
+PASS: renamed target refused
+PASS: changed manifest refused
+PASS: permission cannot be silently broadened during recovery
+PASS: changed USB request refused
+PASS: fresh process ledger reconstruction retains pending identity and exact verified version
+PASS: exclusive commit never overwrites an existing mapping
+PASS: failed exclusive commit preserves final bytes and ignores retained uncommitted scratch
+PASS: missing intent with recorded placeholder refuses recovery
+PASS: corrupt journal never authorizes Photos creation
+PASS: deleted placeholder is ambiguous after fresh reopen
+PASS: hardlinked recovery record refused
+PASS: symlink journal refused
+33 Photos recovery checks passed; synthetic only, PhotoKit transaction recovery NOT_RUN

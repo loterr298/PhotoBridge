@@ -1,0 +1,62 @@
+[0/1] Planning build
+Building for debugging...
+[0/5] Write RecoveryChecks-entitlement.plist
+[1/6] Write sources
+[2/6] Write swift-version--1AB21518FC5DEDBE.txt
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[4/8] Emitting module RecoveryChecks
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/main.swift:14:30: error: cannot find type 'RestoreRecoveryStore' in scope
+12 | defer { try? fm.removeItem(at: root) }
+13 | do {
+14 |     func fixture() throws -> RestoreRecoveryStore {
+   |                              `- error: cannot find type 'RestoreRecoveryStore' in scope
+15 |         let id = UUID().uuidString; let dir = root.appendingPathComponent(id)
+16 |         try fm.createDirectory(at: dir, withIntermediateDirectories: false)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/main.swift:32:116: error: 'nil' requires a contextual type
+30 |     try s.recordAlbumPlaceholder("new-album")
+31 |     try check(s.state().albumID == "new-album", "durable album placeholder reconstructed after restart")
+32 |     try rejects("missing actual album does not authorize another album") { try s.state().validateObserved(albumID: nil, title: nil, memberIDs: [], visibleAssetIDs: []) }
+   |                                                                                                                    `- error: 'nil' requires a contextual type
+33 |     try rejects("wrong actual album refused") { try s.state().validateObserved(albumID: "other", title: "new album", memberIDs: [], visibleAssetIDs: []) }
+34 |     try s.state().validateObserved(albumID: "new-album", title: "new album", memberIDs: [], visibleAssetIDs: [])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/main.swift:32:128: error: 'nil' requires a contextual type
+30 |     try s.recordAlbumPlaceholder("new-album")
+31 |     try check(s.state().albumID == "new-album", "durable album placeholder reconstructed after restart")
+32 |     try rejects("missing actual album does not authorize another album") { try s.state().validateObserved(albumID: nil, title: nil, memberIDs: [], visibleAssetIDs: []) }
+   |                                                                                                                                `- error: 'nil' requires a contextual type
+33 |     try rejects("wrong actual album refused") { try s.state().validateObserved(albumID: "other", title: "new album", memberIDs: [], visibleAssetIDs: []) }
+34 |     try s.state().validateObserved(albumID: "new-album", title: "new album", memberIDs: [], visibleAssetIDs: [])
+[5/8] Compiling RecoveryChecks main.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/main.swift:14:30: error: cannot find type 'RestoreRecoveryStore' in scope
+12 | defer { try? fm.removeItem(at: root) }
+13 | do {
+14 |     func fixture() throws -> RestoreRecoveryStore {
+   |                              `- error: cannot find type 'RestoreRecoveryStore' in scope
+15 |         let id = UUID().uuidString; let dir = root.appendingPathComponent(id)
+16 |         try fm.createDirectory(at: dir, withIntermediateDirectories: false)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/main.swift:17:20: error: cannot find 'RestoreRecoveryPlan' in scope
+15 |         let id = UUID().uuidString; let dir = root.appendingPathComponent(id)
+16 |         try fm.createDirectory(at: dir, withIntermediateDirectories: false)
+17 |         let plan = RestoreRecoveryPlan(inboxSessionID: id, manifestSHA256: String(repeating: "a", count: 64),
+   |                    `- error: cannot find 'RestoreRecoveryPlan' in scope
+18 |             requestSHA256: String(repeating: "b", count: 64), sourceAlbumID: "source-album", sourceAssetIDs: ["old-a", "old-b"],
+19 |             title: "new album", allowTimestampRewrite: false)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/main.swift:32:116: error: 'nil' requires a contextual type
+30 |     try s.recordAlbumPlaceholder("new-album")
+31 |     try check(s.state().albumID == "new-album", "durable album placeholder reconstructed after restart")
+32 |     try rejects("missing actual album does not authorize another album") { try s.state().validateObserved(albumID: nil, title: nil, memberIDs: [], visibleAssetIDs: []) }
+   |                                                                                                                    `- error: 'nil' requires a contextual type
+33 |     try rejects("wrong actual album refused") { try s.state().validateObserved(albumID: "other", title: "new album", memberIDs: [], visibleAssetIDs: []) }
+34 |     try s.state().validateObserved(albumID: "new-album", title: "new album", memberIDs: [], visibleAssetIDs: [])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/main.swift:32:128: error: 'nil' requires a contextual type
+30 |     try s.recordAlbumPlaceholder("new-album")
+31 |     try check(s.state().albumID == "new-album", "durable album placeholder reconstructed after restart")
+32 |     try rejects("missing actual album does not authorize another album") { try s.state().validateObserved(albumID: nil, title: nil, memberIDs: [], visibleAssetIDs: []) }
+   |                                                                                                                                `- error: 'nil' requires a contextual type
+33 |     try rejects("wrong actual album refused") { try s.state().validateObserved(albumID: "other", title: "new album", memberIDs: [], visibleAssetIDs: []) }
+34 |     try s.state().validateObserved(albumID: "new-album", title: "new album", memberIDs: [], visibleAssetIDs: [])

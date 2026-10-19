@@ -1,0 +1,30 @@
+[0/1] Planning build
+Building for debugging...
+[0/16] Write sources
+[2/16] Write swift-version--1AB21518FC5DEDBE.txt
+[4/24] Compiling PhotoBridgeCoreTests StagingResumeTests.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/PhotoBridgeCoreTests/DiagnosticsTests.swift:1:8: error: no such module 'XCTest'
+ 1 | import XCTest
+   |        `- error: no such module 'XCTest'
+ 2 | @testable import PhotoBridgeCore
+ 3 | 
+[5/24] Compiling PhotoBridgeCoreTests RestoreRecoveryTests.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/PhotoBridgeCoreTests/DiagnosticsTests.swift:1:8: error: no such module 'XCTest'
+ 1 | import XCTest
+   |        `- error: no such module 'XCTest'
+ 2 | @testable import PhotoBridgeCore
+ 3 | 
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[6/24] Emitting module PhotoBridgeCoreTests
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/PhotoBridgeCoreTests/DiagnosticsTests.swift:1:8: error: no such module 'XCTest'
+ 1 | import XCTest
+   |        `- error: no such module 'XCTest'
+ 2 | @testable import PhotoBridgeCore
+ 3 | 
+[7/24] Compiling PhotoBridgeCoreTests DiagnosticsTests.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/PhotoBridgeCoreTests/DiagnosticsTests.swift:1:8: error: no such module 'XCTest'
+ 1 | import XCTest
+   |        `- error: no such module 'XCTest'
+ 2 | @testable import PhotoBridgeCore
+ 3 | 
+error: fatalError

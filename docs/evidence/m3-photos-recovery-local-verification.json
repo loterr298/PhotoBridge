@@ -1,0 +1,24 @@
+{
+  "status": "LOCAL_PROTOCOL_CHECKS_AND_INTEL_BUILD_ONLY",
+  "version": "0.3.6",
+  "build": "10",
+  "recoveryChecks": 33,
+  "coreChecks": 47,
+  "stagingChecks": 23,
+  "pythonTests": 44,
+  "xctest": "NOT_RUN: local no such module XCTest",
+  "ios": "SYNTAX_PARSE_ONLY; cloud build pending",
+  "photoKitRecovery": "NOT_RUN",
+  "userLivePlayback": "NOT_RUN",
+  "userManualOrder": "NOT_RUN",
+  "review": "Independent read-only review: no definite Critical/Important; added persistence regression checks",
+  "sourcesWritten": true,
+  "originalMediaWritten": false,
+  "limitations": [
+    "No real Photos transaction failure or persistence-error injection evidence",
+    "No force termination during commit",
+    "No power-loss durability claim",
+    "Native lock coordinates cooperative writers only",
+    "Full-prefix checks favor safety; large-album performance unmeasured"
+  ]
+}
