@@ -432,3 +432,21 @@ RestoreService 从视图拆出，真实流程支持重新预检已记录新协�
 本轮USB-only实际检测错误-3，无设备；没有向手机上传新收件，没有Photos写入。新手机运行时、Photos提交后停止/重启继续、人工顺序及播放均NOT_RUN。旧0.3.5暂存恢复证据仍成立，不能替代0.3.6照片库事务恢复验收。待覆盖安装并重新连接后，先准备全新3-Live收件，然后受控停止并保存基准，不能直接跳到继续或宣称通过。
 
 双端交付 ZIP 最初使用 ditto 时中文说明文件名在标准 ZIP 读取中编码不一致，内部校验明确失败，未将失败包当作通过。保留该包以供排查，改用 ASCII 说明文件名和标准 ZIP（不写 AppleDouble），二进制输入不变。最终 CRC/逐文件内部 SHA-256 校验通过；build/PhotoBridge-0.3.6-M3-Apps.zip SHA-256 **9c7045a4d6854a4d73bccbd9040c38b71e9d32dfb50e9482d0dc1820b83a25b0**。具体说明、真实失败与云检查均已包含，私人照片/标识未包含。
+
+### 0.3.6 首个 Photos 事务提交后停止、用户重启再继续：Live 样本通过独立审计
+
+用户覆盖安装并连接后，USB-only 安装服务只读确认0.3.6/build10。先向全新收件会话上传原3-Live已完成备份，6资源/19,968,426 bytes再次实际USB回读及系统shasum 6/6通过，未写照片库；m3-photos-recovery-new-inbox-verified.json。随后按步骤由用户在手机开启首个Photos提交后停止诊断并启动。
+
+用户回复“已停止”，手机实际进度 INCOMPLETE、diagnosticStopWindow=AFTER_FIRST_PHOTOS_COMMIT_BEFORE_RESOURCE_VERIFICATION、createdAssets=1/newAssetsCreatedThisRun=1/resourcesVerifiedAssets=0，运行commit3ca3a8c...、0.3.6。Mac保存18文件完整bytes与size/mtime/birthtime/nlink，连续两次只读snapshot稳定；独立核对精确manifest/request/plan hash、尝试与源身份、相簿/首个placeholder事件及严格授权，未凭用户回复直接推断通过。m3-photos-recovery-first-commit-captured.json；真实IDs和媒体仅本地private-diagnostics/photos-transaction-recovery-live-036。
+
+要求用户完全关闭App重开、同一会话重新预检继续，用户回复“以重启并继续”（原话）。手机真实完成报告严格 PHOTO_LIBRARY_BYTES_AND_ORDER_VERIFIED、总3/已回读3、本次新建2/复用1，运行commit同云19。新独立只读审计将**实际下载并验证资源的那一份最终报告**绑定到停止现场的同一相簿、标题、首个副本ID、来源/尝试及原授权；防止先检查一份报告、后下载另一份的假通过。全部6资源/19,968,426 bytes实际USB回读并系统shasum 6/6，与来源全部严格字节一致；3成员映射/nil顺序一致。旧18文件中仅最新进度镜像允许更新，其余17个 bytes/size/mtime/birthtime/nlink完全不变；旧目录属性NOT_AUDITED。m3-photos-transaction-device-recovery-verified.json。计数为App运行报告，不冒充外部跟踪PhotoKit API调用；首个身份、旧文件与完整输出字节独立核对。
+
+新增 tests/device_photos_recovery.py 与7项回归（云19后新增，不改变已交付二进制）。审查先发现4项Important证据假通过边界：报告切换、空/不完整基准导致空检查通过、无重启确认也标重启通过、最终标题/非首项源ID身份约束不足。先记录RED，再修复；流式校验保存现场的完整文件keyset/hash/大小及属性记录，强制用户重启确认，绑定实际审计报告，拒绝源/相簿身份混入。独立复核无剩余Critical/Important。当前本地**51 Python**通过；云19真实计数仍为44，不回填。m3-photos-recovery-device-audit-{red,review-red,green,full-tests}.log。
+
+该样本“提交后/回读前停止→用户确认重启→同一会话继续”通过。**不是Photos提交中强杀、系统终止、磁盘满、权限撤销或iCloud故障通过**；这些仍NOT_RUN。新恢复相簿的系统照片人工顺序/逐张Live播放已请求用户确认，当前尚未回填。此项不等于完整产品/全格式/万张性能/最终UI验收。
+
+用户随后确认“顺序一致且都能播放”（原话）：此新恢复相簿3张系统照片自定义顺序、每张Live播放均已由用户观察通过。m3-photos-transaction-device-recovery-verified.json已补本次确认。计划该受控验收步骤完成；没有把此前旧版本人工确认挪用到新样本。
+
+仅更新交付说明并加入脱敏DEVICE_ACCEPTANCE.json，iPhone/Mac二进制与云19完全相同，无需重装。旧9c7045a4…包保留为before-device-audit，当前双端ZIP精确hash见m3-photos-recovery-device-verified-delivery.json，CRC/内部SHA及两二进制hash再次通过。源代码/证据真实提交，新的7项审计测试属于云19之后本地检查，当前51 Python通过；云19仍44。
+
+下一步待验证：Photos提交中/资源写入中终止、权限/空间/iCloud故障、PNG/RAW及更多编辑资源、规模性能；Mac当前GUI仍是诊断入口，真实传输由随附CLI完成，最终极简可操作双端UI仍未实现。本阶段通过仅覆盖该3-Live样本受控提交边界恢复，不宣称全产品完成。
