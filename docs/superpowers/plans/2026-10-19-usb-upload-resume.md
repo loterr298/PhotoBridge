@@ -15,6 +15,6 @@
 - [x] Add AFC regular-file metadata, exclusive lock and non-truncating .part append. Verify both primary and close error preservation.
 - [x] Implement bound uploader; reuse existing manifest and full-byte checks. Record actual uploaded suffix bytes separately from USB verification reads.
 - [x] Run complete tests, independent review and actual USB controlled writer interruption/reconnect/append/readback. Physical upload cable-loss remains a separate manual test, never inferred from the controlled one.
-- [ ] Update implementation status, commit code, build Intel/cloud artifacts and report exact limits. No iPhone update is necessary to test App Documents uploading; new phone diagnostic build is independently checked.
+- [x] Update implementation status, commit code, build Intel/cloud artifacts and report exact limits. No iPhone update is necessary to test App Documents uploading; new phone diagnostic build is independently checked.
 
 Primary API reference: https://libimobiledevice.org/docs/libimobiledevice/latest/afc_8h.html . RW is O_RDWR|O_CREAT, not a truncating mode; append is restricted to owned RestoreInbox .part files. The user explicitly authorized USB transfers and asks not to delete/overwrite originals; appending verified temporary upload data is limited to these new sessions.
