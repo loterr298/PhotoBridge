@@ -1,0 +1,342 @@
+[0/1] Planning build
+Building for debugging...
+[0/6] Write sources
+[1/6] Write StagingChecks-entitlement.plist
+[2/6] Write swift-version--1AB21518FC5DEDBE.txt
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[4/8] Emitting module StagingChecks
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:16:22: error: cannot find 'StagingResourceSource' in scope
+14 | defer { try? fm.removeItem(at: root) }
+15 | do {
+16 |     let descriptor = StagingResourceSource(resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic")
+   |                      `- error: cannot find 'StagingResourceSource' in scope
+17 |     let movie = StagingResourceSource(resourceType: 9, originalFilename: "same.MOV", uniformTypeIdentifier: "com.apple.quicktime-movie")
+18 |     func source(date: Date? = Date(timeIntervalSinceReferenceDate: 123456.1234567), resources: [StagingResourceSource]? = nil) -> StagingAssetSource {
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:17:17: error: cannot find 'StagingResourceSource' in scope
+15 | do {
+16 |     let descriptor = StagingResourceSource(resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic")
+17 |     let movie = StagingResourceSource(resourceType: 9, originalFilename: "same.MOV", uniformTypeIdentifier: "com.apple.quicktime-movie")
+   |                 `- error: cannot find 'StagingResourceSource' in scope
+18 |     func source(date: Date? = Date(timeIntervalSinceReferenceDate: 123456.1234567), resources: [StagingResourceSource]? = nil) -> StagingAssetSource {
+19 |         StagingAssetSource(identifier: "asset-a", modificationDate: date, creationDate: nil,
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:18:131: error: cannot find type 'StagingAssetSource' in scope
+16 |     let descriptor = StagingResourceSource(resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic")
+17 |     let movie = StagingResourceSource(resourceType: 9, originalFilename: "same.MOV", uniformTypeIdentifier: "com.apple.quicktime-movie")
+18 |     func source(date: Date? = Date(timeIntervalSinceReferenceDate: 123456.1234567), resources: [StagingResourceSource]? = nil) -> StagingAssetSource {
+   |                                                                                                                                   `- error: cannot find type 'StagingAssetSource' in scope
+19 |         StagingAssetSource(identifier: "asset-a", modificationDate: date, creationDate: nil,
+20 |             pixelWidth: 10, pixelHeight: 20, mediaType: 1, mediaSubtypes: 8, resources: resources ?? [descriptor, movie])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:18:97: error: cannot find type 'StagingResourceSource' in scope
+16 |     let descriptor = StagingResourceSource(resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic")
+17 |     let movie = StagingResourceSource(resourceType: 9, originalFilename: "same.MOV", uniformTypeIdentifier: "com.apple.quicktime-movie")
+18 |     func source(date: Date? = Date(timeIntervalSinceReferenceDate: 123456.1234567), resources: [StagingResourceSource]? = nil) -> StagingAssetSource {
+   |                                                                                                 `- error: cannot find type 'StagingResourceSource' in scope
+19 |         StagingAssetSource(identifier: "asset-a", modificationDate: date, creationDate: nil,
+20 |             pixelWidth: 10, pixelHeight: 20, mediaType: 1, mediaSubtypes: 8, resources: resources ?? [descriptor, movie])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:23:34: error: cannot find type 'StagingPlan' in scope
+21 |     }
+22 |     let snapshot = OrderSnapshot(albumName: "test", albumIdentifier: "album-a", authorization: "full", fetchMode: "nil-options", identifiers: ["asset-a"], systemVersion: "fixture", build: "fixture")
+23 |     func fresh() throws -> (URL, StagingPlan, String) {
+   |                                  `- error: cannot find type 'StagingPlan' in scope
+24 |         let session = UUID().uuidString; let dir = root.appendingPathComponent(session)
+25 |         try fm.createDirectory(at: dir, withIntermediateDirectories: false)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:31:22: error: cannot find 'StagingResume' in scope
+29 |     }
+30 |     let (old, plan, digest) = try fresh()
+31 |     let loaded = try StagingResume.load(in: old)
+   |                      `- error: cannot find 'StagingResume' in scope
+32 |     try require(loaded.plan.assets == plan.assets && loaded.digest == digest, "lossless subsecond source metadata and plan binding")
+33 |     try plan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source()])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:38:19: error: cannot find 'StagingPlan' in scope
+36 |     try rejects("resource catalog change refused") { try plan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source(resources: [movie, descriptor])]) }
+37 |     try rejects("different album refused") { try plan.validateCurrent(albumIdentifier: "other", albumName: "test", assets: [source()]) }
+38 |     let nilPlan = StagingPlan(sessionID: UUID().uuidString, sourceOrder: snapshot, assets: [source(date: nil)])
+   |                   `- error: cannot find 'StagingPlan' in scope
+39 |     try rejects("missing edit version cannot authorize reuse") { try nilPlan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source(date: nil)]) }
+40 |     let path = ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "same.HEIC")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:38:106: error: 'nil' requires a contextual type
+36 |     try rejects("resource catalog change refused") { try plan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source(resources: [movie, descriptor])]) }
+37 |     try rejects("different album refused") { try plan.validateCurrent(albumIdentifier: "other", albumName: "test", assets: [source()]) }
+38 |     let nilPlan = StagingPlan(sessionID: UUID().uuidString, sourceOrder: snapshot, assets: [source(date: nil)])
+   |                                                                                                          `- error: 'nil' requires a contextual type
+39 |     try rejects("missing edit version cannot authorize reuse") { try nilPlan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source(date: nil)]) }
+40 |     let path = ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "same.HEIC")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:39:163: error: 'nil' requires a contextual type
+37 |     try rejects("different album refused") { try plan.validateCurrent(albumIdentifier: "other", albumName: "test", assets: [source()]) }
+38 |     let nilPlan = StagingPlan(sessionID: UUID().uuidString, sourceOrder: snapshot, assets: [source(date: nil)])
+39 |     try rejects("missing edit version cannot authorize reuse") { try nilPlan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source(date: nil)]) }
+   |                                                                                                                                                                   `- error: 'nil' requires a contextual type
+40 |     let path = ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "same.HEIC")
+41 |     let file = old.appendingPathComponent(path); try fm.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:45:9: error: cannot find 'StagingResume' in scope
+43 |     let receipt = try ProbeFiles.inspect(file)
+44 |     let r = ExportResource(resourceIndex: 1, resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic", storedRelativePath: path, sha256: receipt.sha256, byteCount: receipt.byteCount)
+45 |     try StagingResume.record(r, ordinal: 1, plan: plan, digest: digest, in: old)
+   |         `- error: cannot find 'StagingResume' in scope
+46 |     let partial = old.appendingPathComponent(ResourcePaths.make(ordinal: 1, resourceIndex: 2, originalFilename: "same.MOV") + ".part")
+47 |     try Data("unfinished".utf8).write(to: partial)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:50:21: error: cannot find 'StagingResume' in scope
+48 |     let before = try fm.attributesOfItem(atPath: file.path)[.modificationDate] as? Date
+49 |     let partialBefore = try Data(contentsOf: partial)
+50 |     let reuse = try StagingResume.reusable(in: old, plan: plan, digest: digest)
+   |                     `- error: cannot find 'StagingResume' in scope
+51 |     try require(reuse.count == 1 && reuse[path] == r, "only checkpointed complete resource reused; partial excluded")
+52 |     let (new, newPlan, newDigest) = try fresh()
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:53:9: error: cannot find 'StagingResume' in scope
+51 |     try require(reuse.count == 1 && reuse[path] == r, "only checkpointed complete resource reused; partial excluded")
+52 |     let (new, newPlan, newDigest) = try fresh()
+53 |     try StagingResume.copy(r, from: old, to: new)
+   |         `- error: cannot find 'StagingResume' in scope
+54 |     try StagingResume.record(r, ordinal: 1, plan: newPlan, digest: newDigest, in: new)
+55 |     try require(ProbeFiles.inspect(new.appendingPathComponent(path)).sha256 == receipt.sha256, "copied complete resource independently hashes correctly")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:54:9: error: cannot find 'StagingResume' in scope
+52 |     let (new, newPlan, newDigest) = try fresh()
+53 |     try StagingResume.copy(r, from: old, to: new)
+54 |     try StagingResume.record(r, ordinal: 1, plan: newPlan, digest: newDigest, in: new)
+   |         `- error: cannot find 'StagingResume' in scope
+55 |     try require(ProbeFiles.inspect(new.appendingPathComponent(path)).sha256 == receipt.sha256, "copied complete resource independently hashes correctly")
+56 |     try require(try fm.attributesOfItem(atPath: file.path)[.modificationDate] as? Date == before && Data(contentsOf: partial) == partialBefore && Data(contentsOf: file) == Data("abc".utf8), "old bytes mtime and incomplete resource unchanged")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:57:71: error: cannot find 'StagingResume' in scope
+55 |     try require(ProbeFiles.inspect(new.appendingPathComponent(path)).sha256 == receipt.sha256, "copied complete resource independently hashes correctly")
+56 |     try require(try fm.attributesOfItem(atPath: file.path)[.modificationDate] as? Date == before && Data(contentsOf: partial) == partialBefore && Data(contentsOf: file) == Data("abc".utf8), "old bytes mtime and incomplete resource unchanged")
+57 |     try rejects("copy cannot overwrite a complete destination") { try StagingResume.copy(r, from: old, to: new) }
+   |                                                                       `- error: cannot find 'StagingResume' in scope
+58 |     try rejects("nested recovery cannot mutate old session") { try StagingResume.copy(r, from: old, to: old.appendingPathComponent("nested")) }
+59 |     try Data("abd".utf8).write(to: file)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:58:68: error: cannot find 'StagingResume' in scope
+56 |     try require(try fm.attributesOfItem(atPath: file.path)[.modificationDate] as? Date == before && Data(contentsOf: partial) == partialBefore && Data(contentsOf: file) == Data("abc".utf8), "old bytes mtime and incomplete resource unchanged")
+57 |     try rejects("copy cannot overwrite a complete destination") { try StagingResume.copy(r, from: old, to: new) }
+58 |     try rejects("nested recovery cannot mutate old session") { try StagingResume.copy(r, from: old, to: old.appendingPathComponent("nested")) }
+   |                                                                    `- error: cannot find 'StagingResume' in scope
+59 |     try Data("abd".utf8).write(to: file)
+60 |     try rejects("corrupt cached resource refused before recovery") { _ = try StagingResume.reusable(in: old, plan: plan, digest: digest) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:60:78: error: cannot find 'StagingResume' in scope
+58 |     try rejects("nested recovery cannot mutate old session") { try StagingResume.copy(r, from: old, to: old.appendingPathComponent("nested")) }
+59 |     try Data("abd".utf8).write(to: file)
+60 |     try rejects("corrupt cached resource refused before recovery") { _ = try StagingResume.reusable(in: old, plan: plan, digest: digest) }
+   |                                                                              `- error: cannot find 'StagingResume' in scope
+61 |     try Data("abc".utf8).write(to: file)
+62 |     let recordFile = old.appendingPathComponent("resource-records/000001-0001.json")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:66:73: error: cannot find 'StagingResume' in scope
+64 |     let foreign = String(decoding: checkpointBytes, as: UTF8.self).replacingOccurrences(of: digest, with: String(repeating: "0", count: 64))
+65 |     try Data(foreign.utf8).write(to: recordFile)
+66 |     try rejects("checkpoint bound to different plan refused") { _ = try StagingResume.reusable(in: old, plan: plan, digest: digest) }
+   |                                                                         `- error: cannot find 'StagingResume' in scope
+67 |     try checkpointBytes.write(to: recordFile)
+68 |     try fm.removeItem(at: file); try fm.createSymbolicLink(at: file, withDestinationURL: new.appendingPathComponent(path))
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:69:62: error: cannot find 'StagingResume' in scope
+67 |     try checkpointBytes.write(to: recordFile)
+68 |     try fm.removeItem(at: file); try fm.createSymbolicLink(at: file, withDestinationURL: new.appendingPathComponent(path))
+69 |     try rejects("symlink cached resource refused") { _ = try StagingResume.reusable(in: old, plan: plan, digest: digest) }
+   |                                                              `- error: cannot find 'StagingResume' in scope
+70 |     let orphan = new.appendingPathComponent(ResourcePaths.make(ordinal: 1, resourceIndex: 2, originalFilename: "same.MOV"))
+71 |     try Data("uncheckpointed".utf8).write(to: orphan)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:72:17: error: cannot find 'StagingResume' in scope
+70 |     let orphan = new.appendingPathComponent(ResourcePaths.make(ordinal: 1, resourceIndex: 2, originalFilename: "same.MOV"))
+71 |     try Data("uncheckpointed".utf8).write(to: orphan)
+72 |     try require(StagingResume.reusable(in: new, plan: newPlan, digest: newDigest).count == 1, "crash after commit before checkpoint causes reread, never unverified skip")
+   |                 `- error: cannot find 'StagingResume' in scope
+73 |     try Data("{}".utf8).write(to: new.appendingPathComponent("album-order.json"))
+74 |     try rejects("completed staging session cannot be resumed") { _ = try StagingResume.load(in: new) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:74:74: error: cannot find 'StagingResume' in scope
+72 |     try require(StagingResume.reusable(in: new, plan: newPlan, digest: newDigest).count == 1, "crash after commit before checkpoint causes reread, never unverified skip")
+73 |     try Data("{}".utf8).write(to: new.appendingPathComponent("album-order.json"))
+74 |     try rejects("completed staging session cannot be resumed") { _ = try StagingResume.load(in: new) }
+   |                                                                          `- error: cannot find 'StagingResume' in scope
+75 |     print("\(checks) staging recovery checks passed; synthetic only, device PhotoKit recovery NOT_RUN")
+76 | } catch { fputs("FAIL staging recovery: \(error)\n", stderr); exit(1) }
+[5/8] Compiling StagingChecks main.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:16:22: error: cannot find 'StagingResourceSource' in scope
+14 | defer { try? fm.removeItem(at: root) }
+15 | do {
+16 |     let descriptor = StagingResourceSource(resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic")
+   |                      `- error: cannot find 'StagingResourceSource' in scope
+17 |     let movie = StagingResourceSource(resourceType: 9, originalFilename: "same.MOV", uniformTypeIdentifier: "com.apple.quicktime-movie")
+18 |     func source(date: Date? = Date(timeIntervalSinceReferenceDate: 123456.1234567), resources: [StagingResourceSource]? = nil) -> StagingAssetSource {
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:17:17: error: cannot find 'StagingResourceSource' in scope
+15 | do {
+16 |     let descriptor = StagingResourceSource(resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic")
+17 |     let movie = StagingResourceSource(resourceType: 9, originalFilename: "same.MOV", uniformTypeIdentifier: "com.apple.quicktime-movie")
+   |                 `- error: cannot find 'StagingResourceSource' in scope
+18 |     func source(date: Date? = Date(timeIntervalSinceReferenceDate: 123456.1234567), resources: [StagingResourceSource]? = nil) -> StagingAssetSource {
+19 |         StagingAssetSource(identifier: "asset-a", modificationDate: date, creationDate: nil,
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:18:131: error: cannot find type 'StagingAssetSource' in scope
+16 |     let descriptor = StagingResourceSource(resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic")
+17 |     let movie = StagingResourceSource(resourceType: 9, originalFilename: "same.MOV", uniformTypeIdentifier: "com.apple.quicktime-movie")
+18 |     func source(date: Date? = Date(timeIntervalSinceReferenceDate: 123456.1234567), resources: [StagingResourceSource]? = nil) -> StagingAssetSource {
+   |                                                                                                                                   `- error: cannot find type 'StagingAssetSource' in scope
+19 |         StagingAssetSource(identifier: "asset-a", modificationDate: date, creationDate: nil,
+20 |             pixelWidth: 10, pixelHeight: 20, mediaType: 1, mediaSubtypes: 8, resources: resources ?? [descriptor, movie])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:18:97: error: cannot find type 'StagingResourceSource' in scope
+16 |     let descriptor = StagingResourceSource(resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic")
+17 |     let movie = StagingResourceSource(resourceType: 9, originalFilename: "same.MOV", uniformTypeIdentifier: "com.apple.quicktime-movie")
+18 |     func source(date: Date? = Date(timeIntervalSinceReferenceDate: 123456.1234567), resources: [StagingResourceSource]? = nil) -> StagingAssetSource {
+   |                                                                                                 `- error: cannot find type 'StagingResourceSource' in scope
+19 |         StagingAssetSource(identifier: "asset-a", modificationDate: date, creationDate: nil,
+20 |             pixelWidth: 10, pixelHeight: 20, mediaType: 1, mediaSubtypes: 8, resources: resources ?? [descriptor, movie])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:23:34: error: cannot find type 'StagingPlan' in scope
+21 |     }
+22 |     let snapshot = OrderSnapshot(albumName: "test", albumIdentifier: "album-a", authorization: "full", fetchMode: "nil-options", identifiers: ["asset-a"], systemVersion: "fixture", build: "fixture")
+23 |     func fresh() throws -> (URL, StagingPlan, String) {
+   |                                  `- error: cannot find type 'StagingPlan' in scope
+24 |         let session = UUID().uuidString; let dir = root.appendingPathComponent(session)
+25 |         try fm.createDirectory(at: dir, withIntermediateDirectories: false)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:26:20: error: cannot find 'StagingPlan' in scope
+24 |         let session = UUID().uuidString; let dir = root.appendingPathComponent(session)
+25 |         try fm.createDirectory(at: dir, withIntermediateDirectories: false)
+26 |         let plan = StagingPlan(sessionID: session, sourceOrder: snapshot, assets: [source()])
+   |                    `- error: cannot find 'StagingPlan' in scope
+27 |         let digest = try StagingResume.prepare(plan: plan, in: dir)
+28 |         return (dir, plan, digest)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:27:26: error: cannot find 'StagingResume' in scope
+25 |         try fm.createDirectory(at: dir, withIntermediateDirectories: false)
+26 |         let plan = StagingPlan(sessionID: session, sourceOrder: snapshot, assets: [source()])
+27 |         let digest = try StagingResume.prepare(plan: plan, in: dir)
+   |                          `- error: cannot find 'StagingResume' in scope
+28 |         return (dir, plan, digest)
+29 |     }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:31:22: error: cannot find 'StagingResume' in scope
+29 |     }
+30 |     let (old, plan, digest) = try fresh()
+31 |     let loaded = try StagingResume.load(in: old)
+   |                      `- error: cannot find 'StagingResume' in scope
+32 |     try require(loaded.plan.assets == plan.assets && loaded.digest == digest, "lossless subsecond source metadata and plan binding")
+33 |     try plan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source()])
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:38:19: error: cannot find 'StagingPlan' in scope
+36 |     try rejects("resource catalog change refused") { try plan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source(resources: [movie, descriptor])]) }
+37 |     try rejects("different album refused") { try plan.validateCurrent(albumIdentifier: "other", albumName: "test", assets: [source()]) }
+38 |     let nilPlan = StagingPlan(sessionID: UUID().uuidString, sourceOrder: snapshot, assets: [source(date: nil)])
+   |                   `- error: cannot find 'StagingPlan' in scope
+39 |     try rejects("missing edit version cannot authorize reuse") { try nilPlan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source(date: nil)]) }
+40 |     let path = ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "same.HEIC")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:38:106: error: 'nil' requires a contextual type
+36 |     try rejects("resource catalog change refused") { try plan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source(resources: [movie, descriptor])]) }
+37 |     try rejects("different album refused") { try plan.validateCurrent(albumIdentifier: "other", albumName: "test", assets: [source()]) }
+38 |     let nilPlan = StagingPlan(sessionID: UUID().uuidString, sourceOrder: snapshot, assets: [source(date: nil)])
+   |                                                                                                          `- error: 'nil' requires a contextual type
+39 |     try rejects("missing edit version cannot authorize reuse") { try nilPlan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source(date: nil)]) }
+40 |     let path = ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "same.HEIC")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:39:163: error: 'nil' requires a contextual type
+37 |     try rejects("different album refused") { try plan.validateCurrent(albumIdentifier: "other", albumName: "test", assets: [source()]) }
+38 |     let nilPlan = StagingPlan(sessionID: UUID().uuidString, sourceOrder: snapshot, assets: [source(date: nil)])
+39 |     try rejects("missing edit version cannot authorize reuse") { try nilPlan.validateCurrent(albumIdentifier: "album-a", albumName: "test", assets: [source(date: nil)]) }
+   |                                                                                                                                                                   `- error: 'nil' requires a contextual type
+40 |     let path = ResourcePaths.make(ordinal: 1, resourceIndex: 1, originalFilename: "same.HEIC")
+41 |     let file = old.appendingPathComponent(path); try fm.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:45:9: error: cannot find 'StagingResume' in scope
+43 |     let receipt = try ProbeFiles.inspect(file)
+44 |     let r = ExportResource(resourceIndex: 1, resourceType: 1, originalFilename: "same.HEIC", uniformTypeIdentifier: "public.heic", storedRelativePath: path, sha256: receipt.sha256, byteCount: receipt.byteCount)
+45 |     try StagingResume.record(r, ordinal: 1, plan: plan, digest: digest, in: old)
+   |         `- error: cannot find 'StagingResume' in scope
+46 |     let partial = old.appendingPathComponent(ResourcePaths.make(ordinal: 1, resourceIndex: 2, originalFilename: "same.MOV") + ".part")
+47 |     try Data("unfinished".utf8).write(to: partial)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:50:21: error: cannot find 'StagingResume' in scope
+48 |     let before = try fm.attributesOfItem(atPath: file.path)[.modificationDate] as? Date
+49 |     let partialBefore = try Data(contentsOf: partial)
+50 |     let reuse = try StagingResume.reusable(in: old, plan: plan, digest: digest)
+   |                     `- error: cannot find 'StagingResume' in scope
+51 |     try require(reuse.count == 1 && reuse[path] == r, "only checkpointed complete resource reused; partial excluded")
+52 |     let (new, newPlan, newDigest) = try fresh()
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:53:9: error: cannot find 'StagingResume' in scope
+51 |     try require(reuse.count == 1 && reuse[path] == r, "only checkpointed complete resource reused; partial excluded")
+52 |     let (new, newPlan, newDigest) = try fresh()
+53 |     try StagingResume.copy(r, from: old, to: new)
+   |         `- error: cannot find 'StagingResume' in scope
+54 |     try StagingResume.record(r, ordinal: 1, plan: newPlan, digest: newDigest, in: new)
+55 |     try require(ProbeFiles.inspect(new.appendingPathComponent(path)).sha256 == receipt.sha256, "copied complete resource independently hashes correctly")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:54:9: error: cannot find 'StagingResume' in scope
+52 |     let (new, newPlan, newDigest) = try fresh()
+53 |     try StagingResume.copy(r, from: old, to: new)
+54 |     try StagingResume.record(r, ordinal: 1, plan: newPlan, digest: newDigest, in: new)
+   |         `- error: cannot find 'StagingResume' in scope
+55 |     try require(ProbeFiles.inspect(new.appendingPathComponent(path)).sha256 == receipt.sha256, "copied complete resource independently hashes correctly")
+56 |     try require(try fm.attributesOfItem(atPath: file.path)[.modificationDate] as? Date == before && Data(contentsOf: partial) == partialBefore && Data(contentsOf: file) == Data("abc".utf8), "old bytes mtime and incomplete resource unchanged")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:57:71: error: cannot find 'StagingResume' in scope
+55 |     try require(ProbeFiles.inspect(new.appendingPathComponent(path)).sha256 == receipt.sha256, "copied complete resource independently hashes correctly")
+56 |     try require(try fm.attributesOfItem(atPath: file.path)[.modificationDate] as? Date == before && Data(contentsOf: partial) == partialBefore && Data(contentsOf: file) == Data("abc".utf8), "old bytes mtime and incomplete resource unchanged")
+57 |     try rejects("copy cannot overwrite a complete destination") { try StagingResume.copy(r, from: old, to: new) }
+   |                                                                       `- error: cannot find 'StagingResume' in scope
+58 |     try rejects("nested recovery cannot mutate old session") { try StagingResume.copy(r, from: old, to: old.appendingPathComponent("nested")) }
+59 |     try Data("abd".utf8).write(to: file)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:58:68: error: cannot find 'StagingResume' in scope
+56 |     try require(try fm.attributesOfItem(atPath: file.path)[.modificationDate] as? Date == before && Data(contentsOf: partial) == partialBefore && Data(contentsOf: file) == Data("abc".utf8), "old bytes mtime and incomplete resource unchanged")
+57 |     try rejects("copy cannot overwrite a complete destination") { try StagingResume.copy(r, from: old, to: new) }
+58 |     try rejects("nested recovery cannot mutate old session") { try StagingResume.copy(r, from: old, to: old.appendingPathComponent("nested")) }
+   |                                                                    `- error: cannot find 'StagingResume' in scope
+59 |     try Data("abd".utf8).write(to: file)
+60 |     try rejects("corrupt cached resource refused before recovery") { _ = try StagingResume.reusable(in: old, plan: plan, digest: digest) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:60:78: error: cannot find 'StagingResume' in scope
+58 |     try rejects("nested recovery cannot mutate old session") { try StagingResume.copy(r, from: old, to: old.appendingPathComponent("nested")) }
+59 |     try Data("abd".utf8).write(to: file)
+60 |     try rejects("corrupt cached resource refused before recovery") { _ = try StagingResume.reusable(in: old, plan: plan, digest: digest) }
+   |                                                                              `- error: cannot find 'StagingResume' in scope
+61 |     try Data("abc".utf8).write(to: file)
+62 |     let recordFile = old.appendingPathComponent("resource-records/000001-0001.json")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:66:73: error: cannot find 'StagingResume' in scope
+64 |     let foreign = String(decoding: checkpointBytes, as: UTF8.self).replacingOccurrences(of: digest, with: String(repeating: "0", count: 64))
+65 |     try Data(foreign.utf8).write(to: recordFile)
+66 |     try rejects("checkpoint bound to different plan refused") { _ = try StagingResume.reusable(in: old, plan: plan, digest: digest) }
+   |                                                                         `- error: cannot find 'StagingResume' in scope
+67 |     try checkpointBytes.write(to: recordFile)
+68 |     try fm.removeItem(at: file); try fm.createSymbolicLink(at: file, withDestinationURL: new.appendingPathComponent(path))
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:69:62: error: cannot find 'StagingResume' in scope
+67 |     try checkpointBytes.write(to: recordFile)
+68 |     try fm.removeItem(at: file); try fm.createSymbolicLink(at: file, withDestinationURL: new.appendingPathComponent(path))
+69 |     try rejects("symlink cached resource refused") { _ = try StagingResume.reusable(in: old, plan: plan, digest: digest) }
+   |                                                              `- error: cannot find 'StagingResume' in scope
+70 |     let orphan = new.appendingPathComponent(ResourcePaths.make(ordinal: 1, resourceIndex: 2, originalFilename: "same.MOV"))
+71 |     try Data("uncheckpointed".utf8).write(to: orphan)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:72:17: error: cannot find 'StagingResume' in scope
+70 |     let orphan = new.appendingPathComponent(ResourcePaths.make(ordinal: 1, resourceIndex: 2, originalFilename: "same.MOV"))
+71 |     try Data("uncheckpointed".utf8).write(to: orphan)
+72 |     try require(StagingResume.reusable(in: new, plan: newPlan, digest: newDigest).count == 1, "crash after commit before checkpoint causes reread, never unverified skip")
+   |                 `- error: cannot find 'StagingResume' in scope
+73 |     try Data("{}".utf8).write(to: new.appendingPathComponent("album-order.json"))
+74 |     try rejects("completed staging session cannot be resumed") { _ = try StagingResume.load(in: new) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/StagingChecks/main.swift:74:74: error: cannot find 'StagingResume' in scope
+72 |     try require(StagingResume.reusable(in: new, plan: newPlan, digest: newDigest).count == 1, "crash after commit before checkpoint causes reread, never unverified skip")
+73 |     try Data("{}".utf8).write(to: new.appendingPathComponent("album-order.json"))
+74 |     try rejects("completed staging session cannot be resumed") { _ = try StagingResume.load(in: new) }
+   |                                                                          `- error: cannot find 'StagingResume' in scope
+75 |     print("\(checks) staging recovery checks passed; synthetic only, device PhotoKit recovery NOT_RUN")
+76 | } catch { fputs("FAIL staging recovery: \(error)\n", stderr); exit(1) }

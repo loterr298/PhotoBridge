@@ -1,0 +1,28 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+Build of product 'StagingChecks' complete! (0.35s)
+PASS: lossless subsecond source metadata and plan binding
+PASS: identical current source accepted
+PASS: subsecond edit change refused
+PASS: resource catalog change refused
+PASS: different album refused
+PASS: removed source member refused
+PASS: album rename cannot silently change frozen manifest
+PASS: same members in a different manual order refused
+PASS: missing edit version cannot authorize reuse
+PASS: minimum integer ordinal rejected without arithmetic trap
+PASS: minimum integer resource index rejected without arithmetic trap
+PASS: only checkpointed complete resource reused; partial excluded
+PASS: copied complete resource independently hashes correctly
+PASS: reused copy retains one AFC-readable hard link
+PASS: old bytes mtime and incomplete resource unchanged
+PASS: copy cannot overwrite a complete destination
+PASS: nested recovery cannot mutate old session
+PASS: corrupt cached resource refused before recovery
+PASS: missing checkpointed resource refused
+PASS: checkpoint bound to different plan refused
+PASS: symlink cached resource refused
+PASS: crash after commit before checkpoint causes reread, never unverified skip
+PASS: completed staging session cannot be resumed
+23 staging recovery checks passed; synthetic only, device PhotoKit recovery NOT_RUN

@@ -1,0 +1,5 @@
+Exit status: -4 (expected refusal check instead of process trap)
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+Build of product 'StagingChecks' complete! (0.31s)

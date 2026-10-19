@@ -1,0 +1,15 @@
+{
+  "status": "INSTALLED_CLOUD_BUNDLE_VERIFIED_AND_PROCESS_STARTED",
+  "version": "0.3.4",
+  "build": "8",
+  "verifiedPackageSHA256": "f54bfd9bff1e0844c91e9ce88602a0fc52fc176c1ecad98167af60739dfaf920",
+  "installedPath": "/Applications/PhotoBridgeMac.app",
+  "installedFilesMatchCloudPackage": true,
+  "strictCodeSignatureVerified": true,
+  "architecture": "x86_64",
+  "previousAppBackupPreserved": true,
+  "processExecutableMatchesInstalledPath": true,
+  "GUIVisualAcceptance": "NOT_RUN",
+  "photosLibraryWritten": false,
+  "checkedAt": "2026-10-19T07:20:36.704267+00:00"
+}
