@@ -1,8 +1,30 @@
-import unittest, tempfile, pathlib, sys, hashlib
+import unittest, tempfile, pathlib, sys, hashlib, io
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'scripts'))
 import usb_probe as p
 
 class USBChecks(unittest.TestCase):
+    def test_close_failure_never_replaces_read_write_or_local_primary_error(self):
+        class Library:
+            def afc_file_open(self, *args): return 0
+            def afc_file_close(self, *args): return 30
+            def afc_file_read(self, afc, handle, buffer, length, count):
+                if self.mode == 'read-error': return 30
+                count._obj.value = 1 if self.mode == 'sink-error' else 0
+                return 0
+            def afc_file_write(self, *args): return 30
+        client = p.AFC.__new__(p.AFC); client.afc = None; client.lib = Library(); client.list = lambda path: []
+        client.lib.mode = 'read-error'
+        with self.assertRaisesRegex(RuntimeError, '^AFC read:') as caught: client.read('test/file', lambda data: None)
+        self.assertEqual(caught.exception.afc_close_error, 30)
+        client.lib.mode = 'sink-error'; local = OSError('disk write failed')
+        def sink(data): raise local
+        with self.assertRaises(OSError) as caught: client.read('test/file', sink)
+        self.assertIs(caught.exception, local)
+        client.lib.mode = 'empty'
+        with self.assertRaisesRegex(RuntimeError, '^AFC close read:'): client.read('test/file', lambda data: None)
+        with self.assertRaisesRegex(RuntimeError, '^AFC write:') as caught: client.write_new('test/file', io.BytesIO(b'data'))
+        self.assertEqual(caught.exception.afc_close_error, 30)
+
     def test_uuid_path_rejects_traversal_and_non_probe_paths(self):
         for path in ['/DCIM/a', '../photo', 'USBProbe/Inbox/../x', 'USBProbe/Outbox/not-uuid', '/USBProbe/Inbox/0']:
             with self.assertRaises(ValueError): p.probe_directory(path)
