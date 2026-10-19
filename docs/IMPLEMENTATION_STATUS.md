@@ -270,3 +270,18 @@ dw 的新会话已通过真实 USB 发送并回读 20 项/30 份资源/77,450,23
 本地 **47 CoreChecks / 33 Python tests** 通过，日志 `m2-native-unknown-xml-check.log` / `m2-independent-audit-tests.log`，真实 RED `m2-unknown-xml-red.log` / `m2-scalar-xml-red.log` / `m2-native-scalar-xml-red.log`。当前更严格 Swift 核心针对真实侧车的主机检查另记录 m2-strict-xml-actual-sidecars.json，不当作新版手机运行时验收。0.3.2/build6 新审计及双端解析收紧的云检查结果另行记录，不冒充原云14已运行新测试。
 
 下一步仍为上传/手机暂存/照片库事务的安全恢复、真实物理拔线续传、PNG/DNG/更多编辑/iCloud/权限和空间故障、大规模与最终双端极简 UI。现有证明限于上述 JPEG/Live 样本和受控下载中断；未宣称完整产品已完成。
+
+
+### 0.3.2 双端云构建及审计交付
+
+代码/测试/设备证据本地提交 **dfbd8b2**，独立审查所发现的未知 XML、标量尾随内容及数值/日期归一化问题均已修复；最终复核无剩余 Critical/Important。父子文法与非时间文本签名进一步拒绝歧义，不放宽已有授权。原件及旧失败会话全部保留。
+
+[Actions #15](https://github.com/loterr298/PhotoBridge/actions/runs/39190177844) **SUCCESS**，远端源码 **6087a6cf76fcdb7cb7216769e9c0e8fce73485ed**，实际 **4 XCTest / 47 CoreChecks / 33 Python** 通过，iOS BUILD SUCCEEDED，Intel x86_64 编译通过。工具链实际 Xcode16.4 / iOS18.5 SDK，未冒称 Beta SDK。GitHub 部分 upload 请求出现网络错误后，使用正常文件编辑页完成提交；全部源文件已同步后才触发本轮。
+
+[产物](https://github.com/loterr298/PhotoBridge/actions/runs/39190177844/artifacts/12158724769) 下载 SHA-256 c637ec701c3465d5bf53eea31c0fb354dba794e9ba0f5212daf9d098c92d91b1。ZIP CRC、内部 SHA256SUMS、IPA 0.3.2/build6/源码 commit/稳定 bundle ID/arm64/可执行权限、Mac 版本与 x86_64 已独立核对；包内 Python/构建脚本逐字节与本地源码匹配，无 __pycache__。
+
+- `build/PhotoBridge-0.3.2-M2/PhotoBridgeOrderProbe-0.3.2-unsigned.ipa`，SHA-256 c826b03cc099ae668436021fd947d4c559801bd60b3027b4af4850b5b1d3a689。
+- `build/PhotoBridge-0.3.2-M2/PhotoBridgeMac-Intel.zip`，SHA-256 f85c6223e716e22535bb3dab4316b3e817c3b114dd69fb27e107cc6330e7beee。
+- `build/PhotoBridge-0.3.2-M2-Apps.zip` 汇集双端包与最新保护/恢复/继续下载说明。云日志 `cloud-15-*.log`，核对记录 `cloud-build-15.json`，实际成功截图 `cloud-build-15-success.png`。另有 Intel 本地构建日志 m2-strict-xml-mac-build.log。
+
+当前更严格 Swift 核心已在主机重新检查全部5份真实附件，结果仍为仅授权时间变化；新版 iPhone 二进制尚未由用户安装，明确 **NOT_RUN**。已完成的20项真机证据属于0.3.1；不挪用为0.3.2真机验收。下一次手机恢复前应沿用原个人签名覆盖更新，不卸载旧 App。上传/Photos 事务恢复、真实物理拔线/大规模及最终 UI 等后续项目仍未完成。
