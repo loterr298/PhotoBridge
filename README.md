@@ -2,9 +2,9 @@
 
 原生 iPhone PhotoKit + Intel macOS USB/AFC。目标设备上已验证 20 张手动顺序及移动位置复测、双向各 100 MiB 合成探针；真实 JPEG/编辑附件、3 组 HEIC + MOV Live Photo 已经 USB 下载并逐文件 hash，Mac 新副本创建/修改时间均验证为按资产间隔 5 秒。上述结果限定于实际样本，不能推广为全部格式或完整产品验收通过。
 
-3 张 HEIC/MOV Live Photo 已完成真实 USB 往返、Photos 回读全资源 hash、系统照片人工顺序及播放确认。20 张含编辑资源样本在第 12 张严格停止：原图和编辑后 JPEG 一致，系统只重置了编辑附件 adjustmentTimestamp，不能称为全部资源字节一致。
+3 张 HEIC/MOV Live Photo 已完成真实 USB 往返、Photos 回读全资源 hash、系统照片人工顺序及播放确认。20 张含编辑资源样本也已按用户明确授权的策略完成往返：25 份原图/编辑后 JPEG 字节一致，5 份编辑附件仅系统 adjustmentTimestamp 改变，其余解析字段一致；系统照片 20 张顺序与 5 张编辑效果均经用户确认。仍不称为全部资源字节一致。
 
-0.3.1 新增用户明确授权、默认关闭的系统编辑记录时间选项，其他字段/类型及媒体 bytes 仍严格校验；有授权差异时记录单独状态和原始附件，不伪称 byte-identical。新策略真机复测待安装新版。Mac 下载继续执行已通过真实 AFC 偏移及受控接收中断测试；物理拔线恢复、上传/iPhone 暂存/照片库事务续传尚未通过。
+0.3.1 新增用户明确授权、默认关闭的系统编辑记录时间选项，其他字段/类型及媒体 bytes 仍严格校验；有授权差异时记录单独状态和原始附件，不伪称 byte-identical。0.3.1 真机全20项报告及 USB 独立回读30份已完成，见 [限定样本证据](docs/evidence/m2-dw-authorized-photos-roundtrip-verified.json)。Mac 下载继续执行已通过真实 AFC 偏移及受控接收中断测试；物理拔线恢复、上传/iPhone 暂存/照片库事务续传尚未通过。
 
 - iOS：`apps/iOS/`，XcodeGen 2.44.1 从 `project.yml` 生成工程，GitHub Actions 实编译并打包未签名 IPA。
 - macOS：`swift run PhotoBridgeMac`；`bash scripts/build-mac.sh` 生成 Intel App；包内 scripts 携带实际 USB 下载/回传工具。
