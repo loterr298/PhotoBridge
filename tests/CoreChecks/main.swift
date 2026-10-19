@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import PhotoBridgeCore
 
 func require(_ value: @autoclosure () throws -> Bool, _ message: String) throws {
@@ -134,3 +135,40 @@ do {
     }
     print("8 restore safety checks passed; Photos import NOT_RUN")
 } catch { fputs("FAIL restore: \(error)\n", stderr); exit(1) }
+
+// Explicit permission can accept only a system edit timestamp, never other resource changes.
+do {
+    let original = try PropertyListSerialization.data(fromPropertyList: ["adjustmentTimestamp": Date(timeIntervalSince1970: 1000), "adjustmentData": Data([1,2,3]), "unknownVendorField": true], format: .xml, options: 0)
+    let rewritten = try PropertyListSerialization.data(fromPropertyList: ["adjustmentTimestamp": Date(timeIntervalSince1970: 2000), "adjustmentData": Data([1,2,3]), "unknownVendorField": true], format: .xml, options: 0)
+    func r(_ data: Data, type: Int = 7) -> ExportResource {
+        ExportResource(resourceIndex: 1, resourceType: type, originalFilename: "edit.plist", uniformTypeIdentifier: "com.apple.property-list", storedRelativePath: "Resources/000001/0001.plist", sha256: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(), byteCount: data.count)
+    }
+    func compare(_ data: Data, allowed: Bool, type: Int = 7) throws -> ResourceRoundTripResult {
+        try ResourceRoundTripComparison.verify(expected: [r(original, type: type)], observed: [r(data, type: type)],
+            allowAdjustmentTimestampRewrite: allowed, loadOriginal: { _ in original }, loadObserved: { _ in data })
+    }
+    try rejects("edit timestamp rewrite requires explicit permission") { _ = try compare(rewritten, allowed: false) }
+    let permitted = try compare(rewritten, allowed: true)
+    try require(!permitted.strictBytesIdentical && permitted.authorizedAdjustmentTimestampDifferences == 1, "authorized timestamp difference never claims byte identity")
+    let intact = try compare(original, allowed: false)
+    try require(intact.strictBytesIdentical && intact.authorizedAdjustmentTimestampDifferences == 0, "unchanged resources retain strict byte result")
+    let changedPayload = try PropertyListSerialization.data(fromPropertyList: ["adjustmentTimestamp": Date(timeIntervalSince1970: 2000), "adjustmentData": Data([1,2,4]), "unknownVendorField": true], format: .xml, options: 0)
+    try rejects("opaque edit payload change is never authorized by time permission") { _ = try compare(changedPayload, allowed: true) }
+    let changedType = try PropertyListSerialization.data(fromPropertyList: ["adjustmentTimestamp": Date(timeIntervalSince1970: 2000), "adjustmentData": Data([1,2,3]), "unknownVendorField": 1], format: .xml, options: 0)
+    try rejects("unknown field boolean to integer change cannot pass") { _ = try compare(changedType, allowed: true) }
+    try rejects("media resources never get adjustment timestamp exception") { _ = try compare(rewritten, allowed: true, type: 1) }
+    try rejects("malformed plist cannot pass authorized comparison") { _ = try compare(Data("bad".utf8), allowed: true) }
+    func duplicate(_ value: String, year: String, nested: Bool) -> Data {
+        let dictionary = "<dict><key>payload</key><string>\(value)</string><key>payload</key><string>same</string></dict>"
+        let payload = nested ? "<key>nested</key>" + dictionary : "<key>payload</key><string>\(value)</string><key>payload</key><string>same</string>"
+        return Data(("<?xml version=\"1.0\"?><plist version=\"1.0\"><dict>" + payload + "<key>adjustmentTimestamp</key><date>\(year)-01-01T00:00:00Z</date></dict></plist>").utf8)
+    }
+    for nested in [false, true] {
+        let before = duplicate("BAD", year: "2020", nested: nested)
+        let after = duplicate("XYZ", year: "2026", nested: nested)
+        try rejects(nested ? "nested duplicate keys cannot conceal changed payload" : "duplicate keys cannot conceal changed payload") {
+            _ = try ResourceRoundTripComparison.verify(expected: [r(before)], observed: [r(after)], allowAdjustmentTimestampRewrite: true, loadOriginal: { _ in before }, loadObserved: { _ in after })
+        }
+    }
+    print("9 authorized adjustment timestamp checks passed; new device policy NOT_RUN")
+} catch { fputs("FAIL timestamp policy: \(error)\n", stderr); exit(1) }
