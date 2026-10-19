@@ -418,3 +418,17 @@ RestoreService 从视图拆出，真实流程支持重新预检已记录新协�
 独立只读复审没有确定的 Critical/Important 缺陷；据建议补新 Store 重开、请求 hash 变化、丢失意图/placeholder、保留 pending、独占提交不覆盖及硬链接拒绝。真实 Photos 提交失败/placeholder 持久化失败、资源损坏阻止后续创建、提交中强杀/系统终止、权限/空间/iCloud 故障尚未验证。原生检查只能证明记录协议；不能代替 PhotoKit 集成与设备验收。
 
 运行说明 PHOTOS_TRANSACTION_RECOVERY_RUNBOOK.md。下一步 Actions 编译0.3.6并核对产物，用户覆盖安装后用全新3-Live收件做提交后停止/重启/继续，Mac独立核对6资源、首个 ID 不变且仅新建剩余2项。当前新手机二进制运行、事务恢复及人工观察全为 NOT_RUN。更多格式、规模与最终可操作极简双端 UI 仍未完成。
+
+### 0.3.6 云产物已核对、电脑已更新；Photos 恢复真机待测
+
+功能本地提交5cdf28a。远端源码3ca3a8c8978d8c4e79edf330ce1cd1f6529996b4 的 Actions #19（https://github.com/loterr298/PhotoBridge/actions/runs/39247734331）SUCCESS。真实6 XCTest /47 CoreChecks /23 StagingChecks /33 RecoveryChecks /44 Python；iOS arm64、Mac x86_64 编译通过。实际选中Xcode16.4/iOS18.5 SDK，未因runner另装Xcode26声称使用新版SDK。cloud-19-*.log、cloud-build-19-success.png及cloud-build-19.json保存日志与证据。
+
+下载artifact12183683845，整体SHA-256 71d31238858fa8038f8a389dfdff034aed3409e3d74b2543de3c7145777a1429，与Actions摘要一致。CRC、内部SHA256SUMS、iOS编译Info版本0.3.6/build10/commit/稳定bundleID/文件共享/隐私键/执行权限/arm64，Mac版本/x86_64/执行权限/严格签名及全部随附脚本与已测源码一致均核对。RestoreService.swift实际加入工程并编译。
+
+手机IPA：build/PhotoBridge-0.3.6-M3/PhotoBridgeOrderProbe-0.3.6-unsigned.ipa，SHA-256 233251107519eacb7e3fa1aae74d306424a3ad6c8a8f99799e50866d017eada8；需用户沿用原个人签名覆盖安装，不卸载。Mac ZIP：同目录PhotoBridgeMac-Intel.zip，SHA-256 ccc4731a999d7ba0cda3ebf53a524b641881d4ee7cddecc5655a5fdc15958ebf。双端包及安装/验收说明：build/PhotoBridge-0.3.6-M3-Apps.zip；精确hash记m3-photos-recovery-delivery.json。
+
+按已授权的电脑自动更新先保存旧0.3.5目录及ZIP，停止准确路径旧进程，安装逐文件相同的已验云包，严格签名/Intel架构再次通过；已启动并观察到准确安装路径进程，m3-photos-recovery-mac-install.json。进程存活不代表最终GUI视觉验收，仍为NOT_RUN。
+
+本轮USB-only实际检测错误-3，无设备；没有向手机上传新收件，没有Photos写入。新手机运行时、Photos提交后停止/重启继续、人工顺序及播放均NOT_RUN。旧0.3.5暂存恢复证据仍成立，不能替代0.3.6照片库事务恢复验收。待覆盖安装并重新连接后，先准备全新3-Live收件，然后受控停止并保存基准，不能直接跳到继续或宣称通过。
+
+双端交付 ZIP 最初使用 ditto 时中文说明文件名在标准 ZIP 读取中编码不一致，内部校验明确失败，未将失败包当作通过。保留该包以供排查，改用 ASCII 说明文件名和标准 ZIP（不写 AppleDouble），二进制输入不变。最终 CRC/逐文件内部 SHA-256 校验通过；build/PhotoBridge-0.3.6-M3-Apps.zip SHA-256 **9c7045a4d6854a4d73bccbd9040c38b71e9d32dfb50e9482d0dc1820b83a25b0**。具体说明、真实失败与云检查均已包含，私人照片/标识未包含。
