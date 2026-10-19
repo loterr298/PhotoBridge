@@ -1,0 +1,23 @@
+{
+  "status": "SUCCESS",
+  "runURL": "https://github.com/loterr298/PhotoBridge/actions/runs/39212122893",
+  "sourceCommit": "c786f22119a320bebbb6b76a518616a3e567494c",
+  "artifactID": 12168430346,
+  "outerSHA256": "75997c9053b0a071cf86c4da6e9f3d8f7723a690d2de01d1a601d666472f507a",
+  "crcAndInternalSHA256Verified": true,
+  "version": "0.3.3",
+  "build": "7",
+  "iOSArchitecture": "arm64",
+  "macOSArchitecture": "x86_64",
+  "xctestPassed": 4,
+  "coreChecksPassed": 47,
+  "pythonTestsPassed": 35,
+  "bundledScriptsMatchLocalSource": true,
+  "pythonBytecodeCachePackaged": false,
+  "products": {
+    "PhotoBridgeMac-Intel.zip": "8fb6c7dfa33b62aba96bd1b4de9f47b758eca80d3c130856bc5b7f33157a7970",
+    "PhotoBridgeOrderProbe-0.3.3-unsigned.ipa": "0266a6a3833e96ce4ca3b716671f54cd247941527f7a3e68a0f05f1b290da0ad"
+  },
+  "deviceRuntimeOfThisIOSBuild": "NOT_RUN",
+  "scope": "Cloud build. Physical cable-loss test used the exact local CLI source separately recorded; existing iPhone app unchanged."
+}

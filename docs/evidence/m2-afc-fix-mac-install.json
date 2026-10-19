@@ -1,0 +1,11 @@
+{
+  "installedVersion": "0.3.3",
+  "build": "7",
+  "previousVersion": "0.3.1",
+  "previousAppPreservedAsDirectoryAndZIP": true,
+  "codesignStrictVerified": true,
+  "architecture": "x86_64",
+  "installedScriptsMatchExactTestedSource": true,
+  "runningGUIProcessVersion": "NOT_OBSERVED",
+  "scope": "Installed bundle validated; no claim that an existing GUI process restarted or displayed new UI"
+}
