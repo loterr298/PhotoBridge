@@ -14,7 +14,11 @@ targets:
   PhotoBridgeOrderProbe:
     type: application
     platform: iOS
-    sources: [apps/iOS]
+    sources:
+      - path: apps/iOS
+        excludes: [PrivacyInfo.xcprivacy]
+      - path: apps/iOS/PrivacyInfo.xcprivacy
+        buildPhase: resources
     dependencies:
       - package: PhotoBridge
         product: PhotoBridgeCore
@@ -25,8 +29,8 @@ targets:
         TARGETED_DEVICE_FAMILY: '1,2'
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
-        MARKETING_VERSION: 0.3.6
-        CURRENT_PROJECT_VERSION: 10
+        MARKETING_VERSION: 0.3.7
+        CURRENT_PROJECT_VERSION: 11
 schemes:
   PhotoBridgeOrderProbe:
     build:
