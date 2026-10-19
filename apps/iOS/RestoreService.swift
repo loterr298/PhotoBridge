@@ -18,6 +18,9 @@ private struct RestoreInboxRequest: Decodable {
     @Published var busy = false
     @Published var ready = false
     @Published var message = "请先由 Mac 通过 USB 发送已校验备份，然后刷新收件箱。"
+    @Published var preflightReportSummary = ""
+    @Published var sharedPreflightReport = false
+    private var privatePreflightReport: URL?
     @Published var recovering = false
     @Published var savedTitle = ""
     @Published var completed = 0
@@ -41,13 +44,11 @@ private struct RestoreInboxRequest: Decodable {
                 .filter { UUID(uuidString: $0) != nil }.sorted()
         } catch { message = "无法读取收件箱：\(error.localizedDescription)" }
     }
-    func invalidate() { ready = false; recovering = false; savedTitle = ""; manifest = nil; selected = nil; manifestData = nil; requestData = nil; allowEditTimestampRewrite = false }
+    func invalidate() { preflightReportSummary = ""; sharedPreflightReport = false; privatePreflightReport = nil; ready = false; recovering = false; savedTitle = ""; manifest = nil; selected = nil; manifestData = nil; requestData = nil; allowEditTimestampRewrite = false }
     func requestStop() { stopRequested = true }
     private func checkPermissionAndStop() throws {
         guard !stopRequested && !Task.isCancelled else { throw ExportError.invalidManifest("已在事务边界停止；不会自动重复导入") }
-        guard PHPhotoLibrary.authorizationStatus(for: .readWrite) == .authorized else {
-            throw ExportError.invalidManifest("校验完整相簿需要全部照片权限，请在设置中允许")
-        }
+        try PhotoOperationChecks.requireFullAccess()
     }
     private func readJSONFile(_ url: URL) throws -> Data {
         let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
@@ -57,11 +58,35 @@ private struct RestoreInboxRequest: Decodable {
         }
         return try Data(contentsOf: url)
     }
-    func preflight(session: String, allowTimestampRewrite: Bool) async {
+    func preflight(session: String, allowTimestampRewrite: Bool, simulateNoSpace: Bool = false) async {
         guard !busy else { return }
         invalidate(); busy = true; stopRequested = false; completed = 0
         allowEditTimestampRewrite = allowTimestampRewrite; authorizedTimestampDifferences = 0
-        defer { busy = false }
+        var preflightReport: [String: Any] = ["kind": "PhotoBridgePreflightReport", "schemaVersion": "1.0.0",
+            "sessionID": session, "simulatedZeroCapacity": simulateNoSpace,
+            "photoAccessAtStart": PhotoOperationChecks.access.rawValue,
+            "photoKitCreationRequestsIssuedByPreflight": false, "resourcesHashVerified": 0,
+            "runtimeBuild": Bundle.main.object(forInfoDictionaryKey: "PhotoBridgeBuildCommit") as? String ?? "local-unversioned",
+            "runtimeVersion": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"]
+        defer {
+            preflightReport["status"] = ready ? "READY" : "BLOCKED"
+            preflightReport["photoAccessAtEnd"] = PhotoOperationChecks.access.rawValue
+            do {
+                let logs = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("RestoreChecksPrivate")
+                try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
+                try StagingResume.requireDirectory(logs)
+                let report = logs.appendingPathComponent(UUID().uuidString + ".json")
+                try RestoreRecoveryStore.writeNewMetadata(JSONSerialization.data(withJSONObject: preflightReport, options: [.sortedKeys, .prettyPrinted]), to: report)
+                privatePreflightReport = report
+                let actual = preflightReport["actualAvailableBytes"] as? Int64
+                let required = preflightReport["requiredEstimatedBytes"] as? Int64
+                preflightReportSummary = "本次诊断：\(preflightReport["status"] ?? "unknown")；照片权限 \(preflightReport["photoAccessAtStart"] ?? "unknown")。" +
+                    (actual.map { "实际可用 \($0) bytes；" } ?? "本次未取得容量值；") +
+                    (required.map { "估算另需 \($0) bytes；" } ?? "尚未计算空间需求；") +
+                    "模拟零空间：\(simulateNoSpace ? "是" : "否")。报告还含会话标识、来源清单 hash、资源计数和运行版本；仅用于本次故障诊断。"
+            } catch { ready = false; message += "。诊断日志未能保存：\(error.localizedDescription)" }
+            busy = false
+        }
         do {
             try checkPermissionAndStop()
             guard UUID(uuidString: session) != nil else { throw ExportError.invalidManifest("请选择有效收件会话") }
@@ -78,6 +103,9 @@ private struct RestoreInboxRequest: Decodable {
             let raw = try readJSONFile(manifestURL)
             let candidate = try RestoreSafety.decodeManifest(data: raw, expectedSHA256: request.sourceManifestSHA256)
             let resources = candidate.assets.flatMap(\.resources)
+            preflightReport["manifestSHA256"] = RestoreRecoveryStore.sha256(raw)
+            preflightReport["assets"] = candidate.assets.count; preflightReport["resources"] = resources.count
+            var recordedAssets = 0
             var totalBytes = 0
             for resource in resources {
                 let (sum, overflow) = totalBytes.addingReportingOverflow(resource.byteCount)
@@ -101,8 +129,18 @@ private struct RestoreInboxRequest: Decodable {
                 try validate(store, manifest: candidate, raw: raw, request: requestRaw, allowed: allowTimestampRewrite)
                 let state = try store.state()
                 if state.albumID != nil { _ = try observed(state) }
-                recovering = true; savedTitle = store.plan.title
+                recovering = true; savedTitle = store.plan.title; recordedAssets = state.assetIDs.count
             }
+            let budget = try RestoreWriteBudget(resourceBytesByAsset: candidate.assets.map { $0.resources.map { Int64($0.byteCount) } },
+                recordedAssets: recordedAssets, verifiedThisRun: 0)
+            let actualCapacity = try PhotoOperationChecks.availableCapacity(at: directory)
+            preflightReport["actualAvailableBytes"] = actualCapacity.map { $0 as Any } ?? NSNull()
+            preflightReport["effectiveAvailableBytes"] = simulateNoSpace ? 0 : (actualCapacity.map { $0 as Any } ?? NSNull())
+            preflightReport["requiredEstimatedBytes"] = budget.requiredBytes
+            preflightReport["remainingPhotoCopyBytes"] = budget.remainingPhotoCopyBytes
+            preflightReport["remainingReadbackBytes"] = budget.remainingReadbackBytes
+            preflightReport["reserveBytes"] = budget.reserveBytes; preflightReport["recordedAssets"] = recordedAssets
+            try OperationPreconditions.requireCapacity(simulateNoSpace ? 0 : actualCapacity, budget: budget)
             for asset in candidate.assets {
                 try checkPermissionAndStop()
                 if asset.resources.contains(where: { $0.resourceType == PHAssetResourceType.adjustmentData.rawValue }) && !allowTimestampRewrite {
@@ -117,11 +155,29 @@ private struct RestoreInboxRequest: Decodable {
                 try await Task.detached(priority: .utility) {
                     for resource in asset.resources { try RestoreSafety.verifyResource(resource, in: directory) }
                 }.value
+                preflightReport["resourcesHashVerified"] = (preflightReport["resourcesHashVerified"] as? Int ?? 0) + asset.resources.count
             }
+            try checkPermissionAndStop()
             selected = directory; manifest = candidate; manifestData = raw; requestData = requestRaw; ready = true
             let size = ByteCountFormatter.string(fromByteCount: Int64(totalBytes), countStyle: .file)
-            message = (recovering ? "已有恢复记录；继续时先重新回读全部已创建副本。" : "") + "收件大小/hash 及 PhotoKit 资源组合预检通过：\(candidate.assets.count) 项、\(resources.count) 份资源、\(size)。尚未导入；请为照片库副本和回读校验另预留约两倍资源空间。"
-        } catch { message = "预检未通过：\(error.localizedDescription)" }
+            message = (recovering ? "已有 \(recordedAssets) 项副本；继续时先重新回读已有资源。" : "尚未导入。") + "收件大小/hash、资源组合及空间估算预检通过：\(candidate.assets.count) 项、\(resources.count) 份资源、\(size)。估算另需 \(ByteCountFormatter.string(fromByteCount: budget.requiredBytes, countStyle: .file))；未预留磁盘，系统开销或其他写入仍可能导致失败。"
+        } catch {
+            ready = false
+            preflightReport["failureCode"] = (error as? OperationPreconditionFailure)?.code ?? "PREFLIGHT_FAILED"
+            preflightReport["error"] = error.localizedDescription
+            message = (simulateNoSpace ? "模拟零可用空间诊断：" : "") + "预检未通过：\(error.localizedDescription)"
+        }
+    }
+
+    func sharePreflightReportWithMac() {
+        guard !busy, !sharedPreflightReport, let report = privatePreflightReport else { return }
+        do {
+            let logs = inbox.deletingLastPathComponent().appendingPathComponent("RestoreChecks")
+            try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
+            try StagingResume.requireDirectory(logs)
+            try RestoreRecoveryStore.writeNewMetadata(readJSONFile(report), to: logs.appendingPathComponent(report.lastPathComponent))
+            sharedPreflightReport = true
+        } catch { message += "。报告共享未完成：\(error.localizedDescription)" }
     }
 
     private func changes(_ body: @escaping () -> Void) async throws {
@@ -164,7 +220,7 @@ private struct RestoreInboxRequest: Decodable {
         return (collection, fetch)
     }
     private func verifyImported(_ asset: PHAsset, source: ExportAsset, directory: URL,
-                                verificationDirectory: URL, allowTimestampRewrite: Bool) async throws -> (ResourceRoundTripResult, Date) {
+                                verificationDirectory: URL, allowTimestampRewrite: Bool, checkReadbackSpace: (Int64) throws -> Void) async throws -> (ResourceRoundTripResult, Date) {
         guard let version = asset.modificationDate, asset.pixelWidth == source.pixelWidth, asset.pixelHeight == source.pixelHeight,
               asset.mediaType.rawValue == source.mediaType,
               asset.mediaSubtypes.contains(.photoLive) == PHAssetMediaSubtype(rawValue: UInt(source.mediaSubtypes)).contains(.photoLive) else {
@@ -172,8 +228,10 @@ private struct RestoreInboxRequest: Decodable {
         }
         let resources = PHAssetResource.assetResources(for: asset)
         var verified: [ExportResource] = []
+        var committedReadbackBytes: Int64 = 0
         for (index, resource) in resources.enumerated() {
             try checkPermissionAndStop()
+            try checkReadbackSpace(committedReadbackBytes)
             let path = ResourcePaths.make(ordinal: source.ordinal, resourceIndex: index + 1, originalFilename: resource.originalFilename)
             let final = verificationDirectory.appendingPathComponent(path)
             try FileManager.default.createDirectory(at: final.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -186,6 +244,9 @@ private struct RestoreInboxRequest: Decodable {
             }
             let receipt = try await Task.detached(priority: .utility) { try ProbeFiles.inspect(part) }.value
             try StagingFiles.commit(part: part, destination: final)
+            let (sum, overflow) = committedReadbackBytes.addingReportingOverflow(Int64(receipt.byteCount))
+            guard !overflow else { throw OperationPreconditionFailure.invalidBudget }
+            committedReadbackBytes = sum
             verified.append(ExportResource(resourceIndex: index + 1, resourceType: resource.type.rawValue,
                 originalFilename: resource.originalFilename, uniformTypeIdentifier: resource.uniformTypeIdentifier,
                 storedRelativePath: path, sha256: receipt.sha256, byteCount: receipt.byteCount))
@@ -243,6 +304,16 @@ private struct RestoreInboxRequest: Decodable {
             if let runDirectory { try raw.write(to: runDirectory.appendingPathComponent("progress.json"), options: .atomic) }
             try raw.write(to: directory.appendingPathComponent("restore-progress.json"), options: .atomic)
         }
+        let sizes = manifest.assets.map { $0.resources.map { Int64($0.byteCount) } }
+        func checkSpace(recorded: Int, verified: Int, currentReadbackBytes: Int64 = 0) throws {
+            try checkPermissionAndStop()
+            let budget = try RestoreWriteBudget(resourceBytesByAsset: sizes, recordedAssets: recorded, verifiedThisRun: verified, committedResourceBytesInCurrentAsset: currentReadbackBytes)
+            let available = try PhotoOperationChecks.availableCapacity(at: directory)
+            log["latestCapacityCheck"] = ["requiredEstimatedBytes": budget.requiredBytes,
+                "reserveBytes": budget.reserveBytes,
+                "remainingPhotoCopyBytes": budget.remainingPhotoCopyBytes, "remainingReadbackBytes": budget.remainingReadbackBytes]
+            try OperationPreconditions.requireCapacity(available, budget: budget)
+        }
         func unchangedInputs() throws {
             try checkPermissionAndStop()
             guard try readJSONFile(directory.appendingPathComponent("album-order.json")) == checkedManifest,
@@ -259,6 +330,8 @@ private struct RestoreInboxRequest: Decodable {
             guard !FileManager.default.fileExists(atPath: directory.appendingPathComponent("restore-report.json").path) else {
                 throw ExportError.invalidManifest("此会话已经完成")
             }
+            let recordedBeforeClaim = continuing ? try RestoreRecoveryStore(in: directory).state().assetIDs.count : 0
+            try checkSpace(recorded: recordedBeforeClaim, verified: 0)
             if continuing {
                 store = try RestoreRecoveryStore(in: directory)
             } else {
@@ -294,6 +367,7 @@ private struct RestoreInboxRequest: Decodable {
             log["verificationDirectory"] = "verification-attempts/" + runID
             log["runID"] = runID
             if state.albumID == nil {
+                try checkSpace(recorded: 0, verified: 0)
                 try active.beginAlbum(); try journal("CREATING_NEW_ALBUM")
                 var persistenceError: Error?
                 try await changes {
@@ -320,6 +394,7 @@ private struct RestoreInboxRequest: Decodable {
                     }.value
                     try unchangedInputs()
                     let (collection, fetch) = try observed(try active.state())
+                    try checkSpace(recorded: state.assetIDs.count, verified: completed)
                     try active.beginAsset(ordinal: source.ordinal)
                     log["pendingOrdinal"] = source.ordinal; try journal("IMPORTING")
                     var persistenceError: Error?; var creationRequested = false
@@ -359,13 +434,15 @@ private struct RestoreInboxRequest: Decodable {
                 if FileManager.default.fileExists(atPath: recordURL.path) {
                     guard try readJSONFile(recordURL) == recordData else { throw ExportError.invalidManifest("既有副本映射改变") }
                 } else { try RestoreRecoveryStore.writeNewMetadata(recordData, to: recordURL) }
+                try checkSpace(recorded: state.assetIDs.count, verified: completed)
                 try journal("VERIFYING_IMPORTED_RESOURCES")
                 message = "正在重新回读第 \(source.ordinal)/\(manifest.assets.count) 项的全部资源"
                 guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil).firstObject else {
                     throw ExportError.invalidManifest("已记录副本不可见，不重试创建")
                 }
                 let (comparison, version) = try await verifyImported(asset, source: source, directory: directory,
-                    verificationDirectory: verification, allowTimestampRewrite: userAllowedTimestampRewrite)
+                    verificationDirectory: verification, allowTimestampRewrite: userAllowedTimestampRewrite,
+                    checkReadbackSpace: { bytes in try checkSpace(recorded: state.assetIDs.count, verified: completed, currentReadbackBytes: bytes) })
                 try active.recordVerified(ordinal: source.ordinal, identifier: identifier, modified: version)
                 authorizedTimestampDifferences += comparison.authorizedAdjustmentTimestampDifferences
                 completed += 1; log.removeValue(forKey: "pendingOrdinal"); try journal("IMPORTING")
@@ -384,11 +461,13 @@ private struct RestoreInboxRequest: Decodable {
             try unchangedInputs(); _ = try observed(try active.state())
             log["observedCreatedAssetIDs"] = finalIDs; log["sourceToCreatedAssetIDs"] = mapping
             let status = authorizedTimestampDifferences == 0 ? "PHOTO_LIBRARY_BYTES_AND_ORDER_VERIFIED" : "PHOTO_LIBRARY_NON_TIME_DATA_AND_ORDER_VERIFIED_WITH_AUTHORIZED_EDIT_TIMESTAMPS"
+            try checkPermissionAndStop()
             try journal(status)
             try RestoreRecoveryStore.writeNewMetadata(data(log), to: directory.appendingPathComponent("restore-report.json"))
             message = "照片库回读完成：\(completed) 项，本次新建 \(newCreated) 项，复用已有 \(log["recoveredExistingAssets"] ?? 0) 项。成员顺序通过；\(authorizedTimestampDifferences) 份附件仅已授权的编辑时间变化。请在系统照片独立核对自定义顺序、编辑效果及 Live Photo 播放；人工观察尚未验证。"
         } catch {
-            if claimed { try? journal("INCOMPLETE", error: error.localizedDescription) }
+            log["failureCode"] = (error as? OperationPreconditionFailure)?.code ?? "RESTORE_INCOMPLETE"
+            if claimed { try? journal("INCOMPLETE", error: (error as? OperationPreconditionFailure)?.code ?? error.localizedDescription) }
             message = "恢复未完成：\(error.localizedDescription)。保留新副本、原件和全部日志；仅有完整持久化标识且实际回读一致的新版会话可在重新预检后继续，状态不明确时拒绝重放。"
         }
     }

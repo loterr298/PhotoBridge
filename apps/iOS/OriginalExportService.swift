@@ -192,7 +192,7 @@ struct StagingCandidate: Identifiable {
         }
     }
     private func checkPermission() throws {
-        guard PHPhotoLibrary.authorizationStatus(for: .readWrite) == .authorized else { throw ExportError.invalidManifest("完整相簿导出需要全部照片权限") }
+        try PhotoOperationChecks.requireFullAccess()
     }
     private func checkStopAndPermission() throws {
         if stopRequested || Task.isCancelled { throw ExportError.invalidManifest("已在资源边界停止；旧会话保留，可刷新后继续到新会话") }

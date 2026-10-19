@@ -31,6 +31,11 @@ struct RestoreView: View {
                         .font(.caption).foregroundStyle(.secondary)
                     DisclosureGroup("中断恢复诊断") {
                         Toggle("首个 Photos 事务完成后停止", isOn: $stopAfterFirstCommit).disabled(service.busy || service.recovering)
+                        Button("仅预检：模拟零可用空间") {
+                            Task { await service.preflight(session: session, allowTimestampRewrite: allowTimestampRewrite, simulateNoSpace: true) }
+                        }.disabled(service.busy || session.isEmpty)
+                        Text("模拟仅替换本次预检的可用空间输入，不分配填充文件、不写照片库。之后须重新正常预检才可开始；报告同时保存实际空间与模拟值。")
+                            .font(.caption).foregroundStyle(.secondary)
                         Text("仅用于新会话：提交首个副本并保存标识后、回读资源前停止。重启后重新预检同一会话继续；这不等于事务提交中被强制终止测试。")
                             .font(.caption).foregroundStyle(.secondary)
                     }
@@ -45,6 +50,12 @@ struct RestoreView: View {
                 }
                 Section("真实结果") {
                     Text(service.message).textSelection(.enabled)
+                    if !service.preflightReportSummary.isEmpty {
+                        Text(service.preflightReportSummary).font(.caption).textSelection(.enabled)
+                        Button(service.sharedPreflightReport ? "本次诊断报告已供 Mac 读取" : "允许 Mac 读取这份诊断报告") {
+                            service.sharePreflightReportWithMac()
+                        }.disabled(service.busy || service.sharedPreflightReport)
+                    }
                     Text("已回读校验 \(service.completed) 项").monospacedDigit()
                     if service.authorizedTimestampDifferences > 0 { Text("\(service.authorizedTimestampDifferences) 份附件存在已授权的系统编辑时间变化，附件非字节一致").foregroundStyle(.secondary) }
                     Text("新版仅按已保存的副本标识恢复；先回读已有资源再继续。旧版失败会话、缺失标识或对象不可见时均拒绝重放。每次校验保留独立日志和资源。")
