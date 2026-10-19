@@ -1,0 +1,9 @@
+{
+  "status": "HOST_CURRENT_SWIFT_CORE_ACTUAL_SIDECARS_PASS",
+  "resources": 5,
+  "withoutPermissionRejected": 5,
+  "authorizedTimestampOnly": 5,
+  "strictXMLStructureAndScalarTextCompared": true,
+  "strictBytesIdentical": false,
+  "scope": "Current stricter Swift core, actual USB-read source/restored XML pairs; not a new phone runtime test"
+}

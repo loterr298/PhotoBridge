@@ -1,0 +1,18 @@
+test_duplicate_keys_cannot_hide_a_non_time_payload_change (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+test_malformed_data_is_not_declared_equivalent (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+test_only_top_level_edit_timestamp_can_be_classified_as_timestamp_only (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+test_unknown_payload_change_or_type_change_never_counts_as_time_only (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+test_unknown_xml_elements_cannot_hide_non_time_changes (test_adjustment_inspection.AdjustmentInspectionChecks) ... FAIL
+
+======================================================================
+FAIL: test_unknown_xml_elements_cannot_hide_non_time_changes (test_adjustment_inspection.AdjustmentInspectionChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_adjustment_inspection.py", line 54, in test_unknown_xml_elements_cannot_hide_non_time_changes
+    self.assertNotEqual(result['classification'], 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE')
+AssertionError: 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE' == 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE'
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.006s
+
+FAILED (failures=1)

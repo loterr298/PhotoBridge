@@ -1,0 +1,26 @@
+test_duplicate_keys_cannot_hide_a_non_time_payload_change (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+test_ignored_scalar_suffixes_cannot_hide_non_time_changes (test_adjustment_inspection.AdjustmentInspectionChecks) ... test_malformed_data_is_not_declared_equivalent (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+test_only_top_level_edit_timestamp_can_be_classified_as_timestamp_only (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+test_unknown_payload_change_or_type_change_never_counts_as_time_only (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+test_unknown_xml_elements_cannot_hide_non_time_changes (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+
+======================================================================
+FAIL: test_ignored_scalar_suffixes_cannot_hide_non_time_changes (test_adjustment_inspection.AdjustmentInspectionChecks) (leaf='<data>YQ=={payload}</data>')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_adjustment_inspection.py", line 63, in test_ignored_scalar_suffixes_cannot_hide_non_time_changes
+    self.assertNotEqual(result['classification'], 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE')
+AssertionError: 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE' == 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE'
+
+======================================================================
+FAIL: test_ignored_scalar_suffixes_cannot_hide_non_time_changes (test_adjustment_inspection.AdjustmentInspectionChecks) (leaf='<date>2001-01-01T00:00:00Z{payload}</date>')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_adjustment_inspection.py", line 63, in test_ignored_scalar_suffixes_cannot_hide_non_time_changes
+    self.assertNotEqual(result['classification'], 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE')
+AssertionError: 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE' == 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE'
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.008s
+
+FAILED (failures=2)
