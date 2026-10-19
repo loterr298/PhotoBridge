@@ -337,3 +337,18 @@ dw 的新会话已通过真实 USB 发送并回读 20 项/30 份资源/77,450,23
 本轮实际 **41 Python / 47 CoreChecks** 通过，m2-upload-full-tests.log / m2-upload-core-checks.log；Intel x86_64 App 本地编译、严格签名检查完成，m2-upload-mac-build.log。0.3.4/build8 元数据及上传工具准备完毕，新云编译/产物尚未核对（下文另记）。手机现有0.3.3无需为纯Mac上传工具再安装；没有要求重复导入。
 
 继续待办：iPhone暂存恢复、Photos事务不确定状态协调、PNG/DNG/更多编辑/iCloud/权限和空间故障、万张压力与速度优化、可实际操作的最终极简双端UI。当前 Mac GUI 仍是诊断入口，实际传输由随附CLI执行，未冒充最终产品。原媒体内部 EXIF/GPS/MakerNotes 等未写入；唯一额外Photos编辑记录时间授权边界不变。
+
+
+### 0.3.4 云编译、产物核对与电脑端安装
+
+本地功能提交 **01cf256**。远端源码 **103996d252a11d7c43ad98cab5f74e92833d3572** 的 [Actions #17](https://github.com/loterr298/PhotoBridge/actions/runs/39214737400) **SUCCESS**，实际 **4 XCTest / 47 CoreChecks / 41 Python**，iOS arm64 与 Mac x86_64 均编译通过；实际选中 Xcode16.4 / iOS18.5 SDK。云日志保存于 cloud-17-*.log，成功截图 cloud-build-17-success.png。
+
+[云产物](https://github.com/loterr298/PhotoBridge/actions/runs/39214737400/artifacts/12168289317) 已下载，整体 SHA-256 **400ccf1f6466229e0b29b4bb1170eefb4de580692bb585916fc41d0d276a8964** 与 Actions 摘要一致；CRC、内部 SHA256SUMS、IPA 0.3.4/build8/commit/稳定 bundle ID/执行权限/arm64、Mac版本/执行权限/x86_64及包内全部脚本与本地已测源码一致均核对，无 bytecode 缓存。cloud-build-17.json。
+
+- `build/PhotoBridge-0.3.4-M2/PhotoBridgeMac-Intel.zip`：SHA-256 **f54bfd9bff1e0844c91e9ce88602a0fc52fc176c1ecad98167af60739dfaf920**。
+- `build/PhotoBridge-0.3.4-M2/PhotoBridgeOrderProbe-0.3.4-unsigned.ipa`：SHA-256 **b71981abb804e8c780d80baa86a6faec2e73774ad0781bbd95561a1a0ce80219**，本轮手机二进制运行时 **NOT_RUN**。已运行0.3.3可继续使用本次Mac功能，无需手机重复安装或重新导入。
+- `build/PhotoBridge-0.3.4-M2-Apps.zip`：双端包、校验、恢复/下载/上传继续执行与保护说明；SHA-256 **b489c42056e63bab32b4464512ae2f0a9e6826ec3f83e5a363c1e6558dc3f158**。
+
+本机旧0.3.3 App已保存独立目录及ZIP后，在 `/Applications/PhotoBridgeMac.app` 装入0.3.4云包；严格签名、Intel架构、所有脚本源码及安装后上传CLI --help实际运行均通过。m2-upload-resume-mac-install.json。未声称旧GUI进程已重启，未声称最终界面验收。
+
+本阶段已完成受控及真实物理断线后的双向USB继续执行，范围均限已完整暂存备份与App收件目录。iPhone暂存/Photos事务安全恢复、更多格式及故障/规模、性能和最终UI仍待完成；不把此里程碑写成全项目通过。
