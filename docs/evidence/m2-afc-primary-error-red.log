@@ -1,0 +1,31 @@
+test_container_escape_and_ambiguous_paths_are_rejected (test_usb_probe.DocumentsRootChecks) ... ok
+test_house_arrest_paths_are_beneath_documents (test_usb_probe.DocumentsRootChecks) ... ok
+test_close_failure_never_replaces_read_write_or_local_primary_error (test_usb_probe.USBChecks) ... FAIL
+test_generator_hash_size_and_no_clobber (test_usb_probe.USBChecks) ... ok
+test_partial_writes_and_stalled_writes (test_usb_probe.USBChecks) ... ok
+test_receipt_validation_rejects_mismatch_filename_and_origin (test_usb_probe.USBChecks) ... ok
+test_uuid_path_rejects_traversal_and_non_probe_paths (test_usb_probe.USBChecks) ... ok
+
+======================================================================
+FAIL: test_close_failure_never_replaces_read_write_or_local_primary_error (test_usb_probe.USBChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/scripts/usb_probe.py", line 158, in read
+    self.check(self.lib.afc_file_read(self.afc, handle, buffer, CHUNK, C.byref(count)), 'AFC read')
+RuntimeError: AFC read: error 30
+
+During handling of the above exception, another exception occurred:
+
+RuntimeError: AFC close read: error 30
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_usb_probe.py", line 17, in test_close_failure_never_replaces_read_write_or_local_primary_error
+    with self.assertRaisesRegex(RuntimeError, '^AFC read:') as caught: client.read('test/file', lambda data: None)
+AssertionError: "^AFC read:" does not match "AFC close read: error 30"
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.021s
+
+FAILED (failures=1)

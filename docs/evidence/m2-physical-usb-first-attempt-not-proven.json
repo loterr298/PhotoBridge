@@ -1,0 +1,22 @@
+{
+  "status": "PHYSICAL_INTERRUPTION_NOT_PROVEN",
+  "failure": "RuntimeError: AFC close read: error 30",
+  "USBReadFailure": null,
+  "IOUSBEvents": [
+    {
+      "seconds": 0,
+      "present": true
+    },
+    {
+      "seconds": 27.806839991,
+      "present": false
+    }
+  ],
+  "observerErrors": [],
+  "nonemptyPartialFiles": 8,
+  "phoneFilesWritten": false,
+  "scope": "IOUSB removal plus failed actual USB read required; receiver throttled to 1 MiB/s for manual timing",
+  "userReconnectionAttestation": "已重新连接",
+  "qualification": "NOT_PROVEN: primary read error was masked by close error; no recovery pass claimed",
+  "originalSourcesOrPhoneWritten": false
+}

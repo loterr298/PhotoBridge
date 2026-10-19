@@ -1,0 +1,26 @@
+{
+  "status": "INTERRUPTED_AWAITING_RECONNECT",
+  "failure": "RuntimeError: AFC read: error 30",
+  "USBReadFailure": {
+    "seconds": 32.466925809,
+    "error": "AFC read: error 30"
+  },
+  "IOUSBEvents": [
+    {
+      "seconds": 0,
+      "present": true
+    },
+    {
+      "seconds": 32.592809074,
+      "present": false
+    }
+  ],
+  "observerErrors": [],
+  "nonemptyPartialFiles": 9,
+  "phoneFilesWritten": false,
+  "scope": "IOUSB removal plus failed actual USB read required; receiver throttled to 1 MiB/s for manual timing",
+  "userAttestation": "第二次已重新连接",
+  "continuationStatus": "NOT_RUN: IOUSB absent and USB-only lookup -3 after reported reconnect",
+  "sourceAssets": 20,
+  "sourceResources": 30
+}
