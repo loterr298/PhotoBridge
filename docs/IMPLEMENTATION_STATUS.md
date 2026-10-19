@@ -240,3 +240,33 @@ New regression genuinely failed against the prior link implementation, then pass
 首次硬件尝试 USB-only 返回未发现设备（-3），续传未执行，已如实记录 m2-usb-resume-device-attempt.json。用户重新连接后，真实 USB 受控接收中断测试成功：复用1份完整文件、从 **3,024,889 bytes** 前缀处继续，实际重新从 USB 读取 **15,582,759 bytes**，新建 AFC 连接后6份资源 COMMITTED，系统 shasum 6/6及新副本创建/修改时间验证通过，旧文件 bytes/mtime/birthtime 未变。证据 m2-usb-download-resume-device.json。该测试未物理拔线，不证明上传、iPhone 暂存或照片库事务续传。
 
 0.3.1/b5 已准备源代码及 CI 元数据；新云构建、交付和 dw20 全部恢复复测结果待下文记录。原图及旧失败新相簿继续保留，未自动删除或重放。
+
+
+### 0.3.1 实际云构建及交付
+
+[Actions #14](https://github.com/loterr298/PhotoBridge/actions/runs/39188333981) SUCCESS，源码 **a3fe36c93e1f0f25a8c02098a47fe78a716b1edd**，实际 **4 XCTest / 41 核心 / 27 Python** 通过；iOS arm64 BUILD SUCCEEDED，Intel x86_64 编译通过。实际工具链 Xcode16.4 / iOS18.5 SDK，未猜测 Beta SDK。
+
+[云产物](https://github.com/loterr298/PhotoBridge/actions/runs/39188333981/artifacts/12158792218) 已下载：SHA-256 ba2953cf66c3bbcccae7a9949d676bc9f520e813f6b93bffebee15b9d353b096；CRC、内部 SHA256SUMS、IPA 编译后 0.3.1/build5/源码 commit/稳定 bundle ID/arm64/权限全部核对。Mac 包内完整下载、回传、继续执行和只读 plist 诊断源码与本地审查版本一致；打包已排除 Python bytecode 缓存。
+
+- `build/PhotoBridge-0.3.1-M2/PhotoBridgeOrderProbe-0.3.1-unsigned.ipa`：SHA-256 295fd223face567ae9fee52c488d1b71733ced89f9b15e6f915eee51af1b8441，已提供按原个人签名覆盖安装。
+- `build/PhotoBridge-0.3.1-M2/PhotoBridgeMac-Intel.zip`：SHA-256 ffd51bb3daf13d6192ad5e045dd68ef44e0d1a1de8f981903db0e495c1c675b7。本机旧 App 同时保存 ZIP 和目录备份后安装干净云包，验签并启动；m2-policy-resume-mac-install.json。
+- `build/PhotoBridge-0.3.1-M2-Apps.zip`：双端包、SHA256SUMS、恢复/授权/续传具体说明。详见 cloud-build-14.json、cloud-14-*.log 及成功截图。
+
+dw 的新会话已通过真实 USB 发送并回读 20 项/30 份资源/77,450,231 bytes，旧失败会话及其12个新副本保留；m2-dw-authorized-usb-return-verified.json。已请求用户安装 0.3.1、开启已授权选项，用新会话完成全20项恢复及独立顺序/编辑效果核对。**新策略手机验收仍 NOT_RUN**，没有将主机 fixture、CI 或 Mac→App 收件当成该恢复已通过。新 App 会把实际运行时版本/build写入报告，后续读取再确认。
+
+
+### dw 20 项完整往返验收：仅已授权的编辑记录时间例外
+
+手机实际报告运行时 **0.3.1 / a3fe36c93e1f0f25a8c02098a47fe78a716b1edd**，20 项全部创建及回读通过，状态 PHOTO_LIBRARY_NON_TIME_DATA_AND_ORDER_VERIFIED_WITH_AUTHORIZED_EDIT_TIMESTAMPS，authorizedAdjustmentTimestampDifferences=5，strictBytesIdenticalForVerifiedAssets=false。此为设备实际报告，不再使用前文尚 NOT_RUN 的历史状态。
+
+新增可复现的只读硬件审计 `tests/device_restore_audit.py`：绑定精确来源清单，验证全部旧→新标识及顺序，检验资源类型/原名/UTI/长度的完整多重集，经 USB 取回全部实际 Photos 回读文件，在 Mac 用系统 shasum 独立检验每份 SHA-256。源目录和手机均不写入，目标只能是全新本地目录。
+
+实际 **20 项 / 30 份资源 / 77,450,231 bytes** 独立审计通过：20 份原图 JPEG + 5 份编辑后 JPEG 与原备份字节完全相同；5 份 XML 编辑附件只有顶层 adjustmentTimestamp 变化，其余递归解析值、类型及 opaque 编辑配方一致。源附件原始字节仍保留，严格字节一致标记仍 false。最新私有回读保存在 private-diagnostics/dw-authorized-roundtrip-independent-05，不上传媒体、文件名或标识。
+
+用户先回复“顺序一致”，随后独立回复“5 张编辑效果一致”。记录为本机此20项自建相簿的人工顺序/可见编辑效果通过，不泛化到其他编辑、格式、系统视图。公开脱敏证据 `m2-dw-authorized-photos-roundtrip-verified.json`。
+
+审查发现 Python plistlib 会忽略未知 XML 标签；合成 unknown BAD→XYZ 加时间变化可错误分类，仅属于诊断/独立审计工具边界，未据此隐瞒或改动真实资源。已先运行回归 RED，再加入标准库 expat 严格 plist XML 文法（tag、父子结构、属性、深度，拒绝实体、CDATA 与额外注释/处理指令），保留重复键拒绝。完整审计路径也加入拒绝回归。Swift 同类未知标签实测原已拒绝，但 Foundation 也会忽略 base64 尾随内容，已记录真实 RED 并同步收紧 Swift 产品校验。两端验证已知 tag、结构/属性及完整标量；日期必须有效、base64 必须 canonical、数字拒绝溢出和非有限值。额外比较完整 XML 结构及每个非授权标量的文本，仅允许根字典 adjustmentTimestamp 的日期文本不同，防止解析归一化隐瞒差异；未知字段即使不能理解也保留比较。真实30份资源在修复后重新经 USB 独立检查，结果相同。
+
+本地 **47 CoreChecks / 33 Python tests** 通过，日志 `m2-native-unknown-xml-check.log` / `m2-independent-audit-tests.log`，真实 RED `m2-unknown-xml-red.log` / `m2-scalar-xml-red.log` / `m2-native-scalar-xml-red.log`。当前更严格 Swift 核心针对真实侧车的主机检查另记录 m2-strict-xml-actual-sidecars.json，不当作新版手机运行时验收。0.3.2/build6 新审计及双端解析收紧的云检查结果另行记录，不冒充原云14已运行新测试。
+
+下一步仍为上传/手机暂存/照片库事务的安全恢复、真实物理拔线续传、PNG/DNG/更多编辑/iCloud/权限和空间故障、大规模与最终双端极简 UI。现有证明限于上述 JPEG/Live 样本和受控下载中断；未宣称完整产品已完成。
