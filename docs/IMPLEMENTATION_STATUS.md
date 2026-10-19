@@ -404,3 +404,17 @@ dw 的新会话已通过真实 USB 发送并回读 20 项/30 份资源/77,450,23
 下一项为Photos导入事务的不确定状态协调，以及单资源写入中终止与权限/空间/iCloud等故障测试。更多格式、规模性能、最终可操作极简UI仍未完成。
 
 真机验收后仅更新交付包说明和DEVICE_ACCEPTANCE.json，iOS/Mac二进制未变；旧6585ac4d…双端ZIP已保留为before-device-audit包。当前 `build/PhotoBridge-0.3.5-M3-Apps.zip` SHA-256 **9b53fc7109df10282b876797f59e673ef8b7a63c65c72e6b7c802608f02f6041**，CRC/内部校验及不含私人文件再次通过，m3-device-verified-delivery.json。
+
+### Photos 导入事务恢复实现（0.3.6/build10，真机 NOT_RUN）
+
+新增 RestoreRecovery 原生不可变计划与意图/placeholder/回读版本记录，绑定收件/尝试 UUID、精确清单和请求 SHA-256、源相簿/成员、新名称及原授权。事务前持久化意图，PhotoKit changes block 内同步独占保存 placeholder；持久化失败不能撤销已排队 Photos 请求，缺失标识或对象不可见一律停止，不因“找不到”而自动重建。合作写入者使用原生非阻塞 flock。旧版失败会话没有新计划，继续拒绝。
+
+RestoreService 从视图拆出，真实流程支持重新预检已记录新协议会话。新运行先核对精确相簿名称/成员前缀/顺序、明确 ID 的实际可见性和已回读修改版本；全部已有资产完整回读到新 verification-attempts/UUID 后，才创建剩余项。每个副本仍 shouldMoveFile=false，源日期原值，原资源不主动改写。每次运行独立 run 日志，旧最新进度先保存快照；不可变映射、旧回读/part/日志保留。元数据提交使用唯一 .pending-UUID、同步后 renamex_np(RENAME_EXCL)，不覆盖既有记录；断电耐久性不作保证。
+
+新增默认关闭“首个 Photos 事务完成后停止”诊断：首个副本提交且 ID 保存后、资源回读前停止。下次必须用户重新预检并继续，没有后台重放。每次报告记录本次新建/复用、实际回读目录，仍要求人工独立检查 Photos 顺序及 Live 播放。含 type7 时维持默认关闭、仅既有明确授权的新副本 adjustmentTimestamp 例外；恢复时不得改变原授权。
+
+先记录核心缺失类型编译 RED、重复 ID 回归 RED；独立 USB 审计新增回读目录测试先 RED（旧路径硬编码及未拒绝越界），修复后使用仅 legacy verification 或 verification-attempts/UUID 的安全路径。当前实际本机 44 Python /47 CoreChecks /23 StagingChecks 通过，Intel x86_64 App 编译及严格签名检查成功；iOS 源码 parse 通过。本机 XCTest 因 no such module XCTest 未执行成功，待云端完整 Xcode 实际运行。恢复检查最终计数与云构建下文另记，绝不将模拟测试填为真机通过。
+
+独立只读复审没有确定的 Critical/Important 缺陷；据建议补新 Store 重开、请求 hash 变化、丢失意图/placeholder、保留 pending、独占提交不覆盖及硬链接拒绝。真实 Photos 提交失败/placeholder 持久化失败、资源损坏阻止后续创建、提交中强杀/系统终止、权限/空间/iCloud 故障尚未验证。原生检查只能证明记录协议；不能代替 PhotoKit 集成与设备验收。
+
+运行说明 PHOTOS_TRANSACTION_RECOVERY_RUNBOOK.md。下一步 Actions 编译0.3.6并核对产物，用户覆盖安装后用全新3-Live收件做提交后停止/重启/继续，Mac独立核对6资源、首个 ID 不变且仅新建剩余2项。当前新手机二进制运行、事务恢复及人工观察全为 NOT_RUN。更多格式、规模与最终可操作极简双端 UI 仍未完成。
