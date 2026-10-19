@@ -1,0 +1,23 @@
+{
+  "status": "SUCCESS",
+  "runURL": "https://github.com/loterr298/PhotoBridge/actions/runs/39190177844",
+  "sourceCommit": "6087a6cf76fcdb7cb7216769e9c0e8fce73485ed",
+  "artifactID": 12158724769,
+  "outerSHA256": "c637ec701c3465d5bf53eea31c0fb354dba794e9ba0f5212daf9d098c92d91b1",
+  "crcAndInternalSHA256Verified": true,
+  "version": "0.3.2",
+  "build": "6",
+  "iOSArchitecture": "arm64",
+  "macOSArchitecture": "x86_64",
+  "xctestPassed": 4,
+  "coreChecksPassed": 47,
+  "pythonTestsPassed": 33,
+  "bundledScriptsMatchLocalSource": true,
+  "pythonBytecodeCachePackaged": false,
+  "products": {
+    "PhotoBridgeMac-Intel.zip": "f85c6223e716e22535bb3dab4316b3e817c3b114dd69fb27e107cc6330e7beee",
+    "PhotoBridgeOrderProbe-0.3.2-unsigned.ipa": "c826b03cc099ae668436021fd947d4c559801bd60b3027b4af4850b5b1d3a689"
+  },
+  "deviceRuntimeOfThisBuild": "NOT_RUN",
+  "scope": "Cloud compilation and installation metadata; previous 0.3.1 device sample report remains separate"
+}
