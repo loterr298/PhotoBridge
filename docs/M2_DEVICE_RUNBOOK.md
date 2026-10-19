@@ -22,3 +22,14 @@ CLI 只准备 USB 收件，不调用 Photos。发送失败不会发布 ready 请
 原照片库创建日期按现有清单的 ISO8601 秒精度设置到新副本；不把 Mac 5 秒逻辑日期传入照片库，不改任何媒体内部 EXIF/GPS/MakerNotes。PNG、DNG、编辑状态、iCloud、故障注入及大量照片各有独立验收，不能从 3 张 Live 样本外推。
 
 授权范围详见 [PRESERVATION_POLICY.md](PRESERVATION_POLICY.md)；Mac 下载继续执行详见 [USB_RESUME_RUNBOOK.md](USB_RESUME_RUNBOOK.md)。
+
+
+Mac 独立回读审计（只读手机及来源；写入全新私有本地目录）：
+
+```bash
+python3 tests/device_restore_audit.py --remote RestoreInbox/实际UUID \
+  --source private-diagnostics/已校验备份 \
+  --output private-diagnostics/新的独立回读目录
+```
+
+仅对已明确授权的编辑记录时间例外，加 `--allow-authorized-adjustment-timestamp`；仍逐份校验实际回读字节，并拒绝其他字段、类型、长度、资源组合或顺序变化。工具不会替代系统照片人工观察。2026-10-19 dw20 已独立回读30份，25媒体字节一致/5附件仅授权时间差异，用户确认顺序及5张编辑效果；见对应 evidence JSON。未知XML结构的附件拒绝语义例外，保持失败证据。
