@@ -352,3 +352,23 @@ dw 的新会话已通过真实 USB 发送并回读 20 项/30 份资源/77,450,23
 本机旧0.3.3 App已保存独立目录及ZIP后，在 `/Applications/PhotoBridgeMac.app` 装入0.3.4云包；严格签名、Intel架构、所有脚本源码及安装后上传CLI --help实际运行均通过。m2-upload-resume-mac-install.json。未声称旧GUI进程已重启，未声称最终界面验收。
 
 本阶段已完成受控及真实物理断线后的双向USB继续执行，范围均限已完整暂存备份与App收件目录。iPhone暂存/Photos事务安全恢复、更多格式及故障/规模、性能和最终UI仍待完成；不把此里程碑写成全项目通过。
+
+
+### 电脑端自动更新确认
+
+用户要求“电脑端自动帮我更新”。实际重新核对 `/Applications/PhotoBridgeMac.app` 已为0.3.4/build8，安装目录每个云包文件与已验SHA-256的0.3.4 ZIP逐字节一致；严格签名和Intel架构通过。已有旧App目录及ZIP备份保留，无需重复覆盖。随后实际启动该安装路径，进程可执行路径已确认为 `/Applications/PhotoBridgeMac.app/Contents/MacOS/PhotoBridgeMac`。此前“GUI进程未观察”的历史记录已由本次新进程观察补足，但仍未把进程存活当成最终GUI视觉验收。未进行照片库写入。证据 m2-mac-0.3.4-auto-update-confirmed.json。
+
+
+### iPhone 暂存中断恢复实现（0.3.5/build9，真机待测）
+
+新增 StagingResume 核心、OriginalExportService 及继续入口。每次导出保存完整来源计划（相簿/成员顺序、亚秒级创建及修改日期、尺寸/媒体属性、按原顺序的全部资源类型/原名/UTI），每个资源真实写完、SHA-256及单链接提交后再独占提交绑定session/精确计划hash的检查点。检查点前崩溃留下的完整文件也不凭文件名跳过；没有检查点就重新读取。
+
+继续前校验当前PhotoKit来源完全一致及所有旧完整资源的实际hash，之后只在新的UUID会话复制已验证资源，其余通过PhotoKit重新读取完整资源。旧会话、旧.part及日志不写入；没有资源内偏移续读宣称。新会话全资源再验、来源相簿重新fetch核对、权限/停止边界检查后才最终发布album-order.json。原件或照片库无写入；Photos恢复事务不在本功能范围。旧版无plan/检查点会话拒绝继续。缺失modificationDate时可新导出，但不能据此授权缓存复用。
+
+内部plan使用Foundation数值日期编码，避免ISO8601秒精度丢失编辑版本；现有对外清单/5秒Mac新副本属性策略不变。新日志明确记录实际运行commit、复用完整资源数、重新读取完成资源数、partialResourceBytesReused=0及来源计划hash；旧snapshot的capturedAt和逻辑时间基准保持。
+
+先运行缺失类型编译RED，随后23项新的实际Swift可执行检查通过。补测发现Int.min检查点下标会在减1时算术trap，实际exit -4记录m3-ios-staging-index-red.log；改为减1前guard正数/范围，两项回归通过。其他检查覆盖亚秒编辑、顺序/成员/改名/资源目录、hash损坏/缺失、foreign检查点、symlink、复制不覆盖/嵌套拒绝、旧bytes/mtime/部分资源不变、单链接及完成会话拒绝。独立只读复审无其他Critical/Important；同一collection对象的旧标题快照问题也已改为重新fetch相簿，未据旧对象宣称改名可检测。
+
+实际本地 **23 StagingChecks / 47 CoreChecks / 41 Python**，iOS源码语法parse与Intel x86_64构建通过；日志m3-ios-staging-{red,index-red,green,core,python,mac-build}.log。新增云端XCTest来源绑定case，尚未在本机无完整Xcode环境宣称XCTest通过。CI已增加StagingChecks，并准备0.3.5/build9；云构建及产物另记。
+
+新增默认关闭的诊断停止开关，可让新导出在1资源完成后确定停止，用于用户覆盖安装后强制退出App/重启并继续；继续按钮不受该测试开关影响。runbook IOS_STAGING_RECOVERY_RUNBOOK.md列出分步证据与预期20项/30资源、复用1/重新读取29。**新手机二进制、资源边界停止/重启/继续以及实际PhotoKit变化/权限/空间故障均NOT_RUN**。诊断停止不冒充写入中杀进程或系统故障；完整产品和Photos事务恢复仍未完成。
