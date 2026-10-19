@@ -387,3 +387,20 @@ dw 的新会话已通过真实 USB 发送并回读 20 项/30 份资源/77,450,23
 沿用用户已授权的电脑自动更新：先保留旧0.3.4目录及ZIP备份，核对新云包，停止准确路径的旧诊断GUI进程，再装入 `/Applications/PhotoBridgeMac.app` 0.3.5；严格签名、架构、所有随附脚本核对并实际启动，确认进程来自该安装路径。m3-staging-mac-install.json。未以进程存活当作最终UI验收，也没有执行Photos写入。
 
 本轮实际USB-only检测错误-3（无设备），没有启动任何手机暂存/恢复；m3-staging-device-availability.json。已提供具体IPA并请求覆盖安装、dw诊断停在1资源，先保留旧现场供Mac取基准，再做重启/继续与独立USB全资源校验。**该功能真机结果仍NOT_RUN**。用户配合安装前继续准备独立审计，不把云检查写成设备成功。
+
+
+### 0.3.5 资源边界停止、重启后继续：dw 真机样本已通过
+
+用户先回复“已停止”，首次USB只有3个旧版已完成会话，无新plan；安装服务只读确认实际安装为0.3.5/build9。未把该回复直接当作新流程通过。用户随后回复“点了”，实际发现目标运行commit37798f7的STOPPED/1资源会话，无album-order.json；先通过USB保存其全部6个文件及检查点、实际SHA-256和size/mtime/birthtime/nlink基准。另两次完整新导出仍保留，未删除。
+
+请求用户完整关闭App再打开、选择该来源并继续，用户回复“以重启继续”（原话）。实际新会话STAGED，resourcesCompleted=30、reusedVerifiedResources=1、photoKitResourcesRead=29、partialResourceBytesReused=0、runtimeBuild=37798f7ae000fadffab9949ad684b0ee5691ef18。旧计划和新计划的来源快照/完整资产目录相同，新日志绑定来源session及精确旧plan SHA-256；最终manifest再与新plan的session、完整来源快照、成员与资源目录相互绑定。
+
+真实USB下载新会话 **20项/30资源/77,450,231 bytes COMMITTED**，系统shasum **30/30**。与既有dw完整备份的相簿身份、成员顺序及全部资源类型、原名、UTI、大小、hash、像素/媒体字段逐项一致，严格资源字节相同，无时间附件例外。旧停止会话6个文件在继续前后 bytes/size/mtime/birthtime/nlink 均未变。审计脚本没有手机写操作；新原图读取和新暂存复制是手机App自身工作。原相簿/原照片及Photos均未写入。公开脱敏证据 m3-ios-staging-{baseline-captured,device-recovery-verified}.json；真实标识/文件/计划仅在private-diagnostics/ios-staging-stop-recovery-dw-01。
+
+该样本的“资源边界停止→用户确认App重启→新会话继续”通过。复用数来自目标App运行日志，Mac独立证明输出字节及绑定一致，不把字节相同本身当作PhotoKit调用次数的外部跟踪。旧目录属性NOT_AUDITED，只主张已列出的文件属性。写入中强杀、系统终止、iCloud/权限/空间异常及Photos事务恢复仍NOT_RUN，未把诊断开关冒充这些故障。
+
+新增可复现只读 tests/device_staging_recovery.py（在云18后添加，不属于已交付二进制变化）。其独立复审发现原审计未把final manifest与plan完整绑定的假通过边界；新增RED后补完整快照/session/资产资源目录绑定，日期按既有交换精度转换。新增测试覆盖另一相簿名/标识、不同session、资产与UTI变化的拒绝。当前本地主机 **42 Python**通过，m3-staging-audit-{binding-red,tests}.log；云18的真实计数仍为41，不回填成42。产品代码/手机二进制未因该手工审计改动而替换。
+
+下一项为Photos导入事务的不确定状态协调，以及单资源写入中终止与权限/空间/iCloud等故障测试。更多格式、规模性能、最终可操作极简UI仍未完成。
+
+真机验收后仅更新交付包说明和DEVICE_ACCEPTANCE.json，iOS/Mac二进制未变；旧6585ac4d…双端ZIP已保留为before-device-audit包。当前 `build/PhotoBridge-0.3.5-M3-Apps.zip` SHA-256 **9b53fc7109df10282b876797f59e673ef8b7a63c65c72e6b7c802608f02f6041**，CRC/内部校验及不含私人文件再次通过，m3-device-verified-delivery.json。
