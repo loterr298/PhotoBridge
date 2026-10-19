@@ -16,6 +16,6 @@
 - [x] Implement minimal StagingResume core and run checks; preserve old incomplete resources and repeat them rather than appending PhotoKit data.
 - [x] Integrate OriginalExportService checkpoints and new-session recovery, source checks before/after resource work and final publish. Add selection of eligible unfinished sessions, actual reuse counts and explicit partial-resource restart wording. Existing legacy sessions without plans cannot resume.
 - [x] Run full local core/Python/build checks, independent review, fix important findings with regression evidence; commit and update IMPLEMENTATION_STATUS.
-- [ ] Build 0.3.5/build9 in GitHub Actions; verify artifacts and bundled code; deliver phone update for a real stop/relaunch/recovery test. Until that new binary runs on the phone, device staging recovery remains NOT_RUN.
+- [x] Build 0.3.5/build9 in GitHub Actions; verify artifacts and bundled code; deliver phone update for a real stop/relaunch/recovery test. Until that new binary runs on the phone, device staging recovery remains NOT_RUN.
 
 Primary API: https://developer.apple.com/documentation/photos/phassetresourcemanager — writeData exports a complete resource to a file; no byte-offset parameter in the public interface used here.
