@@ -1,0 +1,7 @@
+{
+  "status": "NOT_RUN",
+  "deviceStagingRecovery": "NOT_RUN",
+  "USBLookupError": -3,
+  "checkedAt": "2026-10-19T07:40:41.210027+00:00",
+  "scope": "Device not found during this attempt. No staging session read or written. Pending iPhone0.3.5 installation and one-resource boundary stop."
+}

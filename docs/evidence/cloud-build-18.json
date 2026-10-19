@@ -1,0 +1,24 @@
+{
+  "status": "SUCCESS",
+  "runURL": "https://github.com/loterr298/PhotoBridge/actions/runs/39217101320",
+  "sourceCommit": "37798f7ae000fadffab9949ad684b0ee5691ef18",
+  "artifactID": 12170171052,
+  "outerSHA256": "86b28e7eff689e26f9502235d9035cdd3ccb94044aaa3d93e93a558dd1d3d112",
+  "crcAndInternalSHA256Verified": true,
+  "version": "0.3.5",
+  "build": "9",
+  "iOSArchitecture": "arm64",
+  "macOSArchitecture": "x86_64",
+  "xctestPassed": 5,
+  "coreChecksPassed": 47,
+  "stagingChecksPassed": 23,
+  "pythonTestsPassed": 41,
+  "bundledScriptsMatchLocalSource": true,
+  "pythonBytecodeCachePackaged": false,
+  "products": {
+    "PhotoBridgeOrderProbe-0.3.5-unsigned.ipa": "5c1cde3f330121139b3a4f0086e29e08d9c9a1190c1e59af86cd022a845476bf",
+    "PhotoBridgeMac-Intel.zip": "807a30a0907ccd279e3532892ee5f40c4888fb1376293d9345dd579e512884dd"
+  },
+  "deviceStagingRecovery": "NOT_RUN",
+  "scope": "Cloud checks and binaries only; staged-copy recovery still requires installation and actual device evidence"
+}
