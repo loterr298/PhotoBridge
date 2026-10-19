@@ -372,3 +372,18 @@ dw 的新会话已通过真实 USB 发送并回读 20 项/30 份资源/77,450,23
 实际本地 **23 StagingChecks / 47 CoreChecks / 41 Python**，iOS源码语法parse与Intel x86_64构建通过；日志m3-ios-staging-{red,index-red,green,core,python,mac-build}.log。新增云端XCTest来源绑定case，尚未在本机无完整Xcode环境宣称XCTest通过。CI已增加StagingChecks，并准备0.3.5/build9；云构建及产物另记。
 
 新增默认关闭的诊断停止开关，可让新导出在1资源完成后确定停止，用于用户覆盖安装后强制退出App/重启并继续；继续按钮不受该测试开关影响。runbook IOS_STAGING_RECOVERY_RUNBOOK.md列出分步证据与预期20项/30资源、复用1/重新读取29。**新手机二进制、资源边界停止/重启/继续以及实际PhotoKit变化/权限/空间故障均NOT_RUN**。诊断停止不冒充写入中杀进程或系统故障；完整产品和Photos事务恢复仍未完成。
+
+
+### 0.3.5 双端云产物交付；暂存恢复等待手机安装
+
+功能实现本地提交 **820dbe9**。远端源码 **37798f7ae000fadffab9949ad684b0ee5691ef18** 的 [Actions #18](https://github.com/loterr298/PhotoBridge/actions/runs/39217101320) **SUCCESS**；实际 **5 XCTest /47 CoreChecks /23 StagingChecks /41 Python**，iOS arm64及Mac x86_64编译通过；实际Xcode16.4/iOS18.5 SDK，源码中的OriginalExportService确实加入生成工程并参与编译。日志cloud-18-*.log与cloud-build-18-success.png。
+
+[云产物](https://github.com/loterr298/PhotoBridge/actions/runs/39217101320/artifacts/12170171052) 已下载，整体SHA-256 **86b28e7eff689e26f9502235d9035cdd3ccb94044aaa3d93e93a558dd1d3d112**与Actions摘要一致；CRC、内部SHA256SUMS、IPA编译版本0.3.5/build9/源码commit/稳定bundleID/可执行权限/arm64、Mac版本/x86_64/可执行权限、全部包内脚本与已测源码一致及没有bytecode缓存均核对。cloud-build-18.json。
+
+- `build/PhotoBridge-0.3.5-M3/PhotoBridgeOrderProbe-0.3.5-unsigned.ipa`，SHA-256 **5c1cde3f330121139b3a4f0086e29e08d9c9a1190c1e59af86cd022a845476bf**；需用户沿用个人签名覆盖安装，新手机运行时与暂存恢复仍NOT_RUN。
+- `build/PhotoBridge-0.3.5-M3/PhotoBridgeMac-Intel.zip`，SHA-256 **807a30a0907ccd279e3532892ee5f40c4888fb1376293d9345dd579e512884dd**。
+- `build/PhotoBridge-0.3.5-M3-Apps.zip`，SHA-256 **6585ac4d7ec2baf8d037425bf4df196fffb05e68feea80bc233f15efa1e7201b**，含保护/暂存恢复/USB继续说明与内部校验，不含私人媒体或清单。
+
+沿用用户已授权的电脑自动更新：先保留旧0.3.4目录及ZIP备份，核对新云包，停止准确路径的旧诊断GUI进程，再装入 `/Applications/PhotoBridgeMac.app` 0.3.5；严格签名、架构、所有随附脚本核对并实际启动，确认进程来自该安装路径。m3-staging-mac-install.json。未以进程存活当作最终UI验收，也没有执行Photos写入。
+
+本轮实际USB-only检测错误-3（无设备），没有启动任何手机暂存/恢复；m3-staging-device-availability.json。已提供具体IPA并请求覆盖安装、dw诊断停在1资源，先保留旧现场供Mac取基准，再做重启/继续与独立USB全资源校验。**该功能真机结果仍NOT_RUN**。用户配合安装前继续准备独立审计，不把云检查写成设备成功。
