@@ -58,6 +58,27 @@ class IndependentAuditChecks(unittest.TestCase):
                     audit(client, 'RestoreInbox/' + manifest['sessionID'], source, output)
                 self.assertFalse((output / 'independent-audit.json').exists())
 
+    def test_fresh_verification_attempt_directory_is_independently_downloaded(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); source, manifest, report, files, client = self.fixture(root)
+            report['verificationDirectory'] = 'verification-attempts/BD0AC183-7BB7-456E-9469-32FF1ECCEE3A'
+            for name in list(files):
+                if name.startswith('verification/'):
+                    files[report['verificationDirectory'] + name[len('verification'):]] = files.pop(name)
+            result = audit(client, 'RestoreInbox/' + manifest['sessionID'], source, root / 'audit')
+            self.assertEqual(result['independentMacShasumMatches'], 2)
+
+    def test_phone_verification_directory_cannot_escape_a_named_attempt(self):
+        for path in ['../outside', '/absolute', 'verification/../other',
+                     'verification-attempts/not-a-uuid', 'verification-attempts/../verification',
+                     'verification-attempts/BD0AC183-7BB7-456E-9469-32FF1ECCEE3A/extra']:
+            with self.subTest(path=path), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory); source, manifest, report, files, client = self.fixture(root)
+                report['verificationDirectory'] = path
+                with self.assertRaisesRegex(ValueError, 'verification directory'):
+                    audit(client, 'RestoreInbox/' + manifest['sessionID'], source, root / 'audit')
+                self.assertFalse((root / 'audit').exists())
+
     def test_unknown_xml_change_cannot_pass_the_complete_audit(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); source, manifest, report, files, client = self.fixture(root)

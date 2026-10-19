@@ -45,11 +45,20 @@ def audit(client, remote, source, output, allow_timestamp=False):
         raise ValueError('Incomplete mapping or incorrect PhotoKit member order')
     if allow_timestamp and report.get('userAuthorizedAdjustmentTimestampRewrite') is not True:
         raise ValueError('Phone authorization was not recorded')
+    verification = report.get('verificationDirectory', 'verification')
+    if verification != 'verification':
+        try:
+            segments = verification.split('/')
+            if (len(segments) != 2 or segments[0] != 'verification-attempts'
+                    or str(uuid.UUID(segments[1])) != segments[1].lower()):
+                raise ValueError()
+        except (ValueError, AttributeError, TypeError):
+            raise ValueError('Unsafe verification directory') from None
     output.mkdir(mode=0o700, exist_ok=False)
     (output / 'restore-report.json').write_bytes(report_raw)
     candidate = copy.deepcopy(manifest)
     for asset in candidate['assets']:
-        relative = f'verification/{asset["ordinal"]:06d}-resources.json'
+        relative = f'{verification}/{asset["ordinal"]:06d}-resources.json'
         data = read(relative); (output / Path(relative).name).write_bytes(data)
         asset['resources'] = json.loads(data)
     validate_manifest(candidate)  # Reject unsafe paths/ordinals/types before using phone-provided paths.
@@ -68,7 +77,7 @@ def audit(client, remote, source, output, allow_timestamp=False):
                 raise ValueError('Source backup bytes changed')
             target = output / restored['storedRelativePath']; target.parent.mkdir(parents=True, exist_ok=True)
             with target.open('xb') as stream:
-                client.read(remote + '/verification/' + restored['storedRelativePath'], stream.write, restored['byteCount'])
+                client.read(remote + '/' + verification + '/' + restored['storedRelativePath'], stream.write, restored['byteCount'])
             digest = subprocess.check_output(['/usr/bin/shasum', '-a', '256', str(target)], text=True).split()[0]
             if digest != restored['sha256'] or target.stat().st_size != restored['byteCount']:
                 raise ValueError('Independent downloaded resource hash/size failed')
