@@ -3,6 +3,26 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'scripts'))
 import usb_probe as p
 
 class USBChecks(unittest.TestCase):
+    def test_partial_append_is_nontruncating_and_refuses_changed_eof(self):
+        import ctypes
+        class Library:
+            written = bytearray(); mode = None; end = 5
+            def afc_file_open(self, afc, path, mode, handle): self.mode = mode; return 0
+            def afc_file_seek(self, *args): return 0
+            def afc_file_tell(self, afc, handle, position): position._obj.value = self.end; return 0
+            def afc_file_write(self, afc, handle, buffer, length, count):
+                self.written.extend(ctypes.string_at(buffer, length)); count._obj.value = length; return 0
+            def afc_file_close(self, *args): return 0
+        client = p.AFC.__new__(p.AFC); client.afc = None; client.lib = Library()
+        client.info = lambda path: dict(st_ifmt='S_IFREG', st_nlink='1', st_size='5')
+        path = 'RestoreInbox/12345678-1234-4234-8234-123456789abc/Resources/000001/0001.HEIC.part'
+        client.append_existing(path, io.BytesIO(b'suffix'), 5)
+        self.assertEqual(client.lib.mode, 2); self.assertEqual(client.lib.written, b'suffix')
+        client.lib.end = 6; client.lib.written.clear()
+        with self.assertRaisesRegex(ValueError, 'changed before append'): client.append_existing(path, io.BytesIO(b'bad'), 5)
+        self.assertEqual(client.lib.written, b'')
+        with self.assertRaises(ValueError): client.append_existing('Exports/owned/file.part', io.BytesIO(b'bad'), 5)
+
     def test_close_failure_never_replaces_read_write_or_local_primary_error(self):
         class Library:
             def afc_file_open(self, *args): return 0
