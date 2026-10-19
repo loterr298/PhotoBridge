@@ -217,3 +217,26 @@ New regression genuinely failed against the prior link implementation, then pass
 **当前已实测：** 限定样本真实 USB 原图/编辑附件/Live HEIC-MOV 导出和 5 秒 Mac 创建/修改时间；Live 资源 USB 反向回读 hash。
 **设备待验证：** 新版手机收件预检、PhotoKit 完整资源导入、导入后资源 bytes/顺序、系统照片人工顺序及 Live 动态播放。已请用户使用预先回传的 3 项/6 资源完成该验证，未把云编译或 AFC 收件标为 Photos 恢复通过。
 **未完成：** PNG/DNG/复杂编辑/iCloud/权限与空间故障验收、原图单次 100 MiB 场景、可靠断点续传/事务恢复、万张稳定性能、最终极简产品 UI。原图和私人清单仅本机保存，不进云端。
+
+
+### Live Photo 照片库闭环实测通过；20 张含编辑附件恢复如实失败
+
+- 手机实际产生 restore-report.json，状态 PHOTO_LIBRARY_BYTES_AND_ORDER_VERIFIED，3 个新资产/6 份资源回读校验通过。Mac 经 USB 独立取回全部 6 份 Photos 回读文件，系统 shasum 再验 6/6 与原始备份一致；完整类型/原名/UTI/大小/hash 多重集、旧→新标识及 nil-options 顺序匹配。用户回复“能播放”，随后明确回复“3 张顺序一致”。限定为 **3 张 HEIC/MOV Live Photo 样本闭环通过**，证据 m2-live-photos-roundtrip-verified.json。报告未独立包含运行时 build，本次软件交付源码版本另有构建证据，不臆造运行时字段。
+- 随后 USB 发送原 dw 的完整 20 项/30 份资源，AFC 读回均一致，m2-dw-usb-return-verified.json。手机实际在第 12 张首次包含编辑附件的资产回读失败：新相簿已创建 12 项，前 11 项回读通过，第 12 项不匹配，未生成 restore-report，未重放或删除这些新副本。
+- 已定位具体差异：第 12 项原图 JPEG 和编辑后 JPEG 均逐字节一致；1035-byte plist（PhotoKit 类型 7）的 hash 不一致。只读解析及严格递归类型/值比较确认，唯一变化是顶层 adjustmentTimestamp，Photos 在导入时重新生成系统编辑记录时间。所有其他解析字段、未知附件数据保持一致；仍不能将该附件标为字节一致。未尝试改写原件、伪造 hash、忽略差异或使用私有 setter。详见 m2-dw-restore-resource-difference.json / m2-dw-adjustment-timestamp-difference.json。
+- 新增只读 scripts/inspect_adjustment.py，默认不写任何媒体或附件；只输出分类和变化键，不泄露原始值。3 项测试覆盖仅时间变化、未知私有数据/类型变化和畸形 plist，先记录缺失模块 RED 后实现；完整 **21 Python tests / 0 failures**，m2-adjustment-inspection-{red,green}.log。此工具不放宽 RestoreSafety.sameResources 的严格字节标准。
+- 已检查当前公开 PHAssetCreationRequest / PHAssetResourceCreationOptions / PHAdjustmentData 接口：没有找到可指定该系统编辑记录时间的公开入口；尚未证实可以保留该字段原值。不将此观察夸大为所有未来 SDK 永远不可能。
+- 按用户“只允许明确授权的时间设置”要求，已提供具体字段差异并询问是否授权仅接受新副本这一系统编辑记录时间变化。默认维持原要求；未取得授权前不放宽验证、不重复导入这个含编辑附件相簿。独立的 USB 续传模块继续实现，未标完成。
+
+
+### 已授权编辑记录时间选项与安全下载继续执行（0.3.1/build5 开发）
+
+用户明确回复“授权仅接受新副本的系统编辑记录时间重置”。已实现默认关闭的独立选项，完整边界见 PRESERVATION_POLICY.md。无授权时含编辑附件的备份在写入前拒绝；有授权也只接受类型7、相同名称/UTI/长度的无歧义 XML plist 顶层 adjustmentTimestamp 改变，其他字段/类型/opaque 编辑配方仍一致，所有媒体 bytes 仍严格。日志记录授权、运行时版本/build、附件差异数；使用独立的 NON_TIME_DATA... 状态，绝不把附件差异称为字节一致。
+
+新增 Swift 核心策略测试，先记录缺失 API RED；审查发现 Foundation 会折叠重复 plist 键，已用根与嵌套重复键实测 RED 重现并修复，拒绝实体声明/CDATA 键及其他歧义。变化的非 XML sidecar 保持严格失败。Python 只读诊断器同样加入唯一键字典防护，避免误分类。当前 **41 核心检查 / 27 Python** 通过。实际设备 1035-byte XML 侧车经同一 Swift 核心在本机再次验证：无授权拒绝，有授权仅识别一处系统时间变化，strictBytesIdentical 仍 false。新手机策略验收尚 NOT_RUN，不能用主机 fixture 检查替代。
+
+新增 album_resume.py 与 AFC 受限 seek：在新目录继续旧下载，以旧 progress 中精确 manifest hash 绑定源；完整文件仅在实际 hash 一致后本地复用，部分前缀保留复制后从真实 AFC 偏移继续，最终沿用完整 hash/时间/最终清单校验。旧目录不写入。审查发现目标嵌套于旧目录会违反保留约束，已 RED 重现后加入 resolved 路径/符号链接别名拒绝。说明及可复现脚本 USB_RESUME_RUNBOOK.md / tests/device_usb_resume.py。
+
+首次硬件尝试 USB-only 返回未发现设备（-3），续传未执行，已如实记录 m2-usb-resume-device-attempt.json。用户重新连接后，真实 USB 受控接收中断测试成功：复用1份完整文件、从 **3,024,889 bytes** 前缀处继续，实际重新从 USB 读取 **15,582,759 bytes**，新建 AFC 连接后6份资源 COMMITTED，系统 shasum 6/6及新副本创建/修改时间验证通过，旧文件 bytes/mtime/birthtime 未变。证据 m2-usb-download-resume-device.json。该测试未物理拔线，不证明上传、iPhone 暂存或照片库事务续传。
+
+0.3.1/b5 已准备源代码及 CI 元数据；新云构建、交付和 dw20 全部恢复复测结果待下文记录。原图及旧失败新相簿继续保留，未自动删除或重放。
