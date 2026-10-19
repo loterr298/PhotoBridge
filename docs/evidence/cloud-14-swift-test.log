@@ -1,0 +1,54 @@
+Building for debugging...
+[0/17] /Users/runner/work/PhotoBridge/PhotoBridge/.build/arm64-apple-macosx/debug/PhotoBridgePackageTests.derived/runner.swift
+[1/17] Write sources
+[3/17] Write PhotoBridgeMac-entitlement.plist
+[3/17] Write sources
+[7/17] Write CoreChecks-entitlement.plist
+[8/17] Write swift-version--79AA4F9932D1E87A.txt
+[10/25] Compiling PhotoBridgeCore OrderSnapshot.swift
+[11/25] Compiling PhotoBridgeCore ProbeFiles.swift
+[12/25] Compiling PhotoBridgeCore RequestGeneration.swift
+[13/25] Compiling PhotoBridgeCore ResourceRoundTripComparison.swift
+[14/25] Emitting module PhotoBridgeCore
+[15/25] Compiling PhotoBridgeCore AlbumManifest.swift
+[16/25] Compiling PhotoBridgeCore OrderComparison.swift
+[17/25] Compiling PhotoBridgeCore RestoreSafety.swift
+[18/26] Compiling PhotoBridgeCore StagingFiles.swift
+[19/32] Compiling CoreChecks main.swift
+[20/32] Emitting module CoreChecks
+[20/32] Write Objects.LinkFileList
+[21/32] Linking CoreChecks
+[22/32] Applying CoreChecks
+[24/32] Compiling PhotoBridgeMac PhotoBridgeMac.swift
+[25/32] Emitting module PhotoBridgeMac
+[25/32] Write Objects.LinkFileList
+[26/32] Linking PhotoBridgeMac
+[27/32] Applying PhotoBridgeMac
+[29/32] Compiling PhotoBridgeCoreTests DiagnosticsTests.swift
+[30/32] Emitting module PhotoBridgeCoreTests
+[31/34] Emitting module PhotoBridgePackageTests
+[32/34] Compiling PhotoBridgePackageTests runner.swift
+[32/34] Write Objects.LinkFileList
+[33/34] Linking PhotoBridgePackageTests
+Build complete! (12.81s)
+Test Suite 'All tests' started at 2026-10-19 02:06:13.498.
+Test Suite 'PhotoBridgePackageTests.xctest' started at 2026-10-19 02:06:13.499.
+Test Suite 'DiagnosticsTests' started at 2026-10-19 02:06:13.499.
+Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testCapturePreservesAPIOrderRatherThanDatesOrNames]' started.
+Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testCapturePreservesAPIOrderRatherThanDatesOrNames]' passed (0.002 seconds).
+Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testComparisonRejectsMissingDuplicateAndMismatchedTwenty]' started.
+Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testComparisonRejectsMissingDuplicateAndMismatchedTwenty]' passed (0.000 seconds).
+Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testProbeHashAndNoOverwrite]' started.
+Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testProbeHashAndNoOverwrite]' passed (0.004 seconds).
+Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testStaleThumbnailCallbacksAreRejected]' started.
+Test Case '-[PhotoBridgeCoreTests.DiagnosticsTests testStaleThumbnailCallbacksAreRejected]' passed (0.000 seconds).
+Test Suite 'DiagnosticsTests' passed at 2026-10-19 02:06:13.507.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.007 (0.008) seconds
+Test Suite 'PhotoBridgePackageTests.xctest' passed at 2026-10-19 02:06:13.507.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.007 (0.008) seconds
+Test Suite 'All tests' passed at 2026-10-19 02:06:13.507.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.007 (0.008) seconds
+◇ Test run started.
+↳ Testing Library Version: 124.4
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests passed after 0.001 seconds.

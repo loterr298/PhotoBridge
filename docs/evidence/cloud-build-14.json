@@ -1,0 +1,24 @@
+{
+  "status": "SUCCESS",
+  "run": "https://github.com/loterr298/PhotoBridge/actions/runs/39188333981",
+  "sourceCommit": "a3fe36c93e1f0f25a8c02098a47fe78a716b1edd",
+  "artifact": "12158792218",
+  "artifactSHA256": "ba2953cf66c3bbcccae7a9949d676bc9f520e813f6b93bffebee15b9d353b096",
+  "localCRCAndChecksumsVerified": true,
+  "version": "0.3.1",
+  "build": "5",
+  "tests": {
+    "XCTest": 4,
+    "CoreChecks": 41,
+    "Python": 27
+  },
+  "ipaArm64AndModeVerified": true,
+  "MacBundledScriptsMatchReviewedSource": true,
+  "noBytecodeCachePackaged": true,
+  "files": {
+    "PhotoBridgeOrderProbe-0.3.1-unsigned.ipa": "295fd223face567ae9fee52c488d1b71733ced89f9b15e6f915eee51af1b8441",
+    "PhotoBridgeMac-Intel.zip": "ffd51bb3daf13d6192ad5e045dd68ef44e0d1a1de8f981903db0e495c1c675b7"
+  },
+  "authorizedEditedPhotoDeviceRestore": "NOT_RUN: awaiting 0.3.1 phone installation",
+  "USBResumeScope": "Controlled client interruption passed; physical cable-loss NOT_RUN"
+}

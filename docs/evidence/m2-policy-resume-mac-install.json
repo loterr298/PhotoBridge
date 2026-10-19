@@ -1,0 +1,11 @@
+{
+  "version": "0.3.1",
+  "build": "5",
+  "previousAppBackedUpZIPAndDirectory": true,
+  "verifiedCloudRun": 39188333981,
+  "bundledTransferSourcesMatch": true,
+  "adHocSignatureVerified": true,
+  "architecture": "x86_64",
+  "launchRequested": true,
+  "newPhonePolicyAcceptance": "NOT_RUN"
+}

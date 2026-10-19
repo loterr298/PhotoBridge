@@ -1,0 +1,7 @@
+    cd /Users/runner/work/PhotoBridge/PhotoBridge
+    /usr/bin/touch -c /Users/runner/work/PhotoBridge/PhotoBridge/build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app
+
+note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'PhotoBridgeOrderProbe' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/PhotoBridge.xcodeproj')
+note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-Owholemodule, expected -Onone (in target 'PhotoBridgeCore' from project 'PhotoBridge' at path '/Users/runner/work/PhotoBridge/PhotoBridge/Package.swift')
+** BUILD SUCCEEDED **
+
