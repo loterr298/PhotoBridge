@@ -85,5 +85,6 @@ do {
     try fm.removeItem(at: linked)
     try fm.removeItem(at: record); try fm.createSymbolicLink(at: record, withDestinationURL: s.directory.appendingPathComponent("000001-placeholder.json"))
     try rejects("symlink journal refused") { _ = try s.state() }
+    try preconditionChecks()
     print("\(count) Photos recovery checks passed; synthetic only, PhotoKit transaction recovery NOT_RUN")
 } catch { fputs("FAIL recovery: \(error)\n", stderr); exit(1) }
