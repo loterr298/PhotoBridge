@@ -149,7 +149,7 @@ class AFC:
             raise ValueError('Invalid AFC resume offset')
         handle = C.c_uint64()
         self.check(self.lib.afc_file_open(self.afc, documents_path(path).encode(), 1, C.byref(handle)), 'AFC open read')
-        total = offset
+        total = offset; primary_error = None
         try:
             if offset:
                 self.check(self.lib.afc_file_seek(self.afc, handle, offset, os.SEEK_SET), 'AFC seek for resume')
@@ -160,7 +160,13 @@ class AFC:
                 total += count.value
                 if maximum is not None and total > maximum: raise ValueError('Remote file exceeds declared bound')
                 sink(buffer.raw[:count.value])
-        finally: self.check(self.lib.afc_file_close(self.afc, handle), 'AFC close read')
+        except BaseException as error:
+            primary_error = error
+            raise
+        finally:
+            close_error = self.lib.afc_file_close(self.afc, handle)
+            if primary_error is None: self.check(close_error, 'AFC close read')
+            elif close_error: primary_error.afc_close_error = close_error
 
     def write_new(self, path, source):
         # Called only in a freshly created UUID session; fail if filename already exists.
@@ -172,12 +178,19 @@ class AFC:
             count = C.c_uint32(); buffer = C.create_string_buffer(data)
             self.check(self.lib.afc_file_write(self.afc, handle, buffer, len(data), C.byref(count)), 'AFC write')
             return count.value
+        primary_error = None
         try:
             while True:
                 data = source.read(CHUNK)
                 if not data: break
                 write_all(writer, data)
-        finally: self.check(self.lib.afc_file_close(self.afc, handle), 'AFC close write')
+        except BaseException as error:
+            primary_error = error
+            raise
+        finally:
+            close_error = self.lib.afc_file_close(self.afc, handle)
+            if primary_error is None: self.check(close_error, 'AFC close write')
+            elif close_error: primary_error.afc_close_error = close_error
 
     def commit_new(self, source, destination):
         parent, name = destination.rsplit('/', 1)
