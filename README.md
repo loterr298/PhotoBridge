@@ -18,4 +18,4 @@
 
 [Mac 上传继续执行](docs/USB_UPLOAD_RESUME_RUNBOOK.md)：只续写已绑定、尚未发布恢复请求的新 App 收件会话；照片库仍须手机人工启动。
 
-0.3.5新增[iPhone暂存中断恢复](docs/IOS_STAGING_RECOVERY_RUNBOOK.md)：逐资源检查点，旧会话只读，校验复用到新会话；未完成资源完整重读。主机合成检查通过，**该功能真机仍待验证**，不代表Photos事务恢复。
+0.3.5新增[iPhone暂存中断恢复](docs/IOS_STAGING_RECOVERY_RUNBOOK.md)：逐资源检查点，旧会话只读，校验复用到新会话；未完成资源完整重读。本机 dw20项/30资源的停止、用户确认重启后继续已通过独立USB审计，复用1/重新读取29、hash30/30及旧文件bytes/mtime/birthtime不变；此结果不代表资源写入中强杀或Photos事务恢复。
