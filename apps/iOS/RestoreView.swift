@@ -19,10 +19,12 @@ private struct RestoreInboxRequest: Decodable {
     @Published var ready = false
     @Published var message = "请先由 Mac 通过 USB 发送已校验备份，然后刷新收件箱。"
     @Published var completed = 0
+    @Published var authorizedTimestampDifferences = 0
     private var selected: URL?
     private var manifest: AlbumExportManifest?
     private var manifestData: Data?
     private var requestData: Data?
+    private var allowEditTimestampRewrite = false
     private var stopRequested = false
     private var inbox: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("RestoreInbox")
@@ -37,7 +39,7 @@ private struct RestoreInboxRequest: Decodable {
                 .filter { UUID(uuidString: $0) != nil }.sorted()
         } catch { message = "无法读取收件箱：\(error.localizedDescription)" }
     }
-    func invalidate() { ready = false; manifest = nil; selected = nil; manifestData = nil; requestData = nil }
+    func invalidate() { ready = false; manifest = nil; selected = nil; manifestData = nil; requestData = nil; allowEditTimestampRewrite = false }
     func requestStop() { stopRequested = true }
     private func checkPermissionAndStop() throws {
         guard !stopRequested && !Task.isCancelled else { throw ExportError.invalidManifest("已在事务边界停止；不会自动重复导入") }
@@ -53,9 +55,10 @@ private struct RestoreInboxRequest: Decodable {
         }
         return try Data(contentsOf: url)
     }
-    func preflight(session: String) async {
+    func preflight(session: String, allowTimestampRewrite: Bool) async {
         guard !busy else { return }
         invalidate(); busy = true; stopRequested = false; completed = 0
+        allowEditTimestampRewrite = allowTimestampRewrite; authorizedTimestampDifferences = 0
         defer { busy = false }
         do {
             try checkPermissionAndStop()
@@ -90,6 +93,9 @@ private struct RestoreInboxRequest: Decodable {
             }
             for asset in candidate.assets {
                 try checkPermissionAndStop()
+                if asset.resources.contains(where: { $0.resourceType == PHAssetResourceType.adjustmentData.rawValue }) && !allowTimestampRewrite {
+                    throw ExportError.invalidManifest("此备份含编辑附件。真机已发现 Photos 会重置系统编辑记录时间；严格模式停止在写入前。仅在明确允许该时间变化后开启对应选项，原始附件仍完整保留。")
+                }
                 guard asset.pixelWidth >= 0, asset.pixelHeight >= 0, asset.mediaType > 0,
                       asset.resources.allSatisfy({ !$0.originalFilename.isEmpty && !$0.uniformTypeIdentifier.isEmpty && PHAssetResourceType(rawValue: $0.resourceType) != nil }),
                       PHAssetCreationRequest.supportsAssetResourceTypes(asset.resources.map { NSNumber(value: $0.resourceType) }) else {
@@ -119,7 +125,7 @@ private struct RestoreInboxRequest: Decodable {
         var ids: [String] = []; fetch.enumerateObjects { asset, _, _ in ids.append(asset.localIdentifier) }
         return (fetch, ids)
     }
-    private func verifyImported(_ asset: PHAsset, source: ExportAsset, directory: URL) async throws -> [ExportResource] {
+    private func verifyImported(_ asset: PHAsset, source: ExportAsset, directory: URL, allowTimestampRewrite: Bool) async throws -> ResourceRoundTripResult {
         guard asset.pixelWidth == source.pixelWidth, asset.pixelHeight == source.pixelHeight,
               asset.mediaType.rawValue == source.mediaType,
               asset.mediaSubtypes.contains(.photoLive) == PHAssetMediaSubtype(rawValue: UInt(source.mediaSubtypes)).contains(.photoLive) else {
@@ -148,10 +154,20 @@ private struct RestoreInboxRequest: Decodable {
                 storedRelativePath: path, sha256: receipt.sha256, byteCount: receipt.byteCount))
         }
         try JSONEncoder().encode(verified).write(to: verificationDirectory.appendingPathComponent(String(format: "%06d-resources.json", source.ordinal)), options: .withoutOverwriting)
-        guard RestoreSafety.sameResources(expected: source.resources, observed: verified) else {
-            throw ExportError.invalidManifest("照片库回读资源的类型、名称、UTI、长度或 SHA-256 存在差异；不能标记往返通过")
+        func boundedData(_ url: URL) throws -> Data {
+            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+            guard attributes[.type] as? FileAttributeType == .typeRegular,
+                  let size = attributes[.size] as? NSNumber, size.intValue <= 4 * 1024 * 1024 else {
+                throw ExportError.invalidManifest("编辑附件不是可检查的小型普通文件")
+            }
+            return try Data(contentsOf: url)
         }
-        return verified
+        let comparison = try ResourceRoundTripComparison.verify(expected: source.resources, observed: verified,
+            allowAdjustmentTimestampRewrite: allowTimestampRewrite,
+            loadOriginal: { try boundedData(directory.appendingPathComponent($0.storedRelativePath)) },
+            loadObserved: { try boundedData(directory.appendingPathComponent("verification/" + $0.storedRelativePath)) })
+        try JSONEncoder().encode(comparison).write(to: verificationDirectory.appendingPathComponent(String(format: "%06d-comparison.json", source.ordinal)), options: .withoutOverwriting)
+        return comparison
     }
 
     func restore(title: String) async {
@@ -160,17 +176,24 @@ private struct RestoreInboxRequest: Decodable {
         let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty && name.count <= 128 else { message = "请填写 1–128 字的新相簿名"; return }
         busy = true; ready = false; stopRequested = false; completed = 0
+        authorizedTimestampDifferences = 0
+        let userAllowedTimestampRewrite = allowEditTimestampRewrite
         defer { busy = false }
         var mapping: [String: String] = [:]; var importedIDs: [String] = []
         var verifiedModified: [String: Date] = [:]
         var albumID: String?; var claimed = false
         var log: [String: Any] = ["schemaVersion": "1.0.0", "kind": "PhotoBridgeRestoreReport",
             "manualPhotosDisplay": "NOT_RUN", "livePlayback": "NOT_RUN", "originalsDeleted": false,
-            "shouldMoveFile": false, "internalMetadataWritten": false, "newAlbumTitle": name]
+            "shouldMoveFile": false, "appInternalMediaMetadataWrites": false, "newAlbumTitle": name,
+            "userAuthorizedAdjustmentTimestampRewrite": userAllowedTimestampRewrite,
+            "runtimeBuild": Bundle.main.object(forInfoDictionaryKey: "PhotoBridgeBuildCommit") as? String ?? "local-unversioned",
+            "runtimeVersion": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"]
         func journal(_ status: String, error: String? = nil) throws {
             log["status"] = status; log["createdAssets"] = importedIDs.count
             log["mappingDirectory"] = "restore-records"
             log["resourcesVerifiedAssets"] = completed; log["createdAlbumID"] = albumID
+            log["authorizedAdjustmentTimestampDifferences"] = authorizedTimestampDifferences
+            log["strictBytesIdenticalForVerifiedAssets"] = authorizedTimestampDifferences == 0
             if let error { log["error"] = error }
             try JSONSerialization.data(withJSONObject: log, options: [.sortedKeys, .prettyPrinted])
                 .write(to: directory.appendingPathComponent("restore-progress.json"), options: .atomic)
@@ -234,7 +257,8 @@ private struct RestoreInboxRequest: Decodable {
                 guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil).firstObject else {
                     throw ExportError.invalidManifest("新资产尚不可回读，保留映射和收件文件")
                 }
-                _ = try await verifyImported(asset, source: source, directory: directory)
+                let comparison = try await verifyImported(asset, source: source, directory: directory, allowTimestampRewrite: userAllowedTimestampRewrite)
+                authorizedTimestampDifferences += comparison.authorizedAdjustmentTimestampDifferences
                 if let date = asset.modificationDate { verifiedModified[identifier] = date }
                 completed += 1; log.removeValue(forKey: "pendingOrdinal"); try journal("IMPORTING")
             }
@@ -255,12 +279,17 @@ private struct RestoreInboxRequest: Decodable {
                   try readJSONFile(directory.appendingPathComponent("restore-request.json")) == checkedRequest else {
                 throw ExportError.invalidManifest("恢复期间收件清单改变，不能标记往返通过")
             }
-            try journal("PHOTO_LIBRARY_BYTES_AND_ORDER_VERIFIED")
+            let status = authorizedTimestampDifferences == 0 ? "PHOTO_LIBRARY_BYTES_AND_ORDER_VERIFIED" : "PHOTO_LIBRARY_NON_TIME_DATA_AND_ORDER_VERIFIED_WITH_AUTHORIZED_EDIT_TIMESTAMPS"
+            try journal(status)
             let report = directory.appendingPathComponent("restore-report.json")
             let part = report.appendingPathExtension("part")
             try JSONSerialization.data(withJSONObject: log, options: [.prettyPrinted, .sortedKeys]).write(to: part, options: .withoutOverwriting)
             try StagingFiles.commit(part: part, destination: report)
-            message = "照片库回读通过：\(completed) 项的全部资源 bytes 与成员顺序一致。请在系统照片检查新相簿的自定义顺序，并逐张播放 Live Photo；人工观察尚未验证。"
+            if authorizedTimestampDifferences == 0 {
+                message = "照片库回读通过：\(completed) 项的全部资源 bytes 与成员顺序一致。请在系统照片检查新相簿的自定义顺序，并逐张播放 Live Photo；人工观察尚未验证。"
+            } else {
+                message = "已恢复并回读 \(completed) 项：原图、编辑后媒体及非时间字段一致，成员顺序一致。\(authorizedTimestampDifferences) 份编辑附件仅系统编辑记录时间变化（已授权），附件 hash 不同；原始附件保留。请在系统照片独立核对顺序与编辑效果。"
+            }
         } catch {
             if claimed { try? journal("INCOMPLETE", error: error.localizedDescription) }
             message = "恢复未完成：\(error.localizedDescription)。保留已创建的新相簿、资源和日志，不删除原件，不自动重复导入。"
@@ -272,6 +301,7 @@ struct RestoreView: View {
     @StateObject private var service = RestoreService()
     @State private var session = ""
     @State private var title = "PhotoBridge 恢复 " + String(UUID().uuidString.prefix(8))
+    @State private var allowTimestampRewrite = false
     var body: some View {
         NavigationStack {
             Form {
@@ -282,7 +312,10 @@ struct RestoreView: View {
                         Picker("恢复会话", selection: $session) {
                             ForEach(service.sessions, id: \.self) { value in Text(String(value.prefix(8))).tag(value) }
                         }.disabled(service.busy)
-                        Button("校验收件与 PhotoKit 支持") { Task { await service.preflight(session: session) } }
+                        Toggle("允许新副本的系统编辑记录时间重置", isOn: $allowTimestampRewrite).disabled(service.busy)
+                        Text("默认关闭。开启仅接受编辑附件 adjustmentTimestamp 变化；原图、编辑后图像及其他字段仍严格校验，原始附件保留，并报告附件 hash 差异。")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Button("校验收件与 PhotoKit 支持") { Task { await service.preflight(session: session, allowTimestampRewrite: allowTimestampRewrite) } }
                             .disabled(service.busy || session.isEmpty)
                     }
                 }
@@ -300,12 +333,14 @@ struct RestoreView: View {
                 Section("真实结果") {
                     Text(service.message).textSelection(.enabled)
                     Text("已回读校验 \(service.completed) 项").monospacedDigit()
+                    if service.authorizedTimestampDifferences > 0 { Text("\(service.authorizedTimestampDifferences) 份附件存在已授权的系统编辑时间变化，附件非字节一致").foregroundStyle(.secondary) }
                     Text("首版不自动续传或重放已尝试会话。中断可能留下部分新副本，请保留日志；不会通过删除或丢弃资源来掩盖差异。")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }.navigationTitle("恢复")
         }.task { service.refresh(); session = service.sessions.last ?? "" }
             .onChange(of: session) { _ in service.invalidate() }
+            .onChange(of: allowTimestampRewrite) { _ in service.invalidate() }
             .onDisappear { service.requestStop() }
     }
 }
