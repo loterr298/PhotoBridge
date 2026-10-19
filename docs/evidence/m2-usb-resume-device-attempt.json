@@ -1,0 +1,8 @@
+{
+  "status": "NOT_RUN_DEVICE_UNAVAILABLE",
+  "USBOnlyDiscoveryError": -3,
+  "controlledInterruptionExecuted": false,
+  "resumeExecuted": false,
+  "sourceMediaModified": false,
+  "scope": "Device disappeared before opening AFC; software tests are separate evidence"
+}

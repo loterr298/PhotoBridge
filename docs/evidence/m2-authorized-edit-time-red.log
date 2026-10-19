@@ -1,0 +1,21 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+[1/4] Write sources
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[3/6] Emitting module CoreChecks
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:146:72: error: cannot find type 'ResourceRoundTripResult' in scope
+144 |         ExportResource(resourceIndex: 1, resourceType: type, originalFilename: "edit.plist", uniformTypeIdentifier: "com.apple.property-list", storedRelativePath: "Resources/000001/0001.plist", sha256: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(), byteCount: data.count)
+145 |     }
+146 |     func compare(_ data: Data, allowed: Bool, type: Int = 7) throws -> ResourceRoundTripResult {
+    |                                                                        `- error: cannot find type 'ResourceRoundTripResult' in scope
+147 |         try ResourceRoundTripComparison.verify(expected: [r(original, type: type)], observed: [r(data, type: type)],
+148 |             allowAdjustmentTimestampRewrite: allowed, loadOriginal: { _ in original }, loadObserved: { _ in data })
+[4/6] Compiling CoreChecks main.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/CoreChecks/main.swift:146:72: error: cannot find type 'ResourceRoundTripResult' in scope
+144 |         ExportResource(resourceIndex: 1, resourceType: type, originalFilename: "edit.plist", uniformTypeIdentifier: "com.apple.property-list", storedRelativePath: "Resources/000001/0001.plist", sha256: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(), byteCount: data.count)
+145 |     }
+146 |     func compare(_ data: Data, allowed: Bool, type: Int = 7) throws -> ResourceRoundTripResult {
+    |                                                                        `- error: cannot find type 'ResourceRoundTripResult' in scope
+147 |         try ResourceRoundTripComparison.verify(expected: [r(original, type: type)], observed: [r(data, type: type)],
+148 |             allowAdjustmentTimestampRewrite: allowed, loadOriginal: { _ in original }, loadObserved: { _ in data })

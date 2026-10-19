@@ -1,0 +1,13 @@
+{
+  "state": "USB_VERIFIED",
+  "resourcesVerified": 30,
+  "bytesVerified": 77450231,
+  "photosImport": "NOT_RUN",
+  "seconds": 2.503059036,
+  "MiBPerSecondIncludingVerification": 29.508811035662347,
+  "assets": 20,
+  "resources": 30,
+  "authorizedPolicy": "Only new-copy adjustmentTimestamp reset; user explicitly approved",
+  "phonePolicyPreflight": "NOT_RUN: requires 0.3.1",
+  "priorFailedSessionRetained": true
+}

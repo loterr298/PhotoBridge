@@ -1,0 +1,41 @@
+test_changed_manifest_refused_before_new_destination (test_album_resume.ResumeChecks) ... ERROR
+test_completed_backup_reuse_fetches_no_resource_over_usb (test_album_resume.ResumeChecks) ... ERROR
+test_corrupt_partial_prefix_or_symlink_never_commits (test_album_resume.ResumeChecks) ... ERROR
+test_reuses_completed_hash_and_seeks_past_partial_without_changing_old_files (test_album_resume.ResumeChecks) ... ERROR
+
+======================================================================
+ERROR: test_changed_manifest_refused_before_new_destination (test_album_resume.ResumeChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_resume.py", line 9, in setUp
+    import album_resume
+ModuleNotFoundError: No module named 'album_resume'
+
+======================================================================
+ERROR: test_completed_backup_reuse_fetches_no_resource_over_usb (test_album_resume.ResumeChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_resume.py", line 9, in setUp
+    import album_resume
+ModuleNotFoundError: No module named 'album_resume'
+
+======================================================================
+ERROR: test_corrupt_partial_prefix_or_symlink_never_commits (test_album_resume.ResumeChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_resume.py", line 9, in setUp
+    import album_resume
+ModuleNotFoundError: No module named 'album_resume'
+
+======================================================================
+ERROR: test_reuses_completed_hash_and_seeks_past_partial_without_changing_old_files (test_album_resume.ResumeChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_resume.py", line 9, in setUp
+    import album_resume
+ModuleNotFoundError: No module named 'album_resume'
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+FAILED (errors=4)

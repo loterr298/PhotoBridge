@@ -1,0 +1,47 @@
+test_malformed_data_is_not_declared_equivalent (test_adjustment_inspection.AdjustmentInspectionChecks) ... ERROR
+test_only_top_level_edit_timestamp_can_be_classified_as_timestamp_only (test_adjustment_inspection.AdjustmentInspectionChecks) ... ERROR
+test_unknown_payload_change_or_type_change_never_counts_as_time_only (test_adjustment_inspection.AdjustmentInspectionChecks) ... ERROR
+
+======================================================================
+ERROR: test_malformed_data_is_not_declared_equivalent (test_adjustment_inspection.AdjustmentInspectionChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_adjustment_inspection.py", line 7, in setUp
+    self.module = importlib.import_module('inspect_adjustment')
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 984, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'inspect_adjustment'
+
+======================================================================
+ERROR: test_only_top_level_edit_timestamp_can_be_classified_as_timestamp_only (test_adjustment_inspection.AdjustmentInspectionChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_adjustment_inspection.py", line 7, in setUp
+    self.module = importlib.import_module('inspect_adjustment')
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 984, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'inspect_adjustment'
+
+======================================================================
+ERROR: test_unknown_payload_change_or_type_change_never_counts_as_time_only (test_adjustment_inspection.AdjustmentInspectionChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_adjustment_inspection.py", line 7, in setUp
+    self.module = importlib.import_module('inspect_adjustment')
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 984, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'inspect_adjustment'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.007s
+
+FAILED (errors=3)

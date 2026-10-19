@@ -1,0 +1,67 @@
+{
+  "restore-progress.json": {
+    "status": "INCOMPLETE",
+    "createdAssets": 12,
+    "resourcesVerifiedAssets": 11,
+    "pendingOrdinal": 12,
+    "error": "照片库回读资源的类型、名称、UTI、长度或 SHA-256 存在差异；不能标记往返通过"
+  },
+  "restore-report.json": {
+    "exists": false
+  },
+  "failedOrdinal": 12,
+  "expectedResourceTypes": {
+    "1": 1,
+    "7": 1,
+    "5": 1
+  },
+  "observedResourceTypes": {
+    "1": 1,
+    "7": 1,
+    "5": 1
+  },
+  "differences": [
+    {
+      "resourceType": 1,
+      "expectedBytes": 1631326,
+      "sameRoleObservedCount": 1,
+      "matchingFieldsInSameRole": [
+        {
+          "filenameMatches": true,
+          "UTIMatches": true,
+          "byteCountMatches": true,
+          "sha256Matches": true,
+          "observedBytes": 1631326
+        }
+      ]
+    },
+    {
+      "resourceType": 7,
+      "expectedBytes": 1035,
+      "sameRoleObservedCount": 1,
+      "matchingFieldsInSameRole": [
+        {
+          "filenameMatches": true,
+          "UTIMatches": true,
+          "byteCountMatches": true,
+          "sha256Matches": false,
+          "observedBytes": 1035
+        }
+      ]
+    },
+    {
+      "resourceType": 5,
+      "expectedBytes": 2694633,
+      "sameRoleObservedCount": 1,
+      "matchingFieldsInSameRole": [
+        {
+          "filenameMatches": true,
+          "UTIMatches": true,
+          "byteCountMatches": true,
+          "sha256Matches": true,
+          "observedBytes": 2694633
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "state": "USB_VERIFIED",
+  "resourcesVerified": 30,
+  "bytesVerified": 77450231,
+  "photosImport": "NOT_RUN",
+  "seconds": 2.251462481,
+  "MiBPerSecondIncludingVerification": 32.8063632984125,
+  "assets": 20,
+  "resources": 30,
+  "content": "20 JPEG originals + 5 edited JPEG + 5 plist adjustment resources",
+  "phonePreflight": "NOT_RUN"
+}

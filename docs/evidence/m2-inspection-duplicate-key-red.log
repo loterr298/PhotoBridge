@@ -1,0 +1,20 @@
+test_duplicate_keys_cannot_hide_a_non_time_payload_change (test_adjustment_inspection.AdjustmentInspectionChecks) ... FAIL
+test_malformed_data_is_not_declared_equivalent (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+test_only_top_level_edit_timestamp_can_be_classified_as_timestamp_only (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+test_unknown_payload_change_or_type_change_never_counts_as_time_only (test_adjustment_inspection.AdjustmentInspectionChecks) ... ok
+
+======================================================================
+FAIL: test_duplicate_keys_cannot_hide_a_non_time_payload_change (test_adjustment_inspection.AdjustmentInspectionChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_adjustment_inspection.py", line 45, in test_duplicate_keys_cannot_hide_a_non_time_payload_change
+    self.assertEqual(result['classification'], 'AMBIGUOUS_PROPERTY_LIST')
+AssertionError: 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE' != 'AMBIGUOUS_PROPERTY_LIST'
+- ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE
++ AMBIGUOUS_PROPERTY_LIST
+
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.011s
+
+FAILED (failures=1)

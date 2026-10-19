@@ -1,0 +1,20 @@
+{
+  "binaryIdentical": false,
+  "strictByteVerificationPass": false,
+  "classification": "ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE",
+  "changedTopLevelKeys": [
+    "adjustmentTimestamp"
+  ],
+  "status": "STRICT_RESTORE_INCOMPLETE",
+  "failedOrdinal": 12,
+  "createdAssets": 12,
+  "verifiedAssets": 11,
+  "originalJPEGBytesMatch": true,
+  "editedJPEGBytesMatch": true,
+  "adjustmentSizeBytes": 1035,
+  "otherParsedValuesAndTypesEqual": true,
+  "phoneRestoreReportExists": false,
+  "originalBackupPreserved": true,
+  "automaticReplayAllowed": false,
+  "scope": "Observed target-device import of first edited group only; not a guarantee for other edits or OS versions"
+}

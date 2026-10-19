@@ -1,0 +1,16 @@
+{
+  "status": "COMMITTED",
+  "resourcesVerified": 6,
+  "bytesVerified": 19968426,
+  "reusedVerifiedResources": 1,
+  "resumedPartialBytes": 3024889,
+  "usbResourceBytesRead": 15582759,
+  "previousFilesWritten": false,
+  "controlledReceiverInterruption": true,
+  "physicalCableDisconnected": false,
+  "newAFCConnectionForContinuation": true,
+  "independentMacShasumMatches": 6,
+  "oldBytesMtimeBirthtimeUnchanged": true,
+  "allNewBirthAndMtimeIntervalsVerified": true,
+  "scope": "Actual USB-only AFC seek after controlled client interruption; not cable-loss or Photos transaction recovery"
+}

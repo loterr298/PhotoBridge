@@ -1,0 +1,15 @@
+apps/iOS/RestoreView.swift:342:14: warning: 'onChange(of:perform:)' was deprecated in macOS 14.0: Use `onChange` with a two or zero parameter action closure instead.
+340 |             }.navigationTitle("恢复")
+341 |         }.task { service.refresh(); session = service.sessions.last ?? "" }
+342 |             .onChange(of: session) { _ in service.invalidate() }
+    |              `- warning: 'onChange(of:perform:)' was deprecated in macOS 14.0: Use `onChange` with a two or zero parameter action closure instead.
+343 |             .onChange(of: allowTimestampRewrite) { _ in service.invalidate() }
+344 |             .onDisappear { service.requestStop() }
+
+apps/iOS/RestoreView.swift:343:14: warning: 'onChange(of:perform:)' was deprecated in macOS 14.0: Use `onChange` with a two or zero parameter action closure instead.
+341 |         }.task { service.refresh(); session = service.sessions.last ?? "" }
+342 |             .onChange(of: session) { _ in service.invalidate() }
+343 |             .onChange(of: allowTimestampRewrite) { _ in service.invalidate() }
+    |              `- warning: 'onChange(of:perform:)' was deprecated in macOS 14.0: Use `onChange` with a two or zero parameter action closure instead.
+344 |             .onDisappear { service.requestStop() }
+345 |     }

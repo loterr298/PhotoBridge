@@ -1,0 +1,18 @@
+test_changed_manifest_refused_before_new_destination (test_album_resume.ResumeChecks) ... ok
+test_completed_backup_reuse_fetches_no_resource_over_usb (test_album_resume.ResumeChecks) ... ok
+test_corrupt_partial_prefix_or_symlink_never_commits (test_album_resume.ResumeChecks) ... ok
+test_destination_inside_previous_or_its_symlink_alias_is_refused (test_album_resume.ResumeChecks) ... FAIL
+test_reuses_completed_hash_and_seeks_past_partial_without_changing_old_files (test_album_resume.ResumeChecks) ... ok
+
+======================================================================
+FAIL: test_destination_inside_previous_or_its_symlink_alias_is_refused (test_album_resume.ResumeChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_album_resume.py", line 79, in test_destination_inside_previous_or_its_symlink_alias_is_refused
+    with self.assertRaises(ValueError): self.module.resume_download(self.client(m, files), remote, old, destination)
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.122s
+
+FAILED (failures=1)

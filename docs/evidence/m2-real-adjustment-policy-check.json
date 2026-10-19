@@ -1,0 +1,8 @@
+{
+  "authorizedAdjustmentTimestampDifferences": 1,
+  "strictBytesIdentical": false,
+  "actualDevicePlistPair": true,
+  "strictModeRejectedWithoutPermission": true,
+  "ambiguousXMLRejectedBySeparateRegressionTests": true,
+  "scope": "Host same-core check against actual XML device sidecars; new iPhone policy NOT_RUN"
+}

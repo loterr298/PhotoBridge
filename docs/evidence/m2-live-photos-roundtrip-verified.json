@@ -1,0 +1,20 @@
+{
+  "status": "LIVE_PHOTO_SAMPLE_ROUND_TRIP_PASS",
+  "assets": 3,
+  "resources": 6,
+  "bytes": 19968426,
+  "independentMacShasumMatches": 6,
+  "completeResourceTypeFilenameUTISizeHashMultisetsMatch": true,
+  "sourceToCreatedMappingVerified": true,
+  "photoKitNilOrderMatchesMapping": true,
+  "phoneReportStatus": "PHOTO_LIBRARY_BYTES_AND_ORDER_VERIFIED",
+  "sourceBuild": "403aae1e2139e107c103744399f3ce7839409bb0",
+  "restoreSoftwareCloudCommit": "3768816d24b1dfceceeb3c5b0b24e96816018632",
+  "restoreRuntimeBuildIndependentlyRecorded": false,
+  "livePlaybackUserAttestation": "能播放",
+  "livePlaybackAttestationContext": "reply to instruction to play all three restored Live photos; no automated playback observation",
+  "manualPhotosCustomOrder": "USER_CONFIRMED: 3 张顺序一致",
+  "originalSourceDeleted": false,
+  "originalMediaInternalMetadataWritten": false,
+  "scope": "3 HEIC+paired MOV Live assets on target device; no edited/RAW/PNG/iCloud/bulk/recovery generalization"
+}
