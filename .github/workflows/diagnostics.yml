@@ -44,6 +44,7 @@ jobs:
           set -o pipefail
           swift test 2>&1 | tee build/logs/swift-test.log
           swift run CoreChecks 2>&1 | tee build/logs/core-checks.log
+          swift run StagingChecks 2>&1 | tee build/logs/staging-checks.log
           python3 -m unittest discover -s tests -v 2>&1 | tee build/logs/python-test.log
       - name: Install pinned XcodeGen and generate project
         run: |
@@ -63,7 +64,7 @@ jobs:
           import pathlib, plistlib
           app = pathlib.Path('build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app')
           info = plistlib.loads((app / 'Info.plist').read_bytes())
-          expected = {'CFBundleShortVersionString': '0.3.4', 'CFBundleVersion': '8', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
+          expected = {'CFBundleShortVersionString': '0.3.5', 'CFBundleVersion': '9', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
           for key, value in expected.items():
               assert info.get(key) == value, f'Invalid compiled Info.plist: {key}'
           assert info.get('NSPhotoLibraryUsageDescription')
@@ -73,7 +74,7 @@ jobs:
           ditto -c -k --keepParent build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/PhotoBridgeOrderProbe-unsigned.app.zip
           mkdir -p build/ipa/Payload
           ditto build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/ipa/Payload/PhotoBridgeOrderProbe.app
-          ditto -c -k --keepParent build/ipa/Payload build/PhotoBridgeOrderProbe-0.3.4-unsigned.ipa
+          ditto -c -k --keepParent build/ipa/Payload build/PhotoBridgeOrderProbe-0.3.5-unsigned.ipa
       - name: Build Intel macOS App
         run: |
           set -o pipefail
