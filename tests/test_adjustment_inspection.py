@@ -45,5 +45,31 @@ class AdjustmentInspectionChecks(unittest.TestCase):
         self.assertEqual(result['classification'], 'AMBIGUOUS_PROPERTY_LIST')
         self.assertFalse(result['strictByteVerificationPass'])
 
+    def test_unknown_xml_elements_cannot_hide_non_time_changes(self):
+        def data(payload, year):
+            return ('<plist version="1.0"><dict><unknown>' + payload +
+                    '</unknown><key>adjustmentTimestamp</key><date>' + year +
+                    '-01-01T00:00:00Z</date></dict></plist>').encode()
+        result = self.module.analyze(data('BAD', '2020'), data('XYZ', '2026'))
+        self.assertNotEqual(result['classification'], 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE')
+
+    def test_ignored_scalar_suffixes_cannot_hide_non_time_changes(self):
+        for leaf in ['<data>YQ=={payload}</data>', '<date>2001-01-01T00:00:00Z{payload}</date>']:
+            with self.subTest(leaf=leaf):
+                def data(payload, year):
+                    return ('<plist version="1.0"><dict><key>payload</key>' + leaf.format(payload=payload) +
+                        '<key>adjustmentTimestamp</key><date>' + year + '-01-01T00:00:00Z</date></dict></plist>').encode()
+                result = self.module.analyze(data('BAD', '2020'), data('XYZ', '2026'))
+                self.assertNotEqual(result['classification'], 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE')
+
+    def test_scalar_normalization_cannot_hide_non_time_changes(self):
+        for before_leaf, after_leaf in [('<date>2020-02-31T00:00:00Z</date>', '<date>2020-03-02T00:00:00Z</date>'),
+                ('<real>1e999</real>', '<real>2e999</real>'), ('<real>1e-999</real>', '<real>2e-999</real>')]:
+            def data(leaf, year):
+                return ('<plist version="1.0"><dict><key>payload</key>' + leaf +
+                    '<key>adjustmentTimestamp</key><date>' + year + '-01-01T00:00:00Z</date></dict></plist>').encode()
+            result = self.module.analyze(data(before_leaf, '2020'), data(after_leaf, '2026'))
+            self.assertNotEqual(result['classification'], 'ADJUSTMENT_TIMESTAMP_ONLY_DIFFERENCE')
+
 
 if __name__ == '__main__': unittest.main()
