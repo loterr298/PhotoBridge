@@ -1,0 +1,12 @@
+{
+  "status": "NEW_INBOX_USB_UPLOAD_INDEPENDENTLY_VERIFIED",
+  "assets": 3,
+  "resources": 6,
+  "bytes": 19968426,
+  "independentMacShasumMatches": 6,
+  "installedVersion": "0.3.6",
+  "installedBuild": "10",
+  "runtimeBuild": "NOT_YET_OBSERVED",
+  "photosImport": "NOT_RUN",
+  "phoneFilesWrittenByIndependentAudit": false
+}

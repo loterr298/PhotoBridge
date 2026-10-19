@@ -1,0 +1,12 @@
+test_complete_saved_baseline_and_exact_audited_report_can_pass (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+test_downloaded_report_switch_cannot_claim_baseline_identity (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+test_empty_truncated_or_changed_baseline_cannot_claim_preservation (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+test_exact_stop_binding_identifies_first_existing_copy (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+test_final_must_reuse_same_album_first_id_and_exact_remaining_count (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+test_foreign_manifest_policy_counter_or_event_never_establishes_baseline (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+test_relaunch_claim_requires_user_attestation (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.046s
+
+OK

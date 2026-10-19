@@ -1,0 +1,50 @@
+test_complete_saved_baseline_and_exact_audited_report_can_pass (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+test_downloaded_report_switch_cannot_claim_baseline_identity (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... FAIL
+test_empty_truncated_or_changed_baseline_cannot_claim_preservation (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... test_exact_stop_binding_identifies_first_existing_copy (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+test_final_must_reuse_same_album_first_id_and_exact_remaining_count (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... test_foreign_manifest_policy_counter_or_event_never_establishes_baseline (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+test_relaunch_claim_requires_user_attestation (test_photos_recovery_audit.PhotosRecoveryAuditChecks) ... ok
+
+======================================================================
+FAIL: test_downloaded_report_switch_cannot_claim_baseline_identity (test_photos_recovery_audit.PhotosRecoveryAuditChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_photos_recovery_audit.py", line 83, in test_downloaded_report_switch_cannot_claim_baseline_identity
+    with self.assertRaises(ValueError):verify(None,baseline,root/'source',root/'output',True)
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_empty_truncated_or_changed_baseline_cannot_claim_preservation (test_photos_recovery_audit.PhotosRecoveryAuditChecks) (fault='empty')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_photos_recovery_audit.py", line 97, in test_empty_truncated_or_changed_baseline_cannot_claim_preservation
+    with self.assertRaises(ValueError):verify(None,baseline,root/'source',root/'output',True)
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_empty_truncated_or_changed_baseline_cannot_claim_preservation (test_photos_recovery_audit.PhotosRecoveryAuditChecks) (fault='truncated')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_photos_recovery_audit.py", line 97, in test_empty_truncated_or_changed_baseline_cannot_claim_preservation
+    with self.assertRaises(ValueError):verify(None,baseline,root/'source',root/'output',True)
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_empty_truncated_or_changed_baseline_cannot_claim_preservation (test_photos_recovery_audit.PhotosRecoveryAuditChecks) (fault='changed-bytes')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_photos_recovery_audit.py", line 97, in test_empty_truncated_or_changed_baseline_cannot_claim_preservation
+    with self.assertRaises(ValueError):verify(None,baseline,root/'source',root/'output',True)
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_final_must_reuse_same_album_first_id_and_exact_remaining_count (test_photos_recovery_audit.PhotosRecoveryAuditChecks) (key='newAlbumTitle')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_photos_recovery_audit.py", line 55, in test_final_must_reuse_same_album_first_id_and_exact_remaining_count
+    with self.subTest(key=key),self.assertRaises(ValueError):bind_final(changed,baseline)
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.046s
+
+FAILED (failures=5)

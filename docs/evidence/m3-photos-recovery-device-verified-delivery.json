@@ -1,0 +1,10 @@
+{
+  "status": "DEVICE_SCOPED_ACCEPTANCE_INCLUDED_WITH_UNCHANGED_BINARIES",
+  "version": "0.3.6",
+  "sha256": "960d8462ca8f9a0afe0bc4463c52305f1ef680f132f46bb771c44e1c067cdc45",
+  "priorBundlePreserved": true,
+  "priorBundleSHA256": "9c7045a4d6854a4d73bccbd9040c38b71e9d32dfb50e9482d0dc1820b83a25b0",
+  "iOSAndMacBinariesUnchanged": true,
+  "privateMediaIncluded": false,
+  "PhotosTerminationDuringCommit": "NOT_RUN"
+}
