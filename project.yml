@@ -25,8 +25,8 @@ targets:
         TARGETED_DEVICE_FAMILY: '1,2'
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
-        MARKETING_VERSION: 0.3.2
-        CURRENT_PROJECT_VERSION: 6
+        MARKETING_VERSION: 0.3.3
+        CURRENT_PROJECT_VERSION: 7
 schemes:
   PhotoBridgeOrderProbe:
     build:
