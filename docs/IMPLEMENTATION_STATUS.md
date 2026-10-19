@@ -305,3 +305,18 @@ dw 的新会话已通过真实 USB 发送并回读 20 项/30 份资源/77,450,23
 用户随后回复“已连接并保持不拔”，本机 IOUSB 已重新发现 iPhone。另建 USB-only AFC 连接，把第二次现场只读继续到新 completed 目录：**30 份 / 77,450,231 bytes COMMITTED**；复用 **8** 份已完成且 hash 相符的资源，从 **3,145,728 bytes（3 MiB）** 部分前缀继续，实际新读取 **46,209,239 bytes** USB 资源数据。系统 shasum **30/30** 与原清单一致，所有新副本创建/修改时间及5秒间隔均验证，旧现场所有文件 bytes/mtime/birthtime 不变。手机、照片库及来源未写入。
 
 证据 `m2-physical-usb-download-resume-verified.json`，附当前实际 CLI 源文件 SHA-256 和用户拔插说明。中断前为操作时间限速1MiB/s，不将本次吞吐当性能基准。**本机该20项样本的真实物理拔线下载续传通过**；上传、手机暂存、Photos事务恢复及万张负载仍未验证。第一轮失败和第二轮短暂无设备的记录均保留，未覆盖为成功。
+
+
+### 0.3.3 最终云编译、包核对及 Intel 安装
+
+[Actions #16](https://github.com/loterr298/PhotoBridge/actions/runs/39212122893) **SUCCESS**；源码 **c786f22119a320bebbb6b76a518616a3e567494c**，实际 **4 XCTest / 47 CoreChecks / 35 Python**，iOS arm64 编译及 Intel x86_64 编译通过。工具链日志保留实际选择的 Xcode/SDK，不臆造 Beta SDK。
+
+[产物](https://github.com/loterr298/PhotoBridge/actions/runs/39212122893/artifacts/12168430346) 已下载，整体 SHA-256 **75997c9053b0a071cf86c4da6e9f3d8f7723a690d2de01d1a601d666472f507a**。CRC、内部 SHA256SUMS、IPA 0.3.3/build7/commit/稳定 bundle ID/arm64/可执行权限、Mac x86_64/版本、无 bytecode 缓存及所有包内脚本与本地已测源码逐字节一致均核对。`cloud-build-16.json`、`cloud-16-*.log`、`cloud-build-16-success.png`。
+
+- `build/PhotoBridge-0.3.3-M2/PhotoBridgeOrderProbe-0.3.3-unsigned.ipa`：SHA-256 **0266a6a3833e96ce4ca3b716671f54cd247941527f7a3e68a0f05f1b290da0ad**。
+- `build/PhotoBridge-0.3.3-M2/PhotoBridgeMac-Intel.zip`：SHA-256 **8fb6c7dfa33b62aba96bd1b4de9f47b758eca80d3c130856bc5b7f33157a7970**。
+- `build/PhotoBridge-0.3.3-M2-Apps.zip`：双端包、SHA256SUMS、保护策略及真实恢复/继续下载说明；不含私人照片或清单。
+
+本机原 `/Applications/PhotoBridgeMac.app`（0.3.1）先完整保存 ZIP 及目录备份，再装入干净的0.3.3云包；严格验签、Intel架构及安装后脚本源码均核对，`m2-afc-fix-mac-install.json`。没有宣称现有GUI进程已重启或界面已验收。iPhone0.3.3运行时仍 **NOT_RUN**；不要求为Mac下载修复重复导入照片。下一次手机恢复前沿用原个人签名方式覆盖更新，不卸载旧App。
+
+当前可信范围：目标设备自建相簿20项手动顺序及改位复测；限定 JPEG/编辑附件与3组Live的往返，编辑附件仅明确授权时间例外；双向USB样本；Mac文件系统5秒时间；受控和真实物理拔线后的Mac下载继续。尚未完成：上传/iPhone暂存/Photos事务安全恢复、PNG/DNG/更多编辑/iCloud与权限空间故障、大规模及最终极简双端操作UI。原始媒体、全部失败现场和私人数据保持在本机。
