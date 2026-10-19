@@ -1,0 +1,7 @@
+{
+  "status": "NATIVE_AFC_LOCK_SAMPLE_PASS",
+  "transport": "USB_ONLY",
+  "lockRefusedConcurrentClient": true,
+  "reacquiredAfterClose": true,
+  "scope": "Two native AFC clients; second exclusive nonblocking lock refused with code19; reacquired after first client closed"
+}

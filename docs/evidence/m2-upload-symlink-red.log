@@ -1,0 +1,34 @@
+test_complete_files_are_not_rewritten_and_partial_uses_exact_offset (test_upload_resume.UploadContinuationChecks) ... ok
+test_fresh_upload_refuses_symlinked_inbox_or_session_before_writes (test_upload_resume.UploadContinuationChecks) ... test_unsafe_or_published_sessions_are_refused_before_resource_writes (test_upload_resume.UploadContinuationChecks) ... ok
+
+======================================================================
+ERROR: test_fresh_upload_refuses_symlinked_inbox_or_session_before_writes (test_upload_resume.UploadContinuationChecks) (fault='inbox')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_upload_resume.py", line 108, in test_fresh_upload_refuses_symlinked_inbox_or_session_before_writes
+    self.module.upload(c, source)
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/scripts/upload_resume.py", line 127, in upload
+    else: client.write_new(remote + '/' + relative + '.part', source)
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_upload_resume.py", line 38, in write_new
+    f.write(source.read(5)); raise RuntimeError('CONTROLLED_WRITER_INTERRUPTION')
+RuntimeError: CONTROLLED_WRITER_INTERRUPTION
+
+======================================================================
+FAIL: test_fresh_upload_refuses_symlinked_inbox_or_session_before_writes (test_upload_resume.UploadContinuationChecks) (fault='session')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_upload_resume.py", line 109, in test_fresh_upload_refuses_symlinked_inbox_or_session_before_writes
+    self.assertEqual(writes, []); self.assertEqual(offsets, [])
+AssertionError: Lists differ: ['RestoreInbox/C96B2A01-85C7-4157-A7E0-EC0106750318/upload-owner.json'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'RestoreInbox/C96B2A01-85C7-4157-A7E0-EC0106750318/upload-owner.json'
+
+- ['RestoreInbox/C96B2A01-85C7-4157-A7E0-EC0106750318/upload-owner.json']
++ []
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.150s
+
+FAILED (failures=1, errors=1)

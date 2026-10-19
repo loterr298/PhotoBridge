@@ -1,0 +1,29 @@
+{
+  "state": "USB_VERIFIED",
+  "resourcesVerified": 6,
+  "bytesVerified": 19968426,
+  "reusedVerifiedResources": 1,
+  "resumedPartialBytes": 3024889,
+  "usbResourceBytesWritten": 15582759,
+  "usbVerificationBytesRead": 22998320,
+  "controlledLocalSourceInterruption": true,
+  "physicalCableDisconnected": false,
+  "newUSBOnlyAFCConnection": true,
+  "independentMacShasumMatches": 6,
+  "sourceBytesMtimeBirthtimeUnchanged": true,
+  "oldLocalJournalUnchanged": true,
+  "previouslyCompletedPhoneFileUnchanged": true,
+  "restoreRequestPublishedLast": true,
+  "observedAtomicPublications": 7,
+  "photosImport": "NOT_RUN",
+  "recordedAt": "2026-10-19T07:11:50.915522+00:00",
+  "scope": "App Documents USB upload continuation only; Photos import NOT_RUN, no staging/Photos transaction recovery claim",
+  "originalMediaInternalMetadataWritten": false,
+  "cliSourceSHA256": {
+    "scripts/upload_resume.py": "9d56f542b5774cd6697d627909ec9f39dce8757eaa8122455ed42c4e2ad4439e",
+    "scripts/usb_probe.py": "a0d93a0277c7221de9a206a482e49e31c9d0c8df48de3e64398f930108a65ca2",
+    "scripts/album_restore.py": "9e5e747e6e1813ce9f76ad7008e9dead25b7008caf89f7f1d778859f25ce77ed",
+    "tests/device_usb_upload_cable_resume.py": "0aa719acadaccb9e388195acd19ccc3178d0f370915d40cb93e34983bb44b1ef",
+    "tests/device_usb_upload_resume.py": "3f8d13287149c80c26e24e60f22a0e1d76c3151a2df4fa1a868c84b8066a7448"
+  }
+}

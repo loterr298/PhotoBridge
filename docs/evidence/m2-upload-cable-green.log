@@ -1,0 +1,12 @@
+USB_UPLOAD_STARTED: waiting for manual cable removal; Photos NOT_RUN
+USB_UPLOAD_STARTED: waiting for manual cable removal; Photos NOT_RUN
+test_full_size_part_cannot_claim_positive_suffix_continuation (test_usb_upload_cable_resume.UploadCableClassificationChecks) ... ok
+test_local_reader_error_cannot_be_reported_as_usb_write_failure (test_usb_upload_cable_resume.UploadCableClassificationChecks) ... ok
+test_complete_files_are_not_rewritten_and_partial_uses_exact_offset (test_upload_resume.UploadContinuationChecks) ... ok
+test_fresh_upload_refuses_symlinked_inbox_or_session_before_writes (test_upload_resume.UploadContinuationChecks) ... ok
+test_unsafe_or_published_sessions_are_refused_before_resource_writes (test_upload_resume.UploadContinuationChecks) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.666s
+
+OK

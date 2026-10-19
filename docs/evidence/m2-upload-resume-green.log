@@ -1,0 +1,7 @@
+test_complete_files_are_not_rewritten_and_partial_uses_exact_offset (test_upload_resume.UploadContinuationChecks) ... ok
+test_unsafe_or_published_sessions_are_refused_before_resource_writes (test_upload_resume.UploadContinuationChecks) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.157s
+
+OK

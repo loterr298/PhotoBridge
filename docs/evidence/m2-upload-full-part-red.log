@@ -1,0 +1,25 @@
+USB_UPLOAD_STARTED: waiting for manual cable removal; Photos NOT_RUN
+USB_UPLOAD_STARTED: waiting for manual cable removal; Photos NOT_RUN
+test_full_size_part_cannot_claim_positive_suffix_continuation (test_usb_upload_cable_resume.UploadCableClassificationChecks) ... ERROR
+test_local_reader_error_cannot_be_reported_as_usb_write_failure (test_usb_upload_cable_resume.UploadCableClassificationChecks) ... ok
+
+======================================================================
+ERROR: test_full_size_part_cannot_claim_positive_suffix_continuation (test_usb_upload_cable_resume.UploadCableClassificationChecks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_usb_upload_cable_resume.py", line 26, in test_full_size_part_cannot_claim_positive_suffix_continuation
+    with self.assertRaisesRegex(ValueError, 'No strict partial'): cable.resume(out)
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/device_usb_upload_cable_resume.py", line 136, in resume
+    result = upload(Observed(), source, previous)
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/scripts/upload_resume.py", line 127, in upload
+    if partial: client.append_existing(remote + '/' + relative + '.part', source, offset)
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/device_usb_upload_cable_resume.py", line 128, in append_existing
+    client.append_existing(path, Counted(), offset)
+  File "/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/test_upload_resume.py", line 42, in append_existing
+    with (phone / path).open('ab') as f: f.write(source.read())
+TypeError: read() missing 1 required positional argument: 'size'
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.549s
+
+FAILED (errors=1)

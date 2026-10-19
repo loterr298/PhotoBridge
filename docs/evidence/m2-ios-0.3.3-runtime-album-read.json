@@ -1,0 +1,12 @@
+{
+  "status": "INSTALLED_RUNTIME_ALBUM_READ_OBSERVED",
+  "build": "c786f22119a320bebbb6b76a518616a3e567494c",
+  "capturedAt": "2026-10-19T06:58:31Z",
+  "authorization": "full",
+  "fetchMode": "nil-options",
+  "memberCount": 20,
+  "expectedCloudBuild": 16,
+  "expectedVersion": "0.3.3",
+  "newPhotosRestore": "NOT_RUN",
+  "privateIdentifiersPublished": false
+}
