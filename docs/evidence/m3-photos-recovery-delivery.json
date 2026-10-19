@@ -1,0 +1,10 @@
+{
+  "status": "PACKAGED_AND_INTERNALLY_VERIFIED",
+  "version": "0.3.6",
+  "archive": "build/PhotoBridge-0.3.6-M3-Apps.zip",
+  "sha256": "9c7045a4d6854a4d73bccbd9040c38b71e9d32dfb50e9482d0dc1820b83a25b0",
+  "devicePhotosTransactionRecovery": "NOT_RUN",
+  "privateMediaIncluded": false,
+  "oldBundlesPreserved": true,
+  "packagingFailureCorrected": "Initial ditto Chinese filename read with wrong ZIP encoding; ASCII filename plus standard ZIP removes encoding ambiguity and AppleDouble entries; binary inputs unchanged"
+}

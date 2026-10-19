@@ -1,0 +1,13 @@
+{
+  "installedVersion": "0.3.6",
+  "build": "10",
+  "previousVersion": "0.3.5",
+  "previousAppPreservedAsDirectoryAndZIP": true,
+  "codesignStrictVerified": true,
+  "architecture": "x86_64",
+  "installedFilesMatchExactVerifiedCloudApp": true,
+  "previousExactProcessesTerminated": 1,
+  "updatedProcess": "OBSERVED_AT_EXACT_INSTALLED_PATH",
+  "GUIVisualAcceptance": "NOT_RUN",
+  "photosWritten": false
+}
