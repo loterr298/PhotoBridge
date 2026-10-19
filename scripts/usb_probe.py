@@ -6,6 +6,7 @@ Never bundles a library, deletes user files, or modifies original media.
 import argparse
 import ctypes as C
 import ctypes.util
+import contextlib
 import hashlib
 import json
 import os
@@ -98,6 +99,9 @@ class AFC:
             'afc_file_close': ([ptr, u64], C.c_int),
             'afc_file_read': ([ptr, u64, ptr, u32, C.POINTER(u32)], C.c_int),
             'afc_file_seek': ([ptr, u64, C.c_int64, C.c_int], C.c_int),
+            'afc_file_tell': ([ptr, u64, C.POINTER(u64)], C.c_int),
+            'afc_file_lock': ([ptr, u64, C.c_int], C.c_int),
+            'afc_get_file_info': ([ptr, C.c_char_p, C.POINTER(C.POINTER(C.c_char_p))], C.c_int),
             'afc_file_write': ([ptr, u64, ptr, u32, C.POINTER(u32)], C.c_int),
             'afc_make_directory': ([ptr, C.c_char_p], C.c_int),
             'afc_rename_path': ([ptr, C.c_char_p, C.c_char_p], C.c_int),
@@ -168,18 +172,63 @@ class AFC:
             if primary_error is None: self.check(close_error, 'AFC close read')
             elif close_error: primary_error.afc_close_error = close_error
 
+    def info(self, path):
+        values = C.POINTER(C.c_char_p)()
+        self.check(self.lib.afc_get_file_info(self.afc, documents_path(path).encode(), C.byref(values)), 'AFC file info')
+        try:
+            result = {}; index = 0
+            while values[index]:
+                key = values[index].decode('utf-8'); index += 1
+                if not values[index] or key in result: raise ValueError('Malformed AFC file attributes')
+                result[key] = values[index].decode('utf-8'); index += 1
+            return result
+        finally: self.lib.afc_dictionary_free(values)
+
+    @contextlib.contextmanager
+    def locked_file(self, path):
+        handle = C.c_uint64(); primary = None
+        self.check(self.lib.afc_file_open(self.afc, documents_path(path).encode(), 1, C.byref(handle)), 'AFC open lock')
+        try:
+            self.check(self.lib.afc_file_lock(self.afc, handle, 6), 'AFC exclusive lock')
+            yield
+        except BaseException as error:
+            primary = error
+            raise
+        finally:
+            code = self.lib.afc_file_close(self.afc, handle)
+            if primary is None: self.check(code, 'AFC close lock')
+            elif code: primary.afc_close_error = code
+
+    def append_existing(self, path, source, offset):
+        parts = path.split('/')
+        if (len(parts) not in (3, 5) or parts[0] != 'RestoreInbox' or not path.endswith('.part')
+                or str(uuid.UUID(parts[1])) != parts[1].lower() or type(offset) is not int or not 0 <= offset <= 2**63 - 1):
+            raise ValueError('Append is limited to owned RestoreInbox temporary files')
+        info = self.info(path)
+        if info.get('st_ifmt') != 'S_IFREG' or info.get('st_nlink') != '1' or int(info['st_size']) != offset:
+            raise ValueError('Partial file is not a matching single-link regular file')
+        self._write_file(path, source, offset)
+
     def write_new(self, path, source):
+        self._write_file(path, source, None)
+
+    def _write_file(self, path, source, offset):
         # Called only in a freshly created UUID session; fail if filename already exists.
         parent, name = path.rsplit('/', 1)
-        if name in self.list(parent): raise FileExistsError(path)
+        if offset is None and name in self.list(parent): raise FileExistsError(path)
         handle = C.c_uint64()
-        self.check(self.lib.afc_file_open(self.afc, documents_path(path).encode(), 3, C.byref(handle)), 'AFC open write')
+        self.check(self.lib.afc_file_open(self.afc, documents_path(path).encode(), 3 if offset is None else 2, C.byref(handle)), 'AFC open write')
         def writer(data):
             count = C.c_uint32(); buffer = C.create_string_buffer(data)
             self.check(self.lib.afc_file_write(self.afc, handle, buffer, len(data), C.byref(count)), 'AFC write')
             return count.value
         primary_error = None
         try:
+            if offset is not None:
+                position = C.c_uint64()
+                self.check(self.lib.afc_file_seek(self.afc, handle, 0, os.SEEK_END), 'AFC seek append EOF')
+                self.check(self.lib.afc_file_tell(self.afc, handle, C.byref(position)), 'AFC tell append EOF')
+                if position.value != offset: raise ValueError('Partial file changed before append')
             while True:
                 data = source.read(CHUNK)
                 if not data: break

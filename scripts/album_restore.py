@@ -27,7 +27,7 @@ def regular_path(root, relative):
     return current
 
 
-def upload_backup(client, local):
+def validated_backup(local):
     local = Path(local)
     manifest_path = regular_path(local, 'album-order.json')
     if manifest_path.stat().st_size > 64 * 1024 * 1024: raise ValueError('Manifest exceeds bound')
@@ -43,6 +43,13 @@ def upload_backup(client, local):
         receipt = inspect(regular_path(local, resource['storedRelativePath']))
         if receipt['sha256'] != resource['sha256'] or receipt['byteCount'] != resource['byteCount']:
             raise ValueError('Local backup byte/hash mismatch')
+    return raw, manifest, resources, digest, total
+
+
+def upload_backup(client, local):
+    local = Path(local)
+    raw, manifest, resources, digest, total = validated_backup(local)
+    manifest_path = regular_path(local, 'album-order.json')
     session = str(uuid.uuid4()).upper(); remote = 'RestoreInbox/' + session
     journals = local / 'restore-uploads'
     if journals.is_symlink(): raise ValueError('Upload journal must not be a symbolic link')
