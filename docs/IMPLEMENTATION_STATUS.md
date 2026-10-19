@@ -285,3 +285,23 @@ dw 的新会话已通过真实 USB 发送并回读 20 项/30 份资源/77,450,23
 - `build/PhotoBridge-0.3.2-M2-Apps.zip` 汇集双端包与最新保护/恢复/继续下载说明。云日志 `cloud-15-*.log`，核对记录 `cloud-build-15.json`，实际成功截图 `cloud-build-15-success.png`。另有 Intel 本地构建日志 m2-strict-xml-mac-build.log。
 
 当前更严格 Swift 核心已在主机重新检查全部5份真实附件，结果仍为仅授权时间变化；新版 iPhone 二进制尚未由用户安装，明确 **NOT_RUN**。已完成的20项真机证据属于0.3.1；不挪用为0.3.2真机验收。下一次手机恢复前应沿用原个人签名覆盖更新，不卸载旧 App。上传/Photos 事务恢复、真实物理拔线/大规模及最终 UI 等后续项目仍未完成。
+
+下一项已准备两步只读硬件脚本 `tests/device_usb_cable_resume.py`，用于同时记录 IOUSB 真消失与 AFC 传输失败，再新连接继续并独立复核全部资源及新/旧文件时间。CLI 帮助与语法检查已执行；协调用户实际拔线时机后再启动。**物理拔线结果仍 NOT_RUN**。该手工验收脚本不在云15应用包内，不改其已验证的应用二进制或测试计数。
+
+
+### 物理拔线测试及共享 AFC 异常修复（0.3.3/build7 开发）
+
+新增只读两步硬件脚本及故障分类检查。独立 IOUSB 观察、真实资源读协议失败、两者时间关联、非空部分文件及没有 COMMITTED 缺一不可；本地 sink/写盘/hash/属性异常不得冒充 USB 读失败。接收限速只为用户操作留时间，不用限速吞吐宣称产品性能。继续执行仍使用原严格清单绑定和新输出目录，不修改旧现场。
+
+第一次实际拔线已观察设备消失，但 `AFC.read` 的 finally 关闭错误覆盖了原始读异常，严格记录 PHYSICAL_INTERRUPTION_NOT_PROVEN；用户回复“已重新连接”。无续传通过宣称，原目录保留；m2-physical-usb-first-attempt-not-proven.json。审查首先合成复现了本地异常误判，修复后新增完整 harness 路径测试；随后自动化 RED 复现 read+close 双失败覆盖根因。共享 read/write 两条路径均已修复：保留原始协议或本地异常，附加关闭错误码；没有原始错误时关闭错误仍报告。m2-afc-primary-error-red.log。
+
+完整 **35 Python / 47 CoreChecks（核心未改）**，Python 本轮实际运行退出0，m2-physical-harness-tests.log；共享 AFC 和脚本独立复审无剩余 Critical/Important。新逻辑尚未打入云15的0.3.2包，准备0.3.3云编译，不拿旧包冒充。
+
+用户同意再测。第二次实际中断记录到 **AFC read error30（32.4669秒）**，**IOUSB iPhone消失（32.5928秒）**，存在非空部分文件，未 COMMITTED，满足中断证据。用户回复“第二次已重新连接”，但下一次实际 IOUSB/USB-only 检测仍无设备（-3），所以 **续传 NOT_RUN、物理闭环未通过**。已保留状态并请求恢复连接；m2-physical-usb-device-interruption.json。不得把“中断证据有效”写成“断线恢复已通过”。
+
+
+#### 第二次物理拔线后实际继续成功
+
+用户随后回复“已连接并保持不拔”，本机 IOUSB 已重新发现 iPhone。另建 USB-only AFC 连接，把第二次现场只读继续到新 completed 目录：**30 份 / 77,450,231 bytes COMMITTED**；复用 **8** 份已完成且 hash 相符的资源，从 **3,145,728 bytes（3 MiB）** 部分前缀继续，实际新读取 **46,209,239 bytes** USB 资源数据。系统 shasum **30/30** 与原清单一致，所有新副本创建/修改时间及5秒间隔均验证，旧现场所有文件 bytes/mtime/birthtime 不变。手机、照片库及来源未写入。
+
+证据 `m2-physical-usb-download-resume-verified.json`，附当前实际 CLI 源文件 SHA-256 和用户拔插说明。中断前为操作时间限速1MiB/s，不将本次吞吐当性能基准。**本机该20项样本的真实物理拔线下载续传通过**；上传、手机暂存、Photos事务恢复及万张负载仍未验证。第一轮失败和第二轮短暂无设备的记录均保留，未覆盖为成功。
