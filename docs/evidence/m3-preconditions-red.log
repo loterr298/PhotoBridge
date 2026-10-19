@@ -1,0 +1,158 @@
+[0/1] Planning build
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--1AB21518FC5DEDBE.txt
+[3/8] Emitting module RecoveryChecks
+[4/8] Compiling RecoveryChecks main.swift
+[5/8] Compiling RecoveryChecks PreconditionChecks.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:5:9: error: cannot find 'OperationPreconditions' in scope
+ 3 | 
+ 4 | func preconditionChecks() throws {
+ 5 |     try OperationPreconditions.requireFullAccess(.full)
+   |         `- error: cannot find 'OperationPreconditions' in scope
+ 6 |     try check(true, "full library permission accepted")
+ 7 |     for permission in [PhotoAccessState.notDetermined, .restricted, .denied, .limited, .unknown] {
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:5:51: error: cannot infer contextual base in reference to member 'full'
+ 3 | 
+ 4 | func preconditionChecks() throws {
+ 5 |     try OperationPreconditions.requireFullAccess(.full)
+   |                                                   `- error: cannot infer contextual base in reference to member 'full'
+ 6 |     try check(true, "full library permission accepted")
+ 7 |     for permission in [PhotoAccessState.notDetermined, .restricted, .denied, .limited, .unknown] {
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:7:24: error: cannot find 'PhotoAccessState' in scope
+ 5 |     try OperationPreconditions.requireFullAccess(.full)
+ 6 |     try check(true, "full library permission accepted")
+ 7 |     for permission in [PhotoAccessState.notDetermined, .restricted, .denied, .limited, .unknown] {
+   |                        `- error: cannot find 'PhotoAccessState' in scope
+ 8 |         try rejects("non-full permission refused: \(permission.rawValue)") { try OperationPreconditions.requireFullAccess(permission) }
+ 9 |     }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:7:57: error: reference to member 'restricted' cannot be resolved without a contextual type
+ 5 |     try OperationPreconditions.requireFullAccess(.full)
+ 6 |     try check(true, "full library permission accepted")
+ 7 |     for permission in [PhotoAccessState.notDetermined, .restricted, .denied, .limited, .unknown] {
+   |                                                         `- error: reference to member 'restricted' cannot be resolved without a contextual type
+ 8 |         try rejects("non-full permission refused: \(permission.rawValue)") { try OperationPreconditions.requireFullAccess(permission) }
+ 9 |     }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:7:70: error: reference to member 'denied' cannot be resolved without a contextual type
+ 5 |     try OperationPreconditions.requireFullAccess(.full)
+ 6 |     try check(true, "full library permission accepted")
+ 7 |     for permission in [PhotoAccessState.notDetermined, .restricted, .denied, .limited, .unknown] {
+   |                                                                      `- error: reference to member 'denied' cannot be resolved without a contextual type
+ 8 |         try rejects("non-full permission refused: \(permission.rawValue)") { try OperationPreconditions.requireFullAccess(permission) }
+ 9 |     }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:7:79: error: reference to member 'limited' cannot be resolved without a contextual type
+ 5 |     try OperationPreconditions.requireFullAccess(.full)
+ 6 |     try check(true, "full library permission accepted")
+ 7 |     for permission in [PhotoAccessState.notDetermined, .restricted, .denied, .limited, .unknown] {
+   |                                                                               `- error: reference to member 'limited' cannot be resolved without a contextual type
+ 8 |         try rejects("non-full permission refused: \(permission.rawValue)") { try OperationPreconditions.requireFullAccess(permission) }
+ 9 |     }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:7:89: error: reference to member 'unknown' cannot be resolved without a contextual type
+ 5 |     try OperationPreconditions.requireFullAccess(.full)
+ 6 |     try check(true, "full library permission accepted")
+ 7 |     for permission in [PhotoAccessState.notDetermined, .restricted, .denied, .limited, .unknown] {
+   |                                                                                         `- error: reference to member 'unknown' cannot be resolved without a contextual type
+ 8 |         try rejects("non-full permission refused: \(permission.rawValue)") { try OperationPreconditions.requireFullAccess(permission) }
+ 9 |     }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:10:22: error: cannot find 'RestoreWriteBudget' in scope
+ 8 |         try rejects("non-full permission refused: \(permission.rawValue)") { try OperationPreconditions.requireFullAccess(permission) }
+ 9 |     }
+10 |     let budget = try RestoreWriteBudget(resourceBytesByAsset: [[10, 20], [40], [50]], recordedAssets: 1, verifiedThisRun: 0, reserveBytes: 100)
+   |                      `- error: cannot find 'RestoreWriteBudget' in scope
+11 |     try check(budget.remainingPhotoCopyBytes == 90 && budget.remainingReadbackBytes == 120 && budget.requiredBytes == 310,
+12 |         "recovery budget rereads every existing asset but only copies remaining Photos assets")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:13:20: error: cannot find 'RestoreWriteBudget' in scope
+11 |     try check(budget.remainingPhotoCopyBytes == 90 && budget.remainingReadbackBytes == 120 && budget.requiredBytes == 310,
+12 |         "recovery budget rereads every existing asset but only copies remaining Photos assets")
+13 |     let next = try RestoreWriteBudget(resourceBytesByAsset: [[10,20], [40], [50]], recordedAssets: 2, verifiedThisRun: 1, reserveBytes: 100)
+   |                    `- error: cannot find 'RestoreWriteBudget' in scope
+14 |     try check(next.requiredBytes == 240, "budget decreases only for completed copy and readback work")
+15 |     try OperationPreconditions.requireCapacity(310, budget: budget)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:15:9: error: cannot find 'OperationPreconditions' in scope
+13 |     let next = try RestoreWriteBudget(resourceBytesByAsset: [[10,20], [40], [50]], recordedAssets: 2, verifiedThisRun: 1, reserveBytes: 100)
+14 |     try check(next.requiredBytes == 240, "budget decreases only for completed copy and readback work")
+15 |     try OperationPreconditions.requireCapacity(310, budget: budget)
+   |         `- error: cannot find 'OperationPreconditions' in scope
+16 |     try check(true, "exact minimum estimated capacity accepted")
+17 |     try rejects("insufficient space refused before creation") { try OperationPreconditions.requireCapacity(309, budget: budget) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:17:69: error: cannot find 'OperationPreconditions' in scope
+15 |     try OperationPreconditions.requireCapacity(310, budget: budget)
+16 |     try check(true, "exact minimum estimated capacity accepted")
+17 |     try rejects("insufficient space refused before creation") { try OperationPreconditions.requireCapacity(309, budget: budget) }
+   |                                                                     `- error: cannot find 'OperationPreconditions' in scope
+18 |     try rejects("unknown space fails closed") { try OperationPreconditions.requireCapacity(nil, budget: budget) }
+19 |     try rejects("negative capacity refused") { try OperationPreconditions.requireCapacity(-1, budget: budget) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:18:53: error: cannot find 'OperationPreconditions' in scope
+16 |     try check(true, "exact minimum estimated capacity accepted")
+17 |     try rejects("insufficient space refused before creation") { try OperationPreconditions.requireCapacity(309, budget: budget) }
+18 |     try rejects("unknown space fails closed") { try OperationPreconditions.requireCapacity(nil, budget: budget) }
+   |                                                     `- error: cannot find 'OperationPreconditions' in scope
+19 |     try rejects("negative capacity refused") { try OperationPreconditions.requireCapacity(-1, budget: budget) }
+20 |     try rejects("space arithmetic overflow refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[Int64.max]], recordedAssets: 0, verifiedThisRun: 0, reserveBytes: 1) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:18:92: error: 'nil' requires a contextual type
+16 |     try check(true, "exact minimum estimated capacity accepted")
+17 |     try rejects("insufficient space refused before creation") { try OperationPreconditions.requireCapacity(309, budget: budget) }
+18 |     try rejects("unknown space fails closed") { try OperationPreconditions.requireCapacity(nil, budget: budget) }
+   |                                                                                            `- error: 'nil' requires a contextual type
+19 |     try rejects("negative capacity refused") { try OperationPreconditions.requireCapacity(-1, budget: budget) }
+20 |     try rejects("space arithmetic overflow refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[Int64.max]], recordedAssets: 0, verifiedThisRun: 0, reserveBytes: 1) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:19:52: error: cannot find 'OperationPreconditions' in scope
+17 |     try rejects("insufficient space refused before creation") { try OperationPreconditions.requireCapacity(309, budget: budget) }
+18 |     try rejects("unknown space fails closed") { try OperationPreconditions.requireCapacity(nil, budget: budget) }
+19 |     try rejects("negative capacity refused") { try OperationPreconditions.requireCapacity(-1, budget: budget) }
+   |                                                    `- error: cannot find 'OperationPreconditions' in scope
+20 |     try rejects("space arithmetic overflow refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[Int64.max]], recordedAssets: 0, verifiedThisRun: 0, reserveBytes: 1) }
+21 |     try rejects("negative resource size refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[-1]], recordedAssets: 0, verifiedThisRun: 0) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:20:64: error: cannot find 'RestoreWriteBudget' in scope
+18 |     try rejects("unknown space fails closed") { try OperationPreconditions.requireCapacity(nil, budget: budget) }
+19 |     try rejects("negative capacity refused") { try OperationPreconditions.requireCapacity(-1, budget: budget) }
+20 |     try rejects("space arithmetic overflow refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[Int64.max]], recordedAssets: 0, verifiedThisRun: 0, reserveBytes: 1) }
+   |                                                                `- error: cannot find 'RestoreWriteBudget' in scope
+21 |     try rejects("negative resource size refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[-1]], recordedAssets: 0, verifiedThisRun: 0) }
+22 |     try rejects("invalid completed asset count refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[1]], recordedAssets: Int.min, verifiedThisRun: 0) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:21:61: error: cannot find 'RestoreWriteBudget' in scope
+19 |     try rejects("negative capacity refused") { try OperationPreconditions.requireCapacity(-1, budget: budget) }
+20 |     try rejects("space arithmetic overflow refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[Int64.max]], recordedAssets: 0, verifiedThisRun: 0, reserveBytes: 1) }
+21 |     try rejects("negative resource size refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[-1]], recordedAssets: 0, verifiedThisRun: 0) }
+   |                                                             `- error: cannot find 'RestoreWriteBudget' in scope
+22 |     try rejects("invalid completed asset count refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[1]], recordedAssets: Int.min, verifiedThisRun: 0) }
+23 |     try rejects("readback count cannot exceed created assets") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[1]], recordedAssets: 0, verifiedThisRun: 1) }
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:22:68: error: cannot find 'RestoreWriteBudget' in scope
+20 |     try rejects("space arithmetic overflow refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[Int64.max]], recordedAssets: 0, verifiedThisRun: 0, reserveBytes: 1) }
+21 |     try rejects("negative resource size refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[-1]], recordedAssets: 0, verifiedThisRun: 0) }
+22 |     try rejects("invalid completed asset count refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[1]], recordedAssets: Int.min, verifiedThisRun: 0) }
+   |                                                                    `- error: cannot find 'RestoreWriteBudget' in scope
+23 |     try rejects("readback count cannot exceed created assets") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[1]], recordedAssets: 0, verifiedThisRun: 1) }
+24 |     let all = try RestoreWriteBudget(resourceBytesByAsset: [[10]], recordedAssets: 1, verifiedThisRun: 1, reserveBytes: 100)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:23:74: error: cannot find 'RestoreWriteBudget' in scope
+21 |     try rejects("negative resource size refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[-1]], recordedAssets: 0, verifiedThisRun: 0) }
+22 |     try rejects("invalid completed asset count refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[1]], recordedAssets: Int.min, verifiedThisRun: 0) }
+23 |     try rejects("readback count cannot exceed created assets") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[1]], recordedAssets: 0, verifiedThisRun: 1) }
+   |                                                                          `- error: cannot find 'RestoreWriteBudget' in scope
+24 |     let all = try RestoreWriteBudget(resourceBytesByAsset: [[10]], recordedAssets: 1, verifiedThisRun: 1, reserveBytes: 100)
+25 |     try check(all.requiredBytes == 100, "completed work still keeps metadata reserve")
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:24:19: error: cannot find 'RestoreWriteBudget' in scope
+22 |     try rejects("invalid completed asset count refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[1]], recordedAssets: Int.min, verifiedThisRun: 0) }
+23 |     try rejects("readback count cannot exceed created assets") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[1]], recordedAssets: 0, verifiedThisRun: 1) }
+24 |     let all = try RestoreWriteBudget(resourceBytesByAsset: [[10]], recordedAssets: 1, verifiedThisRun: 1, reserveBytes: 100)
+   |                   `- error: cannot find 'RestoreWriteBudget' in scope
+25 |     try check(all.requiredBytes == 100, "completed work still keeps metadata reserve")
+26 | }

@@ -1,0 +1,71 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write sources
+[1/4] Write swift-version--1AB21518FC5DEDBE.txt
+[3/6] Emitting module PhotoBridgeCore
+[4/6] Compiling PhotoBridgeCore OperationPreconditions.swift
+[4/8] Write sources
+[6/10] Emitting module RecoveryChecks
+[7/10] Compiling RecoveryChecks PreconditionChecks.swift
+[7/10] Write Objects.LinkFileList
+[8/10] Linking RecoveryChecks
+[9/10] Applying RecoveryChecks
+Build of product 'RecoveryChecks' complete! (1.98s)
+PASS: new durable plan has no Photos objects
+PASS: second native writer lock refused
+PASS: native lock released for a later invocation
+PASS: album intent without placeholder is ambiguous, never recreated
+PASS: durable album placeholder reconstructed after restart
+PASS: missing actual album does not authorize another album
+PASS: wrong actual album refused
+PASS: asset intent without placeholder is ambiguous, never recreated
+PASS: committed-but-unverified explicit identity is preserved
+PASS: invisible recorded object never permits replay
+PASS: visible object outside expected album refused
+PASS: pending identity adopted only after actual album membership matches
+PASS: next create cannot precede prior resource verification
+PASS: verified modification date keeps subsecond precision
+PASS: changed verified asset version refused
+PASS: existing intent cannot be overwritten or replayed
+PASS: extreme negative ordinal is rejected without underflow
+PASS: source originals cannot be adopted as newly created copies
+PASS: duplicate newly-created identity refused before journal write
+PASS: reordered target membership refused
+PASS: extra target member refused
+PASS: renamed target refused
+PASS: changed manifest refused
+PASS: permission cannot be silently broadened during recovery
+PASS: changed USB request refused
+PASS: fresh process ledger reconstruction retains pending identity and exact verified version
+PASS: exclusive commit never overwrites an existing mapping
+PASS: failed exclusive commit preserves final bytes and ignores retained uncommitted scratch
+PASS: missing intent with recorded placeholder refuses recovery
+PASS: corrupt journal never authorizes Photos creation
+PASS: deleted placeholder is ambiguous after fresh reopen
+PASS: hardlinked recovery record refused
+PASS: symlink journal refused
+PASS: full library permission accepted
+PASS: non-full permission refused: notDetermined
+PASS: non-full permission refused: restricted
+PASS: non-full permission refused: denied
+PASS: non-full permission refused: limited
+PASS: non-full permission refused: unknown
+PASS: recovery budget rereads every existing asset but only copies remaining Photos assets
+PASS: budget decreases only for completed copy and readback work
+PASS: exact minimum estimated capacity accepted
+PASS: insufficient space refused before creation
+PASS: unknown space fails closed
+PASS: negative capacity refused
+PASS: space arithmetic overflow refused
+PASS: negative resource size refused
+PASS: invalid completed asset count refused
+PASS: readback count cannot exceed created assets
+PASS: next resource budget subtracts already committed current-asset bytes
+PASS: exact advertised remaining space permits final paired resource
+PASS: excess current-asset readback bytes refused
+PASS: negative readback bytes refused
+PASS: resource boundary retains future Photos copies and readbacks
+PASS: external capacity drop between resource writes stops before next resource
+PASS: partial readback requires an existing unverified asset
+PASS: completed work still keeps metadata reserve
+57 Photos recovery checks passed; synthetic only, PhotoKit transaction recovery NOT_RUN

@@ -1,0 +1,17 @@
+{
+  "status": "LOCAL_GUARD_TESTS_ONLY",
+  "version": "0.3.7",
+  "build": "11",
+  "recoveryChecks": 57,
+  "coreChecks": 47,
+  "stagingChecks": 23,
+  "pythonTests": 51,
+  "iOSBuild": "NOT_RUN: syntax parse only locally",
+  "XCTest": "NOT_RUN locally; full Xcode required",
+  "IntelReleaseBuild": true,
+  "deviceCapacityDiagnostic": "NOT_RUN",
+  "devicePermissionPreflight": "NOT_RUN",
+  "realDiskFull": "NOT_RUN",
+  "permissionRevocationDuringPhotosTransaction": "NOT_RUN",
+  "review": "Independent read-only review; resource-level budget regression fixed; no remaining Critical/Important"
+}

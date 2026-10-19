@@ -1,0 +1,33 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write sources
+[1/4] Write swift-version--1AB21518FC5DEDBE.txt
+[3/6] Compiling PhotoBridgeCore OperationPreconditions.swift
+[4/6] Emitting module PhotoBridgeCore
+[4/8] Write sources
+[6/11] Compiling RecoveryChecks main.swift
+[7/11] Emitting module RecoveryChecks
+[8/11] Compiling RecoveryChecks PreconditionChecks.swift
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:25:46: error: extra argument 'verifiedResourceBytesInCurrentAsset' in call
+23 |     try rejects("readback count cannot exceed created assets") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[1]], recordedAssets: 0, verifiedThisRun: 1) }
+24 |     let partial = try RestoreWriteBudget(resourceBytesByAsset: [[1024, 1024]], recordedAssets: 1, verifiedThisRun: 0,
+25 |         verifiedResourceBytesInCurrentAsset: 1024, reserveBytes: 100)
+   |                                              `- error: extra argument 'verifiedResourceBytesInCurrentAsset' in call
+26 |     try check(partial.requiredBytes == 1124, "next resource budget subtracts already committed current-asset bytes")
+27 |     try OperationPreconditions.requireCapacity(1124, budget: partial)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:29:199: error: extra argument 'verifiedResourceBytesInCurrentAsset' in call
+27 |     try OperationPreconditions.requireCapacity(1124, budget: partial)
+28 |     try check(true, "exact advertised remaining space permits final paired resource")
+29 |     try rejects("excess current-asset readback bytes refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[10]], recordedAssets: 1, verifiedThisRun: 0, verifiedResourceBytesInCurrentAsset: 11) }
+   |                                                                                                                                                                                                       `- error: extra argument 'verifiedResourceBytesInCurrentAsset' in call
+30 |     try rejects("negative readback bytes refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[10]], recordedAssets: 1, verifiedThisRun: 0, verifiedResourceBytesInCurrentAsset: -1) }
+31 |     let all = try RestoreWriteBudget(resourceBytesByAsset: [[10]], recordedAssets: 1, verifiedThisRun: 1, reserveBytes: 100)
+
+/Users/l/Documents/ChatGPT/New project/PhotoBridge/tests/RecoveryChecks/PreconditionChecks.swift:30:187: error: extra argument 'verifiedResourceBytesInCurrentAsset' in call
+28 |     try check(true, "exact advertised remaining space permits final paired resource")
+29 |     try rejects("excess current-asset readback bytes refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[10]], recordedAssets: 1, verifiedThisRun: 0, verifiedResourceBytesInCurrentAsset: 11) }
+30 |     try rejects("negative readback bytes refused") { _ = try RestoreWriteBudget(resourceBytesByAsset: [[10]], recordedAssets: 1, verifiedThisRun: 0, verifiedResourceBytesInCurrentAsset: -1) }
+   |                                                                                                                                                                                           `- error: extra argument 'verifiedResourceBytesInCurrentAsset' in call
+31 |     let all = try RestoreWriteBudget(resourceBytesByAsset: [[10]], recordedAssets: 1, verifiedThisRun: 1, reserveBytes: 100)
+32 |     try check(all.requiredBytes == 100, "completed work still keeps metadata reserve")
