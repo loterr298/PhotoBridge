@@ -41,3 +41,8 @@ Resource-type preflight validates combinations, not bytes; actual import and pos
 ## Execution state
 
 Software tasks 1–4 implemented and committed (99df580, b0ad5ba); review fix binds exact manifest bytes and rejects stale preview. Local 32 CoreChecks / 18 Python tests pass. Final cloud run #13 SUCCESS with 4 XCTest / 32 CoreChecks / 18 Python, iOS arm64 and Intel App. Package CRC, checksums, versions and bundled transfer source verified; Mac updated after backup. Actual USB return of 3 HEIC/MOV groups verified. User has received 0.3.0 IPA and device procedure; phone preflight, Photos resource/order re-read and Live playback remain NOT_RUN until real records arrive. No completion assertion for the full project or recovery/bulk work.
+
+
+## Authorized policy amendment, 2026-10-19
+
+Target-device edited resource import changed only the XML sidecar adjustmentTimestamp; strict restore stopped at asset12 and retained everything. User explicitly authorized accepting that new-copy system edit timestamp reset, with original sidecars preserved and all other data strict. Implement opt-in/default-OFF policy per docs/PRESERVATION_POLICY.md; record a distinct non-byte-identical result, not the old strict status. Unknown/duplicate/malformed fields still fail closed. New 0.3.1/b5 required; host actual-fixture check is separate from pending new-device acceptance.
