@@ -1,0 +1,28 @@
+{
+  "status": "SUCCESS",
+  "runURL": "https://github.com/loterr298/PhotoBridge/actions/runs/39251599027",
+  "sourceCommit": "6603b00476b866f27b6a40635c1161ef6f9ddd0d",
+  "artifactID": 12185463553,
+  "outerSHA256": "e60277347a3584a1820cb3a857653e820bd9a7811da4cd446eba93a864630a0d",
+  "crcAndInternalSHA256Verified": true,
+  "version": "0.3.7",
+  "build": "11",
+  "iOSArchitecture": "arm64",
+  "macOSArchitecture": "x86_64",
+  "xctestPassed": 7,
+  "coreChecksPassed": 47,
+  "stagingChecksPassed": 23,
+  "recoveryChecksPassed": 57,
+  "pythonTestsPassed": 51,
+  "bundledScriptsMatchLocalSource": true,
+  "pythonBytecodeCachePackaged": false,
+  "products": {
+    "PhotoBridgeMac-Intel.zip": "bc29df55581c2388adc5e72f3b4a5c0a0877b1def662247415fc7e04c1302749",
+    "PhotoBridgeOrderProbe-0.3.7-unsigned.ipa": "21dac0a6f3850f62257ba01a622339600859ebfb2ceae60f96099bd7e567b7de"
+  },
+  "devicePreconditionChecks": "NOT_RUN",
+  "realDiskFull": "NOT_RUN",
+  "scope": "Cloud guard checks and binaries only; capacity simulation and permission preflight require actual new-build device evidence; no real disk-full claim",
+  "bundledPrivacyManifestMatchesSource": true,
+  "actualToolchain": "Xcode16.4 / iOS18.5 SDK"
+}

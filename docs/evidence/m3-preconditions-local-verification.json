@@ -5,7 +5,7 @@
   "recoveryChecks": 57,
   "coreChecks": 47,
   "stagingChecks": 23,
-  "pythonTests": 51,
+  "pythonTests": 56,
   "iOSBuild": "NOT_RUN: syntax parse only locally",
   "XCTest": "NOT_RUN locally; full Xcode required",
   "IntelReleaseBuild": true,
@@ -13,5 +13,8 @@
   "devicePermissionPreflight": "NOT_RUN",
   "realDiskFull": "NOT_RUN",
   "permissionRevocationDuringPhotosTransaction": "NOT_RUN",
-  "review": "Independent read-only review; resource-level budget regression fixed; no remaining Critical/Important"
+  "review": "Independent read-only review; resource-level budget regression fixed; no remaining Critical/Important",
+  "preflightAuditTests": 5,
+  "userDeviceSteps": 3,
+  "devicePreconditionChecks": "NOT_RUN"
 }
