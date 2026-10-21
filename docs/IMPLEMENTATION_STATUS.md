@@ -461,4 +461,7 @@ RestoreService 从视图拆出，真实流程支持重新预检已记录新协�
 
 新增PrivacyInfo.xcprivacy公开所用API用途及工程资源/CI包内检查，不宣称完整商店审查完成。操作及验收边界见RESTORE_PRECONDITIONS_RUNBOOK.md；计划新3-Live收件仅预检：模拟0→真实权限无→恢复全部权限正常预检，用户逐份查看并共享诊断，Mac比较收件原字节/属性没有变化。当前此新二进制、真实撤权预检、容量模拟真机均NOT_RUN；真实磁盘耗尽/事务中撤权/提交中强杀仍NOT_RUN。
 
-实际本机最终57 RecoveryChecks /47 CoreChecks /23 StagingChecks /51 Python通过，Intel x86_64 release编译、严格签名检查成功（0.3.7/build11）；m3-preconditions-{green,core,staging,python,mac-build}.log。iOS完整编译/7 XCTest仍待云端；已准备0.3.7/build11及PrivacyInfo包内断言。
+实际本机最终57 RecoveryChecks /47 CoreChecks /23 StagingChecks /56 Python通过，Intel x86_64 release编译、严格签名检查成功（0.3.7/build11）；m3-preconditions-{green,core,staging,python,mac-build}.log。iOS完整编译/7 XCTest仍待云端；已准备0.3.7/build11及PrivacyInfo包内断言。
+
+
+本轮根据用户要求压缩真机配合：只保留新版安装/连接、零空间模拟预检、撤销权限预检、恢复全部权限正常预检三步；照片库导入/相簿排序不重复执行。独立设备预检审计脚本与5项回归通过；夹具首轮失败日志保留，修复后全套Python 56项通过。
