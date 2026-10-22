@@ -1,11 +1,7 @@
+Another instance of SwiftPM is already running using '/Users/l/Documents/ChatGPT/New project/PhotoBridge/.build', waiting until that process has finished execution...[0/1] Planning build
 Building for debugging...
 [0/3] Write swift-version--1AB21518FC5DEDBE.txt
-[2/6] Compiling StagingChecks main.swift
-[3/6] Emitting module StagingChecks
-[3/6] Write Objects.LinkFileList
-[4/6] Linking StagingChecks
-[5/6] Applying StagingChecks
-Build of product 'StagingChecks' complete! (1.32s)
+Build of product 'StagingChecks' complete! (0.31s)
 PASS: lossless subsecond source metadata and plan binding
 PASS: identical current source accepted
 PASS: subsecond edit change refused

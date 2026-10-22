@@ -1,16 +1,7 @@
 [0/1] Planning build
 Building for debugging...
-[0/4] Write sources
-[1/4] Write swift-version--1AB21518FC5DEDBE.txt
-[3/6] Emitting module PhotoBridgeCore
-[4/6] Compiling PhotoBridgeCore OperationPreconditions.swift
-[4/8] Write sources
-[6/10] Emitting module RecoveryChecks
-[7/10] Compiling RecoveryChecks PreconditionChecks.swift
-[7/10] Write Objects.LinkFileList
-[8/10] Linking RecoveryChecks
-[9/10] Applying RecoveryChecks
-Build of product 'RecoveryChecks' complete! (1.98s)
+[0/3] Write swift-version--1AB21518FC5DEDBE.txt
+Build of product 'RecoveryChecks' complete! (0.35s)
 PASS: new durable plan has no Photos objects
 PASS: second native writer lock refused
 PASS: native lock released for a later invocation
