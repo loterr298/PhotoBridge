@@ -12,7 +12,7 @@
 2. 手机界面显示本次实际容量、估算需求和模拟标记。报告默认仅存 Application Support，用户点击“允许 Mac 读取这份诊断报告”才独占复制该报告到 Documents/RestoreChecks。Mac 按本次报告检查，不把模拟称为真实磁盘耗尽。
 3. 用户在系统设置把本App照片权限改为“无”，回手机同一新会话正常预检。预期 FULL_PHOTO_ACCESS_REQUIRED，起止权限denied，未读取容量/未写Photos。用户查看并共享此份报告。
 4. 用户恢复“全部照片”权限，回同一会话正常预检。预期READY、simulatedZeroCapacity=false、effective=actual且实际值>=预算、3项/6资源完整hash。查看并共享此份报告；**不要创建相簿**。
-5. Mac只读验证三份独立报告的实际runtime commit/版本、会话/策略和空间字段，全部收件 bytes/可用属性仍与基准相同，没有任何恢复声明/Photos意图。报告本身新增于独立目录，不纳入收件不变的比较。
+5. Mac只读验证三份独立报告的实际runtime commit/版本、会话/策略和空间字段，全部收件 bytes/可用属性仍与基准相同，没有任何恢复声明/Photos意图。报告本身新增于独立目录，不纳入收件不变的比较。审计命令必须传入用户从 `Documents/RestoreChecks` 选出的实际报告文件名（`--report-file <filename>`）；工具拒绝路径片段，不按 session 猜测报告路径。
 
 本次真实权限测试限定“预检前撤销，再恢复”；不是事务进行中撤权。空间测试限定“模拟零输入”，不是实际ENOSPC。真正写满磁盘、系统终止、Photos提交中强杀和iCloud故障仍NOT_RUN。日志默认私有，用户每次明确共享后才取回；不自动上传容量或私人媒体。
 
