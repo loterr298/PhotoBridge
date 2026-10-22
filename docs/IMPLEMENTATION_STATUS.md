@@ -459,9 +459,9 @@ RestoreService 从视图拆出，真实流程支持重新预检已记录新协�
 
 新增“仅预检：模拟零可用空间”，只替换本次预检输入，保存实际容量和模拟值，ready=false，不创建填充文件或Photos请求、不占用恢复声明；下一次须正常预检。预检失败/成功均留独立UUID报告；修复已有恢复会话却提示“尚未导入”的文案，明确已有副本数量。容量诊断默认存在ApplicationSupport私有目录，手机显著展示容量/估算/模拟及报告范围，用户每次点击“允许Mac读取这份诊断报告”才复制到共享Documents。共享恢复日志不保存实际容量，仅保留源清单计算的预算和错误代码。独立复审无剩余Critical/Important；服务层写报告/共享失败注入尚未测。
 
-新增PrivacyInfo.xcprivacy公开所用API用途及工程资源/CI包内检查，不宣称完整商店审查完成。操作及验收边界见RESTORE_PRECONDITIONS_RUNBOOK.md；计划新3-Live收件仅预检：模拟0→真实权限无→恢复全部权限正常预检，用户逐份查看并共享诊断，Mac比较收件原字节/属性没有变化。当前此新二进制、真实撤权预检、容量模拟真机均NOT_RUN；真实磁盘耗尽/事务中撤权/提交中强杀仍NOT_RUN。
+新增PrivacyInfo.xcprivacy公开所用API用途及工程资源/CI包内检查，不宣称完整商店审查完成。操作及验收边界见RESTORE_PRECONDITIONS_RUNBOOK.md；新3-Live收件已完成三项精简真机预检：模拟零空间、撤销权限、恢复全部权限正常预检。三份报告均通过 Mac 独立审计，session 前缀 FB8C64EE、runtime 0.3.7/build11 与源清单绑定，三项均确认未发起 Photos 写入；公开脱敏证据见 m3-preconditions-device-verified.json。真实磁盘耗尽/事务中撤权/提交中强杀仍NOT_RUN。
 
-实际本机最终57 RecoveryChecks /47 CoreChecks /23 StagingChecks /56 Python通过，Intel x86_64 release编译、严格签名检查成功（0.3.7/build11）；m3-preconditions-{green,core,staging,python,mac-build}.log。iOS完整编译/7 XCTest仍待云端；已准备0.3.7/build11及PrivacyInfo包内断言。
+实际本机最终57 RecoveryChecks /47 CoreChecks /23 StagingChecks /57 Python通过，Intel x86_64 release编译、严格签名检查成功（0.3.7/build11）；新增6项前置报告审计测试并修复共享报告路径读取错误，日志见 m3-preconditions-{green,core,staging,python,mac-build}.log 与 m3-preconditions-device-verified.json。iOS完整编译/7 XCTest仍待云端；已准备0.3.7/build11及PrivacyInfo包内断言。
 
 
-本轮根据用户要求压缩真机配合：只保留新版安装/连接、零空间模拟预检、撤销权限预检、恢复全部权限正常预检三步；照片库导入/相簿排序不重复执行。独立设备预检审计脚本与5项回归通过；夹具首轮失败日志保留，修复后全套Python 56项通过。
+本轮根据用户要求压缩真机配合：只保留新版安装/连接、零空间模拟预检、撤销权限预检、恢复全部权限正常预检三步；照片库导入/相簿排序不重复执行。独立设备预检审计脚本与6项回归通过；夹具首轮失败日志保留，修复共享 `RestoreChecks` 根目录读取路径后全套 Python 57 项通过。三份真实报告均为同一 session，未创建相簿。
