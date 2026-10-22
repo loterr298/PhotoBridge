@@ -1,0 +1,38 @@
+{
+  "status": "DEVICE_PREFLIGHTS_VERIFIED",
+  "version": "0.3.7",
+  "build": "11",
+  "runtimeBuild": "6603b00476b866f27b6a40635c1161ef6f9ddd0d",
+  "sessionPrefix": "FB8C64EE",
+  "sample": "3 assets / 6 resources; preflight only",
+  "checks": [
+    {
+      "mode": "zero",
+      "status": "BLOCKED",
+      "failureCode": "INSUFFICIENT_ESTIMATED_CAPACITY",
+      "simulatedZeroCapacity": true,
+      "resourcesHashVerified": 0,
+      "photosWrite": "NOT_RUN"
+    },
+    {
+      "mode": "denied",
+      "status": "BLOCKED",
+      "failureCode": "FULL_PHOTO_ACCESS_REQUIRED",
+      "photoAccessAtStart": "denied",
+      "photoAccessAtEnd": "denied",
+      "resourcesHashVerified": 0,
+      "photosWrite": "NOT_RUN"
+    },
+    {
+      "mode": "ready",
+      "status": "READY",
+      "simulatedZeroCapacity": false,
+      "resourcesHashVerified": 6,
+      "photosWrite": "NOT_RUN"
+    }
+  ],
+  "independentAudit": "PREFLIGHT_REPORT_AUDIT_PASS for all three reports",
+  "reportSelection": "shared RestoreChecks filenames selected explicitly; no session-path guessing",
+  "photosCreatedByPreflight": false,
+  "privateMediaIncluded": false
+}

@@ -1,0 +1,9 @@
+DEVICE_PREFLIGHT_AUDIT
+runtimeVersion=0.3.7
+runtimeBuild=6603b00476b866f27b6a40635c1161ef6f9ddd0d
+sessionPrefix=FB8C64EE
+zero: PREFLIGHT_REPORT_AUDIT_PASS status=BLOCKED failureCode=INSUFFICIENT_ESTIMATED_CAPACITY simulatedZeroCapacity=true resourcesHashVerified=0 photosWrite=NOT_RUN
+denied: PREFLIGHT_REPORT_AUDIT_PASS status=BLOCKED failureCode=FULL_PHOTO_ACCESS_REQUIRED access=denied->denied resourcesHashVerified=0 photosWrite=NOT_RUN
+ready: PREFLIGHT_REPORT_AUDIT_PASS status=READY simulatedZeroCapacity=false resourcesHashVerified=6 photosWrite=NOT_RUN
+Photos creation requests issued by all preflights: false
+Photos library writes: NOT_RUN

@@ -1,8 +1,9 @@
 {
-  "status": "CLOUD_BINARY_DELIVERY_VERIFIED_DEVICE_PRECONDITIONS_PENDING",
+  "status": "CLOUD_BINARY_DELIVERY_AND_DEVICE_PREFLIGHTS_VERIFIED",
   "version": "0.3.7",
   "archive": "build/PhotoBridge-0.3.7-M3-Apps.zip",
   "sha256": "19bebbe7e0b61b16636b9a6292ba40fc80fb0c5389758c79c06dc071253a34a5",
-  "devicePreconditionChecks": "NOT_RUN",
+  "devicePreconditionChecks": "VERIFIED_ZERO_DENIED_READY",
+  "deviceEvidence": "docs/evidence/m3-preconditions-device-verified.json",
   "privateMediaIncluded": false
 }

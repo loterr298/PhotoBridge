@@ -1,10 +1,11 @@
 test_denied_must_be_real_permission_and_before_capacity_read (test_preconditions_audit.PreconditionsAuditChecks) ... ok
 test_empty_incomplete_or_changed_inbox_baseline_cannot_pass (test_preconditions_audit.PreconditionsAuditChecks) ... ok
 test_ready_requires_all_hashes_real_capacity_and_no_simulation (test_preconditions_audit.PreconditionsAuditChecks) ... ok
+test_shared_report_uses_selected_filename_without_session_path_guessing (test_preconditions_audit.PreconditionsAuditChecks) ... ok
 test_three_distinct_modes_bind_actual_target_build (test_preconditions_audit.PreconditionsAuditChecks) ... ok
 test_wrong_build_session_simulation_or_write_claim_refused (test_preconditions_audit.PreconditionsAuditChecks) ... ok
 
 ----------------------------------------------------------------------
-Ran 5 tests in 0.001s
+Ran 6 tests in 0.001s
 
 OK

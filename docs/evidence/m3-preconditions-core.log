@@ -1,7 +1,7 @@
-Another instance of SwiftPM is already running using '/Users/l/Documents/ChatGPT/New project/PhotoBridge/.build', waiting until that process has finished execution...[0/1] Planning build
+[0/1] Planning build
 Building for debugging...
 [0/3] Write swift-version--1AB21518FC5DEDBE.txt
-Build of product 'CoreChecks' complete! (0.31s)
+Build of product 'CoreChecks' complete! (0.35s)
 PASS: API order preserved
 PASS: reading never auto-verifies manual order
 PASS: JSON encodes

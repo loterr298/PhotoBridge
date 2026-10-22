@@ -33,6 +33,7 @@ test_relaunch_claim_requires_user_attestation (test_photos_recovery_audit.Photos
 test_denied_must_be_real_permission_and_before_capacity_read (test_preconditions_audit.PreconditionsAuditChecks) ... ok
 test_empty_incomplete_or_changed_inbox_baseline_cannot_pass (test_preconditions_audit.PreconditionsAuditChecks) ... ok
 test_ready_requires_all_hashes_real_capacity_and_no_simulation (test_preconditions_audit.PreconditionsAuditChecks) ... ok
+test_shared_report_uses_selected_filename_without_session_path_guessing (test_preconditions_audit.PreconditionsAuditChecks) ... ok
 test_three_distinct_modes_bind_actual_target_build (test_preconditions_audit.PreconditionsAuditChecks) ... ok
 test_wrong_build_session_simulation_or_write_claim_refused (test_preconditions_audit.PreconditionsAuditChecks) ... ok
 test_audit_requires_actual_bytes_even_when_phone_report_says_pass (test_restore_audit.IndependentAuditChecks) ... ok
@@ -60,6 +61,6 @@ USB_UPLOAD_STARTED: waiting for manual cable removal; Photos NOT_RUN
 ok
 
 ----------------------------------------------------------------------
-Ran 56 tests in 3.749s
+Ran 57 tests in 3.668s
 
 OK
