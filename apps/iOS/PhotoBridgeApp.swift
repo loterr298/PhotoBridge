@@ -87,15 +87,43 @@ struct AlbumsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    Text("USB 链路状态由 Mac 端检测").foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 16) {
-                        Label("Mac 连接诊断", systemImage: "laptopcomputer").font(.headline)
-                        Text("先核对相簿顺序，再导出原始资源").foregroundStyle(.secondary)
-                        Button("读取照片相簿") { Task { await library.request() } }
-                            .buttonStyle(.borderedProminent).controlSize(.large)
-                        Text("进入相簿导出原始资源；USB 收件可在恢复页预检").font(.caption).foregroundStyle(.secondary)
-                    }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 24))
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("照片传输").font(.largeTitle.bold())
+                                Text("先核对相簿顺序，再导出原始资源")
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Label("USB 待 Mac 检测", systemImage: "cable.connector")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(Color.secondary.opacity(0.1), in: Capsule())
+                        }
+                        HStack(spacing: 12) {
+                            Label("原图只读", systemImage: "lock.shield")
+                            Label("自动 SHA-256", systemImage: "checkmark.shield")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        HStack(spacing: 12) {
+                            Button("读取照片相簿") { Task { await library.request() } }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.large)
+                            NavigationLink("导入到 iPhone") { RestoreView() }
+                                .buttonStyle(.bordered)
+                                .controlSize(.large)
+                        }
+                        Text("USB 连接状态只以 Mac 端真实检测结果为准，不在手机端虚构已连接。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(22)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 26))
+                    .overlay(RoundedRectangle(cornerRadius: 26).stroke(Color.white.opacity(0.45)))
                     Text("相簿").font(.title.bold())
                     Text(library.message).font(.subheadline).foregroundStyle(.secondary)
                     LazyVStack(spacing: 12) {
@@ -112,7 +140,9 @@ struct AlbumsView: View {
                             }.buttonStyle(.plain)
                         }
                     }
-                    Label("顺序读取待验证", systemImage: "arrow.up.arrow.down").foregroundStyle(.secondary)
+                    Label("顺序读取待验证 · 以人工逐项比对为准", systemImage: "arrow.up.arrow.down")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }.padding(20)
             }.background(Color(uiColor: .systemGroupedBackground)).navigationTitle("照片传输")
                 .toolbar { Button("刷新") { library.reload() } }
