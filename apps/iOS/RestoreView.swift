@@ -18,6 +18,11 @@ struct RestoreView: View {
                         Picker("恢复会话", selection: $session) {
                             ForEach(service.sessions, id: \.self) { value in Text(String(value.prefix(8))).tag(value) }
                         }.disabled(service.busy)
+                        if !session.isEmpty {
+                            Label("当前收件：\(String(session.prefix(8)))…", systemImage: "externaldrive.connected.to.line.below")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                         Toggle("允许新副本的系统编辑记录时间重置", isOn: $allowTimestampRewrite).disabled(service.busy)
                         Text("默认关闭。开启仅接受编辑附件 adjustmentTimestamp 变化；原图、编辑后图像及其他字段仍严格校验，原始附件保留，并报告附件 hash 差异。")
                             .font(.caption).foregroundStyle(.secondary)
