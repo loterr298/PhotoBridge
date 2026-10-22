@@ -65,7 +65,7 @@ jobs:
           import pathlib, plistlib
           app = pathlib.Path('build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app')
           info = plistlib.loads((app / 'Info.plist').read_bytes())
-          expected = {'CFBundleShortVersionString': '0.3.7', 'CFBundleVersion': '11', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
+          expected = {'CFBundleShortVersionString': '0.3.8', 'CFBundleVersion': '12', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
           for key, value in expected.items():
               assert info.get(key) == value, f'Invalid compiled Info.plist: {key}'
           privacy = plistlib.loads((app / 'PrivacyInfo.xcprivacy').read_bytes())
@@ -78,7 +78,7 @@ jobs:
           ditto -c -k --keepParent build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/PhotoBridgeOrderProbe-unsigned.app.zip
           mkdir -p build/ipa/Payload
           ditto build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/ipa/Payload/PhotoBridgeOrderProbe.app
-          ditto -c -k --keepParent build/ipa/Payload build/PhotoBridgeOrderProbe-0.3.7-unsigned.ipa
+          ditto -c -k --keepParent build/ipa/Payload build/PhotoBridgeOrderProbe-0.3.8-unsigned.ipa
       - name: Build Intel macOS App
         run: |
           set -o pipefail
