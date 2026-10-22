@@ -57,12 +57,19 @@ def read_report(client, remote, relative):
     return json.loads(data)
 
 
-def audit(client, remote, output, mode, session, expected_build, manifest_sha, assets, resources, remaining_bytes):
-    report = read_report(client, remote, 'RestoreChecks/' + session + '.json')
+def _report_relative_path(report_file):
+    """Accept only the exact filename the user selected in RestoreChecks."""
+    if not report_file or Path(report_file).name != report_file or report_file in {'.', '..'}:
+        _fail('report file must be a single selected filename')
+    return 'RestoreChecks/' + report_file
+
+
+def audit(client, remote, output, mode, session, expected_build, manifest_sha, assets, resources, remaining_bytes, report_file):
+    report = read_report(client, remote, _report_relative_path(report_file))
     bind_report(report, mode, session, expected_build, manifest_sha, assets, resources, remaining_bytes)
     output = Path(output); output.mkdir(mode=0o700, exist_ok=False)
     (output / 'preflight-report.json').write_text(json.dumps(report, indent=2) + '\n')
-    result = dict(status='PREFLIGHT_REPORT_AUDIT_PASS', mode=mode, sessionID=session, runtimeBuild=expected_build,
+    result = dict(status='PREFLIGHT_REPORT_AUDIT_PASS', mode=mode, sessionID=session, reportFile=report_file, runtimeBuild=expected_build,
                   photoKitCreationRequestsIssuedByPreflight=False, photosWrite='NOT_RUN')
     (output / 'audit.json').write_text(json.dumps(result, indent=2) + '\n')
     return result
@@ -70,9 +77,10 @@ def audit(client, remote, output, mode, session, expected_build, manifest_sha, a
 if __name__ == '__main__':
     p = argparse.ArgumentParser(); p.add_argument('--remote', required=True); p.add_argument('--output', type=Path, required=True)
     p.add_argument('--mode', choices=['denied','zero','ready'], required=True); p.add_argument('--session', required=True); p.add_argument('--expected-build', required=True)
+    p.add_argument('--report-file', required=True, help='exact filename selected from the shared RestoreChecks directory')
     p.add_argument('--manifest-sha', required=True); p.add_argument('--assets', type=int, required=True); p.add_argument('--resources', type=int, required=True)
     p.add_argument('--remaining-photo-copy', type=int, required=True); p.add_argument('--remaining-readback', type=int, required=True); a=p.parse_args()
     c=AFC()
     try:
-        c.vend('com.photobridge.OrderProbe'); print(json.dumps(audit(c, a.remote, a.output, a.mode, a.session, a.expected_build, a.manifest_sha, a.assets, a.resources, (a.remaining_photo_copy, a.remaining_readback)), indent=2))
+        c.vend('com.photobridge.OrderProbe'); print(json.dumps(audit(c, a.remote, a.output, a.mode, a.session, a.expected_build, a.manifest_sha, a.assets, a.resources, (a.remaining_photo_copy, a.remaining_readback), a.report_file), indent=2))
     finally: c.close()
