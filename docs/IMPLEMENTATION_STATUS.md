@@ -465,3 +465,5 @@ RestoreService 从视图拆出，真实流程支持重新预检已记录新协�
 
 
 本轮根据用户要求压缩真机配合：只保留新版安装/连接、零空间模拟预检、撤销权限预检、恢复全部权限正常预检三步；照片库导入/相簿排序不重复执行。独立设备预检审计脚本与6项回归通过；夹具首轮失败日志保留，修复共享 `RestoreChecks` 根目录读取路径后全套 Python 57 项通过。三份真实报告均为同一 session，未创建相簿。
+
+随后修正恢复页的可见状态：在收件 Picker 下直接显示当前选中 session 前缀，避免随机“新相簿名”遮蔽实际收件身份。提交 `70daeb9` 已同步 GitHub；Swift 语法解析通过。本机没有完整 Xcode/XcodeGen，iOS 类型编译交由 Actions，阻塞日志保留在 `m3-restore-session-label-{xcodegen,ios-build}.log`。
