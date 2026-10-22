@@ -52,8 +52,8 @@ def unchanged_inbox(before, after, expected):
             _fail('inbox bytes or attributes changed')
 
 
-def read_report(client, remote, relative):
-    data = bytearray(); client.read(remote + '/' + relative, data.extend, 4 * 1024 * 1024)
+def read_report(client, relative):
+    data = bytearray(); client.read(relative, data.extend, 4 * 1024 * 1024)
     return json.loads(data)
 
 
@@ -65,7 +65,9 @@ def _report_relative_path(report_file):
 
 
 def audit(client, remote, output, mode, session, expected_build, manifest_sha, assets, resources, remaining_bytes, report_file):
-    report = read_report(client, remote, _report_relative_path(report_file))
+    # Shared preflight reports live in Documents/RestoreChecks, while `remote`
+    # identifies the immutable RestoreInbox session used for binding.
+    report = read_report(client, _report_relative_path(report_file))
     bind_report(report, mode, session, expected_build, manifest_sha, assets, resources, remaining_bytes)
     output = Path(output); output.mkdir(mode=0o700, exist_ok=False)
     (output / 'preflight-report.json').write_text(json.dumps(report, indent=2) + '\n')

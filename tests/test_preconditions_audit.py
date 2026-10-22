@@ -1,6 +1,6 @@
 import copy
 import unittest
-from device_preconditions_audit import bind_report, unchanged_inbox
+from device_preconditions_audit import bind_report, unchanged_inbox, _report_relative_path, read_report
 
 class PreconditionsAuditChecks(unittest.TestCase):
     def report(self, mode):
@@ -44,3 +44,17 @@ class PreconditionsAuditChecks(unittest.TestCase):
             if fault=='changed':b['Resources/one']['sha256']='b'
             if fault=='new-intent':b['restore-started.json']={}
             with self.subTest(fault=fault),self.assertRaises(ValueError):unchanged_inbox(a,b,expected)
+
+    def test_shared_report_uses_selected_filename_without_session_path_guessing(self):
+        self.assertEqual(_report_relative_path('report.json'), 'RestoreChecks/report.json')
+        for unsafe in ['', '.', '..', '../report.json', 'RestoreChecks/report.json', 'a/b.json']:
+            with self.subTest(unsafe=unsafe), self.assertRaises(ValueError):
+                _report_relative_path(unsafe)
+
+        class Client:
+            def __init__(self): self.path = None
+            def read(self, path, sink, maximum):
+                self.path = path; sink(b'{"status":"READY"}')
+        client = Client()
+        self.assertEqual(read_report(client, 'RestoreChecks/report.json'), {'status': 'READY'})
+        self.assertEqual(client.path, 'RestoreChecks/report.json')
