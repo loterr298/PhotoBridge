@@ -469,3 +469,17 @@ RestoreService 从视图拆出，真实流程支持重新预检已记录新协�
 随后修正恢复页的可见状态：在收件 Picker 下直接显示当前选中 session 前缀，避免随机“新相簿名”遮蔽实际收件身份。提交 `70daeb9` 已同步 GitHub；Swift 语法解析通过。本机没有完整 Xcode/XcodeGen，iOS 类型编译交由 Actions，阻塞日志保留在 `m3-restore-session-label-{xcodegen,ios-build}.log`。
 
 UI 修正已由 GitHub Actions #21 实编译通过：run `39805966543`，main 提交 `0380b54`，job `diagnostics` 成功，artifact `12437198019`，外层 digest `sha256:50de082fe7a1fa66109c1fabca8139dacbb04fb1c1fabe8624dbc9f523d7a041`。本次没有新增 Photos 或 USB 真机操作；Actions 页面保留 Node.js 20 弃用提示和 macOS arm64 runner 容量提示，均未导致失败。
+
+### 0.3.8/build12 云编译交付
+
+将已验证的恢复收件 session 可见标识修复提升为 0.3.8/build12：iOS 工程版本、Mac Info.plist、CI 编译后版本断言与未签名 IPA 文件名已同步更新。该版本没有新增照片库或 USB 行为，也不要求重复真机预检。本机可执行检查：57 Python、57 RecoveryChecks、15 CoreChecks、23 StagingChecks，Intel x86_64 Mac release 构建通过。
+
+GitHub Actions #24 已成功完成：run `39810559102`，main 提交 `cc1cf66ed62952680fdbaaf8bda2ae9036c02f9`，diagnostics job 成功，耗时 1m19s；artifact `12440086673`，大小 1.15 MB，外层 digest `sha256:0492a3eb8fbd24061cec69671eda7a127de46092d080bb8c3ee220a3aa916ce1`。该云包包含 0.3.8/build12 的未签名 iOS IPA 与 Intel macOS ZIP，并执行了完整 Swift/Python 检查、XcodeGen 生成、iOS unsigned build、版本/隐私键断言和 x86_64 Mac 构建。Actions 仍显示 Node.js 20 弃用提示及 macOS arm64 runner 容量提示，但本次没有失败。未新增 Photos 或 USB 真机操作；现有真机预检证据继续有效。
+
+### M4 极简可操作界面第一轮
+
+Mac SwiftUI 已从只读说明页升级为可操作的传输工作台：可在 App 内检测 USB-only House Arrest/AFC、读取 iPhone 原始资源暂存会话、选择 Mac 目录下载并运行逐资源大小/SHA-256/5 秒文件时间校验，也可选择已提交备份目录上传到新的 iPhone 收件会话。ImageCaptureCore/PTP 相机目录仍单独显示，明确不冒充 PhotoKit 相簿顺序。失败输出保留在界面中，不显示伪完成状态；照片库写入仍需 iPhone 恢复页明确启动。
+
+iPhone 首页补充真实状态边界、原图只读与 SHA-256 提示，并提供“读取照片相簿”和进入恢复页的主要入口；不在手机端虚构 USB 已连接。现有相簿顺序诊断、原始资源导出、预检和恢复逻辑保持不变。SwiftUI 源码解析、57 Python、57 RecoveryChecks、15 CoreChecks、23 StagingChecks 与 Intel x86_64 release 构建通过；iOS 完整编译仍交由下一次 Actions。M4 尚未完成：批量选择/速度图表、macOS 13/14 实机兼容、所有格式压力测试和最终视觉验收。
+
+M4 云编译验证：iPhone 首页提交 `f4640d7f48c9e77c9eb86183f766acb88cbdb334` 的 Actions #25 成功，run `39819409819`，耗时 1m16s，artifact `12443921629`，digest `sha256:aafb694d01c7983301fa28b4efc0497659be246100ba4e716ebbaa2f42e59e0c`。Mac 传输工作台提交 `b6fae79db6ec4d508296f42ba39c96c477def0d4` 的 Actions #26 成功，run `39819964248`，耗时 1m19s，artifact `12444076831`，digest `sha256:a97ffbe6f037a12bdc76505a235ae8932b69478ab5285edbca49c89be57659a9`。两次均执行 iOS unsigned build、Swift/Python 检查、Mac x86_64 build 和包内断言；警告仍只有 Actions 的 Node.js 20 弃用和 macOS arm64 runner 容量提示。
