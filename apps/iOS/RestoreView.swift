@@ -50,7 +50,7 @@ struct RestoreView: View {
                     }
                     if service.totalAssets > 0 {
                         ProgressView(value: Double(service.completed), total: Double(service.totalAssets))
-                        Text("已恢复 (service.completed)/(service.totalAssets) 张")
+                        Text("已恢复 \(service.completed)/\(service.totalAssets) 张")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
@@ -71,7 +71,7 @@ struct RestoreView: View {
                     Text(service.message)
                         .textSelection(.enabled)
                     if service.authorizedTimestampDifferences > 0 {
-                        Text("系统重新记录了 (service.authorizedTimestampDifferences) 个编辑时间")
+                        Text("系统重新记录了 \(service.authorizedTimestampDifferences) 个编辑时间")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
