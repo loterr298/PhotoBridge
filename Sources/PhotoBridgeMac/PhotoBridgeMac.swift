@@ -34,6 +34,7 @@ final class CameraDiscovery: NSObject, ObservableObject, ICDeviceBrowserDelegate
 @MainActor
 final class MacTransferModel: ObservableObject {
     @Published var usbState = "等待连接"
+    @Published var userMessage = "用数据线连接 iPhone，然后点“检查连接”。"
     @Published var output = "用数据线连接 iPhone，解锁并点“信任”，然后检查连接。"
     @Published var sessions: [String] = []
     @Published var selectedSession = ""
@@ -57,6 +58,7 @@ final class MacTransferModel: ObservableObject {
     func discover() {
         runScript("usb_probe.py", arguments: ["discover", "--bundle", bundleIdentifier]) { [weak self] result in
             self?.usbState = result.success ? "已连接" : "未连接"
+            self?.userMessage = result.success ? "iPhone 已连接，可以开始保存。" : "还没有连接 iPhone，请检查数据线和信任设置。"
             self?.output = result.text
         }
     }
@@ -70,10 +72,12 @@ final class MacTransferModel: ObservableObject {
                   let values = json["sessions"] as? [String] else {
                 self?.sessions = []
                 self?.selectedSession = ""
+                self?.userMessage = "还没有找到手机里的保存。请先在 iPhone 选择相册并开始准备。"
                 return
             }
             self?.sessions = values
             self?.selectedSession = values.first ?? ""
+            self?.userMessage = values.isEmpty ? "还没有找到手机里的保存。" : "已找到 (values.count) 份手机保存。"
         }
     }
 
@@ -82,8 +86,10 @@ final class MacTransferModel: ObservableObject {
         guard let parent = chooseDirectory(title: "选择照片保存位置") else { return }
         let folder = parent.appendingPathComponent("PhotoBridge-\(String(selectedSession.prefix(8)))", isDirectory: true)
         rememberBackup(folder)
+        userMessage = "正在把照片保存到你选择的文件夹…"
         runScript("album_export.py", arguments: ["download", "--remote", "Exports/\(selectedSession)", "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
+            self?.userMessage = result.success ? "已保存到：\(folder.lastPathComponent)" : "保存没有完成，请重新连接 iPhone 后继续。"
             if result.success { self?.loadPreview(from: folder) }
         }
     }
@@ -94,16 +100,20 @@ final class MacTransferModel: ObservableObject {
         guard let parent = chooseDirectory(title: "选择继续保存的位置") else { return }
         let folder = parent.appendingPathComponent("PhotoBridge-resume-\(String(selectedSession.prefix(8)))", isDirectory: true)
         rememberBackup(folder)
+        userMessage = "正在继续保存…"
         runScript("album_resume.py", arguments: ["--remote", "Exports/\(selectedSession)", "--from-directory", previous.path, "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
+            self?.userMessage = result.success ? "已保存到：\(folder.lastPathComponent)" : "继续保存没有完成，请重试。"
             if result.success { self?.loadPreview(from: folder) }
         }
     }
 
     func uploadBackup() {
         guard let directory = chooseDirectory(title: "选择要发送到 iPhone 的照片") else { return }
+        userMessage = "正在发送照片到 iPhone…"
         runScript("album_restore.py", arguments: ["--local", directory.path, "--bundle", bundleIdentifier], progressDirectory: directory.appendingPathComponent("restore-uploads", isDirectory: true), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
+            self?.userMessage = result.success ? "照片已发送到 iPhone，请在 iPhone 点“恢复到新相册”。" : "发送没有完成，请重新连接 iPhone 后重试。"
         }
     }
 
@@ -117,10 +127,13 @@ final class MacTransferModel: ObservableObject {
                   return lhs < rhs
               }) else {
             output = "找不到可以继续的备份，请先选择一份已保存的照片。"
+            userMessage = output
             return
         }
+        userMessage = "正在继续发送照片到 iPhone…"
         runScript("upload_resume.py", arguments: ["--local", directory.path, "--resume-journal", journal.path], progressDirectory: journalDirectory, controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
+            self?.userMessage = result.success ? "照片已发送到 iPhone，请在 iPhone 点“恢复到新相册”。" : "继续发送没有完成，请重试。"
         }
     }
 
@@ -306,202 +319,90 @@ private struct StatusPill: View {
 
 @main
 struct PhotoBridgeMacApp: App {
-    @StateObject private var discovery = CameraDiscovery()
     @StateObject private var transfer = MacTransferModel()
 
     var body: some Scene {
-        WindowGroup("PhotoBridge · 照片") {
-            NavigationSplitView {
-                List {
-                    Section("设备") {
-                        Label("iPhone", systemImage: "iphone")
+        WindowGroup("PhotoBridge") {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text("PhotoBridge")
+                            .font(.largeTitle.bold())
+                        Text("在 iPhone 和 Mac 之间保存照片")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
                         StatusPill(text: transfer.usbState, systemImage: "cable.connector", tint: transfer.usbState == "已连接" ? .green : .secondary)
                     }
-                    Section("功能") {
-                        Label("保存照片", systemImage: "arrow.down.circle")
-                        Label("恢复到 iPhone", systemImage: "arrow.up.circle")
-                        Label("查看相机照片", systemImage: "camera")
-                    }
-                    Section("最近备份") {
-                        if transfer.recentBackups.isEmpty {
-                            Text("完成一次下载后会显示在这里")
-                                .font(.caption).foregroundStyle(.secondary)
-                        } else {
-                            ForEach(transfer.recentBackups, id: \.self) { path in
-                                Text(URL(fileURLWithPath: path).lastPathComponent)
-                                    .font(.caption)
-                                    .help(path)
-                            }
-                        }
-                    }
-                    Section("相机照片（辅助）") {
-                        ForEach(discovery.devices.indices, id: \.self) { index in
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(discovery.devices[index].name ?? "未命名设备")
-                                Text(discovery.devices[index].transportType ?? "未知链路")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        if discovery.devices.isEmpty {
-                            Text("没有找到相机")
-                                .font(.caption)
+
+                    GroupBox("iPhone → Mac") {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("先在 iPhone 选择相册并开始准备照片，再回到这里保存到文件夹。")
                                 .foregroundStyle(.secondary)
+                            HStack {
+                                Button("检查连接") { transfer.discover() }
+                                    .buttonStyle(.bordered)
+                                Button("查找手机保存") { transfer.refreshSessions() }
+                                    .buttonStyle(.bordered)
+                            }
+                            if transfer.sessions.isEmpty {
+                                Text("还没有找到手机里的保存。")
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Picker("选择保存", selection: $transfer.selectedSession) {
+                                    ForEach(transfer.sessions, id: \.self) { session in
+                                        Text("保存 \(session.prefix(8))").tag(session)
+                                    }
+                                }
+                                Button("选择文件夹并保存") { transfer.downloadSelected() }
+                                    .buttonStyle(.borderedProminent)
+                            }
                         }
                     }
-                }
-                .listStyle(.sidebar)
-                .navigationTitle("PhotoBridge")
-            } detail: {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("照片传输").font(.largeTitle.bold())
-                                Text("保留原图 · 安全检查")
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            StatusPill(text: transfer.usbState, systemImage: "cable.connector", tint: transfer.usbState == "已连接" ? .green : .secondary)
-                        }
 
-                        GroupBox("连接 iPhone") {
-                            VStack(alignment: .leading, spacing: 14) {
-                                Label("开始前先连接", systemImage: "cable.connector.horizontal")
-                                    .font(.headline)
-                                Text("用数据线连接 iPhone，解锁并点“信任”。照片顺序来自 iPhone 相册，相机照片只作为辅助查看。")
-                                    .foregroundStyle(.secondary)
-                                HStack {
-                                    Button("检查连接") { transfer.discover() }
-                                        .buttonStyle(.borderedProminent)
-                                    Button("查找手机备份") { transfer.refreshSessions() }
-                                        .buttonStyle(.bordered)
-                                    Button("查看相机") { discovery.start() }
-                                        .buttonStyle(.bordered)
-                                }
-                            }
+                    GroupBox("Mac → iPhone") {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("选择 Mac 上已经保存的照片文件夹，照片会按原相册顺序发送。")
+                                .foregroundStyle(.secondary)
+                            Button("选择文件夹并发送") { transfer.uploadBackup() }
+                                .buttonStyle(.borderedProminent)
+                            Button("继续上次发送") { transfer.resumeUpload() }
+                                .buttonStyle(.bordered)
                         }
+                    }
 
-                        GroupBox("手机备份") {
-                            VStack(alignment: .leading, spacing: 12) {
-                                if transfer.sessions.isEmpty {
-                                    Text("还没有找到备份。请先在 iPhone 选择一个相册并开始保存。")
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    Picker("备份", selection: $transfer.selectedSession) {
-                                        ForEach(transfer.sessions, id: \.self) { session in
-                                            Text(String(session.prefix(8))).tag(session)
-                                        }
-                                    }
-                                    HStack {
-                                        Button("保存到 Mac") { transfer.downloadSelected() }
-                                            .buttonStyle(.borderedProminent)
-                                        Button("继续上次保存") { transfer.resumeSelected() }
-                                            .buttonStyle(.bordered)
-                                        Text("每张照片都会检查完整，并按原相册顺序整理")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                if transfer.busy {
-                                    ProgressView(value: transfer.progressFraction)
-                                    HStack(spacing: 14) {
-                                        Text(transfer.progressText)
-                                        Text(transfer.speedText)
-                                        Text(transfer.etaText)
-                                    }
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
-                                    Button("暂停并保留进度") { transfer.requestCancel() }
-                                        .buttonStyle(.bordered)
-                                    if !transfer.currentResource.isEmpty {
-                                        Text(transfer.currentResource)
-                                            .font(.caption2.monospaced())
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                    }
-                                }
+                    if transfer.busy {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ProgressView(value: transfer.progressFraction)
+                            Text(transfer.progressText)
+                                .font(.callout.monospacedDigit())
+                            HStack {
+                                Text(transfer.speedText)
+                                Text(transfer.etaText)
                             }
-                        }
-
-                        if !transfer.backupPreview.isEmpty {
-                            GroupBox("备份内容") {
-                                VStack(spacing: 0) {
-                                    HStack {
-                                        Text("位置").frame(width: 54, alignment: .leading)
-                                        Text("照片").frame(maxWidth: .infinity, alignment: .leading)
-                                        Text("文件").frame(width: 50, alignment: .trailing)
-                                        Text("大小").frame(width: 88, alignment: .trailing)
-                                    }
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .padding(.bottom, 8)
-                                    ForEach(transfer.backupPreview.prefix(12)) { asset in
-                                        HStack {
-                                            Text(String(format: "%04d", asset.ordinal)).frame(width: 54, alignment: .leading)
-                                            Text(asset.primaryFilename).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
-                                            Text("\(asset.resourceCount)").frame(width: 50, alignment: .trailing)
-                                            Text(ByteCountFormatter.string(fromByteCount: asset.byteCount, countStyle: .file))
-                                                .frame(width: 88, alignment: .trailing)
-                                        }
-                                        .font(.caption.monospacedDigit())
-                                        .padding(.vertical, 5)
-                                        Divider()
-                                    }
-                                    if transfer.backupPreview.count > 12 {
-                                        Text("这里只显示前 12 张，完整照片已保存在你选择的文件夹")
-                                            .font(.caption2).foregroundStyle(.secondary).padding(.top, 8)
-                                    }
-                                }
-                            }
-                        }
-
-                        GroupBox("恢复到 iPhone") {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("选择一份已保存的照片，发送到 iPhone 后，在 iPhone 上确认恢复。")
-                                    .foregroundStyle(.secondary)
-                                Button("选择照片并发送") { transfer.uploadBackup() }
-                                    .buttonStyle(.bordered)
-                                Button("继续上次发送") { transfer.resumeUpload() }
-                                    .buttonStyle(.bordered)
-                                if transfer.busy {
-                                    ProgressView(value: transfer.progressFraction)
-                                    HStack(spacing: 14) {
-                                        Text(transfer.progressText)
-                                        Text(transfer.speedText)
-                                        Text(transfer.etaText)
-                                    }
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
-                                    Button("暂停并保留进度") { transfer.requestCancel() }
-                                        .buttonStyle(.bordered)
-                                    if !transfer.currentResource.isEmpty {
-                                        Text(transfer.currentResource)
-                                            .font(.caption2.monospaced())
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                    }
-                                }
-                            }
-                        }
-
-                        DisclosureGroup("查看详细信息") {
-                            Text(transfer.output.isEmpty ? "暂无输出" : transfer.output)
-                                .font(.system(.callout, design: .monospaced))
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        Text("原照片不会删除、覆盖或改变。遇到问题时，已完成的照片和进度都会保留。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            Button("暂停并保留进度") { transfer.requestCancel() }
+                                .buttonStyle(.bordered)
+                        }
+                        .padding(16)
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
                     }
-                    .padding(28)
-                    .frame(maxWidth: 960, alignment: .leading)
+
+                    Text(transfer.userMessage)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                    Text("原照片不会删除、覆盖或改变。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .background(Color(nsColor: .windowBackgroundColor))
+                .padding(28)
+                .frame(maxWidth: 720, alignment: .leading)
             }
-            .frame(minWidth: 900, minHeight: 640)
-            .onAppear { discovery.start() }
+            .background(Color(nsColor: .windowBackgroundColor))
+            .frame(minWidth: 680, minHeight: 560)
+            .onAppear { transfer.discover(); transfer.refreshSessions() }
         }
     }
 }
