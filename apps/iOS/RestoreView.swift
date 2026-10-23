@@ -8,16 +8,21 @@ struct RestoreView: View {
     @State private var title = "PhotoBridge 恢复 " + String(UUID().uuidString.prefix(8))
     @State private var allowTimestampRewrite = false
     @State private var stopAfterFirstCommit = false
+    private var restoreFinished: Bool {
+        service.totalAssets > 0 &&
+        service.completed == service.totalAssets &&
+        service.message.hasPrefix("恢复完成")
+    }
     private var integrityState: (String, Color, String) {
-        if service.completed == service.totalAssets, service.totalAssets > 0, service.message.contains("照片库回读完成") {
-            return ("可以恢复", .green, "照片文件已检查完整")
+        if restoreFinished {
+            return ("已完成", .green, "照片文件已检查完整")
         }
         if service.ready { return ("检查通过", .blue, "这份备份可以使用") }
         return ("等待检查", .secondary, "先检查这份备份")
     }
     private var orderState: (String, Color, String) {
-        if service.message.contains("成员顺序通过") {
-            return ("顺序已保留", .green, "恢复后请在照片中看一眼新相册")
+        if restoreFinished {
+            return ("顺序已恢复", .green, "请在照片中看一眼新相册")
         }
         return ("等待恢复", .secondary, "恢复完成后会创建新的相册")
     }
@@ -106,7 +111,7 @@ private struct VerificationCard: View {
     let tint: Color
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Label(title, systemImage: value.contains("通过") ? "checkmark.shield.fill" : "clock")
+            Label(title, systemImage: (value == "已完成" || value == "顺序已恢复" || value == "检查通过") ? "checkmark.shield.fill" : "clock")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(tint)
             Text(value).font(.subheadline.weight(.semibold))
