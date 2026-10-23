@@ -13,8 +13,8 @@ struct OriginalExportView: View {
         NavigationStack {
             Form {
                 Section(collection.localizedTitle ?? "保存照片") {
-                    if let memberCount { Text("将保存 (memberCount) 张照片") }
-                    if let freeSpace { Text("手机可用空间：(freeSpace)").foregroundStyle(.secondary) }
+                    if let memberCount { Text("将保存 \(memberCount) 张照片") }
+                    if let freeSpace { Text("手机可用空间：\(freeSpace)").foregroundStyle(.secondary) }
                     Text("原图会完整保留，照片顺序也会一起保存。")
                     Toggle("原图只在 iCloud 时允许下载", isOn: $allowNetwork)
                         .disabled(exporter.busy)
@@ -33,7 +33,7 @@ struct OriginalExportView: View {
                         .textSelection(.enabled)
                     if exporter.totalResources > 0 {
                         ProgressView(value: Double(exporter.resourcesCompleted), total: Double(exporter.totalResources))
-                        Text("已准备 (exporter.resourcesCompleted)/(exporter.totalResources) 个文件")
+                        Text("已准备 \(exporter.resourcesCompleted)/\(exporter.totalResources) 个文件")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
@@ -55,7 +55,7 @@ struct OriginalExportView: View {
                         Picker("选择保存", selection: $resumeSession) {
                             Text("请选择").tag("")
                             ForEach(exporter.candidates) { candidate in
-                                Text("保存 (candidate.id.prefix(8))").tag(candidate.id)
+                                Text("保存 \(candidate.id.prefix(8))").tag(candidate.id)
                             }
                         }
                         Button("继续保存") {
