@@ -2,14 +2,20 @@ import SwiftUI
 import Photos
 import PhotoBridgeCore
 
-@main struct PhotoBridgeApp: App {
+@main
+struct PhotoBridgeApp: App {
     @StateObject private var library = LibraryProbe()
+    @State private var selectedTab = 0
     var body: some Scene {
         WindowGroup {
-            TabView {
-                AlbumsView().tabItem { Label("保存到 Mac", systemImage: "arrow.down.to.line.compact") }
-                RestoreView().tabItem { Label("恢复到 iPhone", systemImage: "arrow.up.to.line.compact") }
-            }.environmentObject(library)
+            TabView(selection: $selectedTab) {
+                AlbumsView(selectedTab: $selectedTab).tabItem { Label("相册", systemImage: "photo.on.rectangle.angled") }.tag(0)
+                TransferView().tabItem { Label("传输", systemImage: "arrow.left.arrow.right") }.tag(1)
+                RestoreView().tabItem { Label("恢复", systemImage: "clock.arrow.circlepath") }.tag(2)
+                SettingsView().tabItem { Label("设置", systemImage: "gearshape") }.tag(3)
+            }
+            .tint(.bridgeBlue)
+            .environmentObject(library)
         }
     }
 }
@@ -19,6 +25,7 @@ struct AlbumItem: Identifiable {
     let collection: PHAssetCollection
     let count: Int
     let cover: PHAsset?
+    let previews: [PHAsset]
 }
 
 enum FetchMode: String, CaseIterable, Identifiable {
@@ -28,18 +35,17 @@ enum FetchMode: String, CaseIterable, Identifiable {
     var options: PHFetchOptions? { self == .defaults ? nil : PHFetchOptions() }
 }
 
-@MainActor final class LibraryProbe: ObservableObject {
+@MainActor
+final class LibraryProbe: ObservableObject {
     @Published var albums: [AlbumItem] = []
     @Published var authorization: PHAuthorizationStatus = .notDetermined
-    @Published var message = "准备好查看你的相册"
+    @Published var message = "准备查看你的相册"
     var permissionName: String {
         switch authorization { case .authorized: return "full"; case .limited: return "limited"
         case .denied: return "denied"; case .restricted: return "restricted"
         case .notDetermined: return "notDetermined"; @unknown default: return "unknown" }
     }
-    func request() async {
-        _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite); reload()
-    }
+    func request() async { _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite); reload() }
     func reload() {
         authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         albums = []
@@ -49,7 +55,11 @@ enum FetchMode: String, CaseIterable, Identifiable {
         let collections = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil)
         collections.enumerateObjects { collection, _, _ in
             let assets = PHAsset.fetchAssets(in: collection, options: nil)
-            self.albums.append(AlbumItem(collection: collection, count: assets.count, cover: assets.firstObject))
+            var previews: [PHAsset] = []; previews.reserveCapacity(3)
+            assets.enumerateObjects { asset, index, stop in
+                if index < 3 { previews.append(asset) } else { stop.pointee = true }
+            }
+            self.albums.append(AlbumItem(collection: collection, count: assets.count, cover: previews.first, previews: previews))
         }
         message = authorization == .limited ? "当前只显示你选中的照片" : "相册已准备好"
     }
@@ -58,63 +68,128 @@ enum FetchMode: String, CaseIterable, Identifiable {
         var assets: [PHAsset] = []; assets.reserveCapacity(result.count)
         result.enumerateObjects { asset, _, _ in assets.append(asset) }
         let build = Bundle.main.object(forInfoDictionaryKey: "PhotoBridgeBuildCommit") as? String ?? "local-unversioned"
-        return (OrderSnapshot(albumName: collection.localizedTitle ?? "未命名相簿",
-                              albumIdentifier: collection.localIdentifier, authorization: permissionName,
-                              fetchMode: mode.rawValue, identifiers: assets.map(\.localIdentifier),
-                              creationDates: assets.map(\.creationDate), systemVersion: UIDevice.current.systemVersion,
-                              build: build), assets)
+        return (OrderSnapshot(albumName: collection.localizedTitle ?? "未命名相簿", albumIdentifier: collection.localIdentifier, authorization: permissionName,
+                              fetchMode: mode.rawValue, identifiers: assets.map(\.localIdentifier), creationDates: assets.map(\.creationDate),
+                              systemVersion: UIDevice.current.systemVersion, build: build), assets)
     }
 }
 
 struct AlbumsView: View {
-    @EnvironmentObject var library: LibraryProbe
+    @EnvironmentObject private var library: LibraryProbe
+    @Binding var selectedTab: Int
+    @State private var showAll = false
+    @State private var showRestore = false
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("保存照片到 Mac").font(.title2.bold())
-                        Text("选择一个相册，照片会按原来的顺序准备好。")
-                            .foregroundStyle(.secondary)
-                        Button("允许访问照片") { Task { await library.request() } }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
-                    }
-                    .padding(.vertical, 8)
-                }
-                Section("选择相册") {
-                    if library.albums.isEmpty {
-                        Text(library.message).foregroundStyle(.secondary)
-                        Button("重新读取相册") { Task { await library.request() } }
-                    } else {
-                        ForEach(library.albums) { item in
-                            NavigationLink { OriginalExportView(collection: item.collection) } label: {
+            ZStack {
+                BridgeBackground()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("照片传输").font(.system(size: 36, weight: .bold, design: .rounded)).foregroundStyle(Color.bridgeInk)
+                                BridgeStatus(title: library.authorization == .authorized ? "已准备好 · USB 连接后传输" : "等待 Mac 连接 · USB", connected: false)
+                            }
+                            Spacer()
+                            Menu {
+                                Button("刷新相册") { library.reload() }
+                                Button("打开设置") { selectedTab = 3 }
+                            } label: {
+                                Image(systemName: "ellipsis").font(.title3.weight(.bold)).foregroundStyle(Color.bridgeMuted).frame(width: 46, height: 46).background(.white.opacity(0.68), in: Circle())
+                            }
+                        }
+
+                        BridgeCard {
+                            VStack(alignment: .leading, spacing: 16) {
                                 HStack(spacing: 14) {
-                                    AssetThumbnail(asset: item.cover)
-                                        .frame(width: 64, height: 64)
-                                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                                    BridgeIconCircle(systemImage: "laptopcomputer", tint: .bridgeBlue, size: 62)
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        Text("连接 Mac 后开始传输").font(.title3.weight(.semibold))
+                                        Text("使用 USB 数据线，照片不会上传云端").font(.subheadline).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Circle().fill(.gray.opacity(0.55)).frame(width: 11, height: 11)
+                                }
+                                HStack(spacing: 12) {
+                                    NavigationLink { AlbumTransferPicker() } label: {
+                                        Label("开始导出", systemImage: "arrow.up.to.line.compact")
+                                    }.buttonStyle(.borderedProminent).tint(.bridgeBlue).controlSize(.large)
+                                    NavigationLink { RestoreView() } label: {
+                                        Label("导入到 iPhone", systemImage: "arrow.down.to.line.compact")
+                                    }.buttonStyle(.bordered).controlSize(.large)
+                                }
+                            }
+                        }
+
+                        HStack(alignment: .firstTextBaseline) {
+                            Text("相册").font(.title2.bold()).foregroundStyle(Color.bridgeInk)
+                            Spacer()
+                            Button(showAll ? "收起" : "查看全部") { withAnimation(.easeOut(duration: 0.2)) { showAll.toggle() } }
+                                .font(.subheadline.weight(.medium)).foregroundStyle(Color.bridgeMuted)
+                        }
+
+                        if library.albums.isEmpty {
+                            BridgeCard {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text(library.message).foregroundStyle(.secondary)
+                                    BridgePrimaryButton(action: { Task { await library.request() } }) { Text("允许访问照片") }
+                                }
+                            }
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(showAll ? library.albums : Array(library.albums.prefix(3))) { item in
+                                    NavigationLink { OriginalExportView(collection: item.collection) } label: {
+                                        AlbumRow(item: item)
+                                    }.buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        if let first = library.albums.first {
+                            BridgeCard {
+                                HStack(spacing: 14) {
+                                    BridgeIconCircle(systemImage: "arrow.up.arrow.down", tint: .bridgeBlue, size: 52)
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text(item.collection.localizedTitle ?? "未命名相册")
-                                            .font(.headline)
-                                        Text("\(item.count) 张照片")
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
+                                        Text("顺序保留").font(.headline)
+                                        Text("按系统照片中的当前顺序保存，不在这里重新排序").font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    HStack(spacing: 4) {
+                                        ForEach(Array(first.previews.enumerated()), id: \.element.localIdentifier) { index, asset in
+                                            ZStack(alignment: .bottomTrailing) {
+                                                AssetThumbnail(asset: asset).frame(width: 34, height: 34).clipShape(RoundedRectangle(cornerRadius: 8))
+                                                Text(String(format: "%04d", index + 1)).font(.system(size: 7, weight: .semibold, design: .monospaced)).foregroundStyle(.white).padding(2).background(.black.opacity(0.55), in: Capsule())
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                Section {
-                    Text("原图不会删除、覆盖或压缩。完成后请在 Mac 上选择保存文件夹。")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 28)
                 }
             }
-            .navigationTitle("保存到 Mac")
-            .toolbar { Button("刷新") { library.reload() } }
+            .navigationBarHidden(true)
             .task { library.reload() }
         }
+    }
+}
+
+struct AlbumRow: View {
+    let item: AlbumItem
+    var body: some View {
+        HStack(spacing: 14) {
+            AssetThumbnail(asset: item.cover).frame(width: 72, height: 72).clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            VStack(alignment: .leading, spacing: 5) {
+                Text(item.collection.localizedTitle ?? "未命名相册").font(.headline).foregroundStyle(Color.bridgeInk)
+                Text("\(item.count) 张照片").font(.subheadline).foregroundStyle(Color.bridgeMuted)
+            }
+            Spacer()
+            Image(systemName: "chevron.right").font(.subheadline.weight(.semibold)).foregroundStyle(Color.bridgeMuted)
+        }
+        .padding(14)
+        .background(.white.opacity(0.74), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(.white.opacity(0.8), lineWidth: 1))
     }
 }
 
