@@ -188,7 +188,7 @@ struct AlbumRow: View {
             Image(systemName: "chevron.right").font(.subheadline.weight(.semibold)).foregroundStyle(Color.bridgeMuted)
         }
         .padding(14)
-        .background(.white.opacity(0.74), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Color(uiColor: .systemBackground).opacity(0.9), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(.white.opacity(0.8), lineWidth: 1))
     }
 }
