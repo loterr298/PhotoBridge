@@ -33,6 +33,25 @@ bash scripts/verify-delivery.sh
 
 更新：2026-10-23。历史阶段记录从下方开始。
 
+### M4.11 面向最终用户的双端交付收口（2026-10-24）
+
+本轮根据实际使用反馈，产品界面只保留两条主流程：
+
+- iPhone：选择相册 → 点“开始准备照片” → 照片暂存在手机的 PhotoBridge 文件区。
+- Intel Mac：点“查找手机备份” → 选择保存文件夹 → 保存完成后显示完整路径。
+- Mac → iPhone：选择电脑上的照片文件夹 → 发送 → iPhone 点“恢复到新相册”。原相册和原文件不会被删除或覆盖，顺序按保存清单恢复。
+- 删除了用户端的诊断、相机目录、底层 USB/AFC、会话哈希和测试暂停等主界面内容；底层脚本和日志仍保留给排查使用。
+
+针对“保存快完成时闪退”，定位到导出结束阶段一次性把整本相册的资源清单编码成 JSON，可能造成末尾内存峰值。已改为逐项写入临时清单，完成后原子替换正式清单；中断时保留可继续的已完成项目，并在最后阶段显示“正在整理保存记录，请不要关闭 App”。这是基于代码路径和触发时机的修复，仍需用户在大相册上复测，不能把云编译当作真机稳定性证明。
+
+GitHub Actions #54 已成功完成 iOS arm64 unsigned build、Intel macOS build、自动化测试和交付闸门：
+
+- iOS IPA：`build/PhotoBridge-0.3.8-M4-Final/PhotoBridgeOrderProbe-0.3.8-M4-unsigned.ipa`，SHA-256 `d5ace8f67c2c12c065b91ce7b3a18f9da485aeddf5e79743a065d782d26c3405`。
+- Intel Mac ZIP：`build/PhotoBridge-0.3.8-M4-Final/PhotoBridgeMac-Intel-M4.zip`，SHA-256 `7fdca36d0bbe19781babb06b66b64d82a7ebd258f2e67bda1aed26ceeab0314d`。
+- 云端产物包：[Actions #54](https://github.com/loterr298/PhotoBridge/actions/runs/40010990092)，artifact digest `sha256:91a91abe1615471e3dfa3da4de211ceb48802e48e606efe59863fba8143b71d5`。
+
+本地复核：iOS/Intel Swift 语法解析通过，Python 测试 63 项通过，`git diff --check` 通过；云端完整构建通过。未签名 IPA 仍需用户用自己的 Apple ID 签名安装，真机复测前不标“已通过”。
+
 规格包从 `/Users/l/Downloads/PhotoBridge-AI-Project` 导入当前工作区 `PhotoBridge/`，原包未改动。私有 GitHub 仓库：[loterr298/PhotoBridge](https://github.com/loterr298/PhotoBridge)。
 
 ## 已完成的软件实现
