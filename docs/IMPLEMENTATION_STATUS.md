@@ -37,7 +37,9 @@ bash scripts/verify-delivery.sh
 
 用户反馈首页和其他页面卡片偏灰。本轮把 iPhone 和 Mac 的主卡片从系统材质改成更亮的系统背景白色浮层，降低灰雾感，保留浅蓝背景、白色边缘和轻阴影；相册行、连接状态和 Mac 侧栏视觉同步调整。真实数据、传输逻辑和按钮行为未改变。
 
-本地验证：iOS/Intel Swift 语法解析通过，Intel x86_64 打包通过，Python 63 项测试通过，`git diff --check` 通过；云端构建将在本轮提交后更新。
+本地验证：iOS/Intel Swift 语法解析通过，Intel x86_64 打包通过，Python 63 项测试通过，`git diff --check` 通过；GitHub Actions #66 已完成本轮云构建。
+
+亮色卡片版云包：iPhone IPA SHA-256 `7651ad4f815c16a48e0ad45ca6d3bb67c886a1e84c3e0ea73094d27ef8d3e416`；Intel Mac ZIP SHA-256 `e678238a14a132504b38ef00f8a1bd274aefc081404617c8420fbf98297ba630`；artifact digest `sha256:ece2dbf4e558ce2df724ce8999c44ed9413197504981052a979ab21644c7c189`。
 
 ### M4.12 参考图视觉重做（2026-10-24）
 
