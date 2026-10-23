@@ -601,3 +601,11 @@ IPA 仍是 unsigned，需要用户自己的 Apple ID 签名；Mac 包为 Intel x
 
 - `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`51a8204d04318823cc5f2f85a7e76b8c0a8bb9122c76852287ad74360c051082`
 - `PhotoBridgeMac-Intel.zip`：`4467e6074384333d6ad3c80dfb0290dabd3c67de4c869f73f80252a1ed6367d8`
+
+### M4.9 双端应用图标（2026-10-24）
+
+新增原创浅蓝相册图标：单一相册轮廓、单个照片窗口、低对比度留白。iOS 使用 `Assets.xcassets/AppIcon.appiconset`，Mac 使用 `PhotoBridge.icns` 并由打包脚本复制到 `.app/Contents/Resources`。云端 Actions #46（run `40005853139`）成功，已检查 IPA 内含 `Assets.car` 与 AppIcon 文件，Mac ZIP 内含 `Contents/Resources/PhotoBridge.icns`。
+
+- 云端归档 digest：`sha256:53fbad07af026f997c92954f732830c266207d601ebb0da247df3f123bc2a47c`
+- `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`df3d21c0156edf7d9a5cab97c74caf4b838e105f265afd90f7e70b985a8a44e1`
+- `PhotoBridgeMac-Intel.zip`：`26e2e6764b758ef354da7d611e4bf406e028777643bd1b9244c91148ea9b11c1`
