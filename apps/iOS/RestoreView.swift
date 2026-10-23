@@ -41,7 +41,7 @@ struct RestoreView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Button(service.recovering ? "继续恢复" : "开始恢复") {
-                        Task { await service.restore(title: title, stopAfterFirstCommit: nil) }
+                        Task { await service.restore(title: title, stopAfterFirstCommit: false) }
                     }
                     .disabled(!service.ready || service.busy)
                     if service.busy {
