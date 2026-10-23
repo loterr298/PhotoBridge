@@ -5,14 +5,11 @@ import PhotoBridgeCore
 @main
 struct PhotoBridgeApp: App {
     @StateObject private var library = LibraryProbe()
-    @State private var selectedTab = 0
     var body: some Scene {
         WindowGroup {
-            TabView(selection: $selectedTab) {
-                AlbumsView(selectedTab: $selectedTab).tabItem { Label("相册", systemImage: "photo.on.rectangle.angled") }.tag(0)
-                TransferView().tabItem { Label("传输", systemImage: "arrow.left.arrow.right") }.tag(1)
-                RestoreView().tabItem { Label("恢复", systemImage: "clock.arrow.circlepath") }.tag(2)
-                SettingsView().tabItem { Label("设置", systemImage: "gearshape") }.tag(3)
+            TabView {
+                AlbumsView().tabItem { Label("备份到 Mac", systemImage: "arrow.down.to.line.compact") }.tag(0)
+                RestoreView().tabItem { Label("导入到 iPhone", systemImage: "arrow.up.to.line.compact") }.tag(1)
             }
             .tint(.bridgeBlue)
             .environmentObject(library)
@@ -76,7 +73,6 @@ final class LibraryProbe: ObservableObject {
 
 struct AlbumsView: View {
     @EnvironmentObject private var library: LibraryProbe
-    @Binding var selectedTab: Int
     @State private var showAll = false
     @State private var showRestore = false
     var body: some View {
@@ -87,13 +83,13 @@ struct AlbumsView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("照片传输").font(.system(size: 36, weight: .bold, design: .rounded)).foregroundStyle(Color.bridgeInk)
-                                BridgeStatus(title: library.authorization == .authorized ? "已准备好 · USB 连接后传输" : "等待 Mac 连接 · USB", connected: false)
+                                Text("备份照片到 Mac").font(.system(size: 36, weight: .bold, design: .rounded)).foregroundStyle(Color.bridgeInk)
+                                BridgeStatus(title: library.authorization == .authorized ? "照片已准备 · 等待数据线" : "请先允许访问照片", connected: false)
                             }
                             Spacer()
                             Menu {
                                 Button("刷新相册") { library.reload() }
-                                Button("打开设置") { selectedTab = 3 }
+                                Button("重新读取相册") { library.reload() }
                             } label: {
                                 Image(systemName: "ellipsis").font(.title3.weight(.bold)).foregroundStyle(Color.bridgeMuted).frame(width: 46, height: 46).background(.white.opacity(0.68), in: Circle())
                             }
@@ -104,25 +100,21 @@ struct AlbumsView: View {
                                 HStack(spacing: 14) {
                                     BridgeIconCircle(systemImage: "laptopcomputer", tint: .bridgeBlue, size: 62)
                                     VStack(alignment: .leading, spacing: 5) {
-                                        Text("连接 Mac 后开始传输").font(.title3.weight(.semibold))
-                                        Text("使用 USB 数据线，照片不会上传云端").font(.subheadline).foregroundStyle(.secondary)
+                                        Text("连接 Mac 后开始备份").font(.title3.weight(.semibold))
+                                        Text("用数据线连接 Mac，照片不会上传云端").font(.subheadline).foregroundStyle(.secondary)
                                     }
                                     Spacer()
                                     Circle().fill(.gray.opacity(0.55)).frame(width: 11, height: 11)
                                 }
-                                HStack(spacing: 12) {
-                                    NavigationLink { AlbumTransferPicker() } label: {
-                                        Label("开始导出", systemImage: "arrow.up.to.line.compact")
-                                    }.buttonStyle(.borderedProminent).tint(.bridgeBlue).controlSize(.large)
-                                    NavigationLink { RestoreView() } label: {
-                                        Label("导入到 iPhone", systemImage: "arrow.down.to.line.compact")
-                                    }.buttonStyle(.bordered).controlSize(.large)
-                                }
+                                NavigationLink { AlbumTransferPicker() } label: {
+                                    Label("选择相册开始备份", systemImage: "photo.on.rectangle.angled")
+                                        .frame(maxWidth: .infinity)
+                                }.buttonStyle(.borderedProminent).tint(.bridgeBlue).controlSize(.large)
                             }
                         }
 
                         HStack(alignment: .firstTextBaseline) {
-                            Text("相册").font(.title2.bold()).foregroundStyle(Color.bridgeInk)
+                            Text("选择相册").font(.title2.bold()).foregroundStyle(Color.bridgeInk)
                             Spacer()
                             Button(showAll ? "收起" : "查看全部") { withAnimation(.easeOut(duration: 0.2)) { showAll.toggle() } }
                                 .font(.subheadline.weight(.medium)).foregroundStyle(Color.bridgeMuted)
