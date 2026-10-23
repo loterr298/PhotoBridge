@@ -311,7 +311,7 @@ extension Color {
 
 private struct MacBackground: View {
     var body: some View {
-        LinearGradient(colors: [.macBridgeSky.opacity(0.74), Color(nsColor: .windowBackgroundColor), .white.opacity(0.72)], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea()
+        LinearGradient(colors: [.macBridgeSky.opacity(0.66), Color.white.opacity(0.84), .white], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea()
     }
 }
 
@@ -320,8 +320,8 @@ private struct MacCard<Content: View>: View {
     init(@ViewBuilder content: () -> Content) { self.content = content() }
     var body: some View {
         content.padding(20)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(.white.opacity(0.7), lineWidth: 1))
+            .background(Color(nsColor: .controlBackgroundColor).opacity(0.94), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(.white.opacity(0.92), lineWidth: 1))
             .shadow(color: .black.opacity(0.06), radius: 16, y: 7)
     }
 }
@@ -343,7 +343,7 @@ private struct MacStatusPill: View {
             Text(connected ? "已连接 · USB" : "等待连接").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(.white.opacity(0.65), in: Capsule())
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.92), in: Capsule())
     }
 }
 
