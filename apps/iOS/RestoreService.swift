@@ -17,13 +17,14 @@ private struct RestoreInboxRequest: Decodable {
     @Published var sessions: [String] = []
     @Published var busy = false
     @Published var ready = false
-    @Published var message = "请先由 Mac 通过 USB 发送已校验备份，然后刷新收件箱。"
+    @Published var message = "请先在 Mac 完成备份，再回来查找备份。"
     @Published var preflightReportSummary = ""
     @Published var sharedPreflightReport = false
     private var privatePreflightReport: URL?
     @Published var recovering = false
     @Published var savedTitle = ""
     @Published var completed = 0
+    @Published var totalAssets = 0
     @Published var authorizedTimestampDifferences = 0
     private var selected: URL?
     private var manifest: AlbumExportManifest?
@@ -42,7 +43,7 @@ private struct RestoreInboxRequest: Decodable {
             try FileManager.default.createDirectory(at: inbox, withIntermediateDirectories: true)
             sessions = try FileManager.default.contentsOfDirectory(atPath: inbox.path)
                 .filter { UUID(uuidString: $0) != nil }.sorted()
-        } catch { message = "无法读取收件箱：\(error.localizedDescription)" }
+        } catch { message = "找不到 Mac 备份：\(error.localizedDescription)" }
     }
     func invalidate() { preflightReportSummary = ""; sharedPreflightReport = false; privatePreflightReport = nil; ready = false; recovering = false; savedTitle = ""; manifest = nil; selected = nil; manifestData = nil; requestData = nil; allowEditTimestampRewrite = false }
     func requestStop() { stopRequested = true }
@@ -60,7 +61,7 @@ private struct RestoreInboxRequest: Decodable {
     }
     func preflight(session: String, allowTimestampRewrite: Bool, simulateNoSpace: Bool = false) async {
         guard !busy else { return }
-        invalidate(); busy = true; stopRequested = false; completed = 0
+        invalidate(); busy = true; stopRequested = false; completed = 0; totalAssets = 0
         allowEditTimestampRewrite = allowTimestampRewrite; authorizedTimestampDifferences = 0
         var preflightReport: [String: Any] = ["kind": "PhotoBridgePreflightReport", "schemaVersion": "1.0.0",
             "sessionID": session, "simulatedZeroCapacity": simulateNoSpace,
@@ -103,6 +104,7 @@ private struct RestoreInboxRequest: Decodable {
             let raw = try readJSONFile(manifestURL)
             let candidate = try RestoreSafety.decodeManifest(data: raw, expectedSHA256: request.sourceManifestSHA256)
             let resources = candidate.assets.flatMap(\.resources)
+            totalAssets = candidate.assets.count
             preflightReport["manifestSHA256"] = RestoreRecoveryStore.sha256(raw)
             preflightReport["assets"] = candidate.assets.count; preflightReport["resources"] = resources.count
             var recordedAssets = 0
@@ -151,7 +153,7 @@ private struct RestoreInboxRequest: Decodable {
                       PHAssetCreationRequest.supportsAssetResourceTypes(asset.resources.map { NSNumber(value: $0.resourceType) }) else {
                     throw ExportError.invalidManifest("位置 \(asset.ordinal) 的完整资源组合不受本机 PhotoKit 支持，未丢弃任何附件，未写入照片库")
                 }
-                message = "正在校验收件第 \(asset.ordinal)/\(candidate.assets.count) 项的全部资源"
+                message = "正在检查第 \(asset.ordinal)/\(candidate.assets.count) 张照片"
                 try await Task.detached(priority: .utility) {
                     for resource in asset.resources { try RestoreSafety.verifyResource(resource, in: directory) }
                 }.value
@@ -160,12 +162,12 @@ private struct RestoreInboxRequest: Decodable {
             try checkPermissionAndStop()
             selected = directory; manifest = candidate; manifestData = raw; requestData = requestRaw; ready = true
             let size = ByteCountFormatter.string(fromByteCount: Int64(totalBytes), countStyle: .file)
-            message = (recovering ? "已有 \(recordedAssets) 项副本；继续时先重新回读已有资源。" : "尚未导入。") + "收件大小/hash、资源组合及空间估算预检通过：\(candidate.assets.count) 项、\(resources.count) 份资源、\(size)。估算另需 \(ByteCountFormatter.string(fromByteCount: budget.requiredBytes, countStyle: .file))；未预留磁盘，系统开销或其他写入仍可能导致失败。"
+            message = (recovering ? "已找到 \(recordedAssets) 张已恢复照片，继续前会再次检查。" : "准备恢复。") + "共 \(candidate.assets.count) 张照片，占用约 \(size)。"
         } catch {
             ready = false
             preflightReport["failureCode"] = (error as? OperationPreconditionFailure)?.code ?? "PREFLIGHT_FAILED"
             preflightReport["error"] = error.localizedDescription
-            message = (simulateNoSpace ? "模拟零可用空间诊断：" : "") + "预检未通过：\(error.localizedDescription)"
+            message = (simulateNoSpace ? "空间不足测试：" : "检查未通过：") + "\(error.localizedDescription)"
         }
     }
 
@@ -276,9 +278,9 @@ private struct RestoreInboxRequest: Decodable {
         guard !busy, ready, let directory = selected, let manifest,
               let checkedManifest = manifestData, let checkedRequest = requestData else { return }
         let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty && name.count <= 128 else { message = "请填写 1–128 字的新相簿名"; return }
+        guard !name.isEmpty && name.count <= 128 else { message = "请输入 1–128 个字符的相册名称"; return }
         let continuing = recovering
-        busy = true; ready = false; stopRequested = false; completed = 0; authorizedTimestampDifferences = 0
+        busy = true; ready = false; stopRequested = false; completed = 0; totalAssets = manifest.assets.count; authorizedTimestampDifferences = 0
         let userAllowedTimestampRewrite = allowEditTimestampRewrite
         defer { busy = false }
         var lease: RestoreRecoveryLease?
@@ -388,7 +390,7 @@ private struct RestoreInboxRequest: Decodable {
                 state = try active.state()
                 _ = try observed(state)
                 if source.ordinal > state.assetIDs.count {
-                    message = "正在创建第 \(source.ordinal)/\(manifest.assets.count) 项的完整副本"
+                    message = "正在恢复第 \(source.ordinal)/\(manifest.assets.count) 张照片"
                     try await Task.detached(priority: .utility) {
                         for resource in source.resources { try RestoreSafety.verifyResource(resource, in: directory) }
                     }.value
@@ -436,7 +438,7 @@ private struct RestoreInboxRequest: Decodable {
                 } else { try RestoreRecoveryStore.writeNewMetadata(recordData, to: recordURL) }
                 try checkSpace(recorded: state.assetIDs.count, verified: completed)
                 try journal("VERIFYING_IMPORTED_RESOURCES")
-                message = "正在重新回读第 \(source.ordinal)/\(manifest.assets.count) 项的全部资源"
+                message = "正在检查第 \(source.ordinal)/\(manifest.assets.count) 张照片"
                 guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil).firstObject else {
                     throw ExportError.invalidManifest("已记录副本不可见，不重试创建")
                 }
@@ -464,11 +466,11 @@ private struct RestoreInboxRequest: Decodable {
             try checkPermissionAndStop()
             try journal(status)
             try RestoreRecoveryStore.writeNewMetadata(data(log), to: directory.appendingPathComponent("restore-report.json"))
-            message = "照片库回读完成：\(completed) 项，本次新建 \(newCreated) 项，复用已有 \(log["recoveredExistingAssets"] ?? 0) 项。成员顺序通过；\(authorizedTimestampDifferences) 份附件仅已授权的编辑时间变化。请在系统照片独立核对自定义顺序、编辑效果及 Live Photo 播放；人工观察尚未验证。"
+            message = "恢复完成：\(completed) 张照片已添加到新相册。请在照片中确认顺序、编辑效果和动态照片播放。"
         } catch {
             log["failureCode"] = (error as? OperationPreconditionFailure)?.code ?? "RESTORE_INCOMPLETE"
             if claimed { try? journal("INCOMPLETE", error: (error as? OperationPreconditionFailure)?.code ?? error.localizedDescription) }
-            message = "恢复未完成：\(error.localizedDescription)。保留新副本、原件和全部日志；仅有完整持久化标识且实际回读一致的新版会话可在重新预检后继续，状态不明确时拒绝重放。"
+            message = "恢复未完成：\(error.localizedDescription)。已完成的照片和原照片都已保留，检查通过后可以继续。"
         }
     }
 }

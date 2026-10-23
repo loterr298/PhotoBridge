@@ -8,21 +8,9 @@ import PhotoBridgeCore
         WindowGroup {
             TabView {
                 AlbumsView().tabItem { Label("相册", systemImage: "photo.on.rectangle") }
-                USBProbeView().tabItem { Label("传输", systemImage: "arrow.left.arrow.right") }
+                TransferView().tabItem { Label("备份", systemImage: "arrow.left.arrow.right") }
                 RestoreView().tabItem { Label("恢复", systemImage: "clock.arrow.circlepath") }
-                NavigationStack {
-                    Form {
-                        Section("当前版本 · 导出与恢复诊断") {
-                            Text("导出只读；恢复仅向新相簿添加副本，不修改或删除原照片")
-                            Text("不改媒体 EXIF/GPS/MakerNotes；恢复副本保留清单原拍摄日期")
-                            Text("清单和资源仅本地暂存，可经已信任 Mac 的 USB 文件共享复制")
-                        }
-                        Section("原始资源导出策略") {
-                            Text("原始资源字节 + SHA-256")
-                            Text("5 秒步长仅用于 Mac 文件系统时间")
-                        }
-                    }.navigationTitle("设置")
-                }.tabItem { Label("设置", systemImage: "gearshape") }
+                SettingsView().tabItem { Label("设置", systemImage: "gearshape") }
             }.environmentObject(library)
         }
     }
@@ -45,7 +33,7 @@ enum FetchMode: String, CaseIterable, Identifiable {
 @MainActor final class LibraryProbe: ObservableObject {
     @Published var albums: [AlbumItem] = []
     @Published var authorization: PHAuthorizationStatus = .notDetermined
-    @Published var message = "读取自建普通相簿，顺序待人工核验"
+    @Published var message = "准备好查看你的相册"
     var permissionName: String {
         switch authorization { case .authorized: return "full"; case .limited: return "limited"
         case .denied: return "denied"; case .restricted: return "restricted"
@@ -58,14 +46,14 @@ enum FetchMode: String, CaseIterable, Identifiable {
         authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         albums = []
         guard authorization == .authorized || authorization == .limited else {
-            message = "需要照片权限，请在设置中允许读取"; return
+            message = "请允许访问照片，才能显示你的相册"; return
         }
         let collections = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil)
         collections.enumerateObjects { collection, _, _ in
             let assets = PHAsset.fetchAssets(in: collection, options: nil)
             self.albums.append(AlbumItem(collection: collection, count: assets.count, cover: assets.firstObject))
         }
-        message = authorization == .limited ? "受限照片权限：成员可能缺失，不能通过全相簿验收" : "全库权限 · 顺序读取待验证"
+        message = authorization == .limited ? "当前只显示你选中的照片" : "相册已准备好"
     }
     func read(_ collection: PHAssetCollection, mode: FetchMode) -> (OrderSnapshot, [PHAsset]) {
         let result = PHAsset.fetchAssets(in: collection, options: mode.options)
@@ -91,11 +79,11 @@ struct AlbumsView: View {
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text("照片传输").font(.largeTitle.bold())
-                                Text("先核对相簿顺序，再导出原始资源")
+                                Text("把照片安全保存到 Mac")
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Label("USB 待 Mac 检测", systemImage: "cable.connector")
+                            Label("等待连接 Mac", systemImage: "cable.connector")
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 10)
@@ -103,20 +91,20 @@ struct AlbumsView: View {
                                 .background(Color.secondary.opacity(0.1), in: Capsule())
                         }
                         HStack(spacing: 12) {
-                            Label("原图只读", systemImage: "lock.shield")
-                            Label("自动 SHA-256", systemImage: "checkmark.shield")
+                            Label("保留原图", systemImage: "lock.shield")
+                            Label("逐张检查", systemImage: "checkmark.shield")
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         HStack(spacing: 12) {
-                            Button("读取照片相簿") { Task { await library.request() } }
+                            Button("查看我的相册") { Task { await library.request() } }
                                 .buttonStyle(.borderedProminent)
                                 .controlSize(.large)
-                            NavigationLink("导入到 iPhone") { RestoreView() }
+                            NavigationLink("从 Mac 恢复") { RestoreView() }
                                 .buttonStyle(.bordered)
                                 .controlSize(.large)
                         }
-                        Text("USB 连接状态只以 Mac 端真实检测结果为准，不在手机端虚构已连接。")
+                        Text("用数据线连接 iPhone 后，Mac 会自动检查连接状态。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -124,7 +112,8 @@ struct AlbumsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 26))
                     .overlay(RoundedRectangle(cornerRadius: 26).stroke(Color.white.opacity(0.45)))
-                    Text("相簿").font(.title.bold())
+                    .shadow(color: .black.opacity(0.06), radius: 18, y: 8)
+                    Text("我的相册").font(.title.bold())
                     Text(library.message).font(.subheadline).foregroundStyle(.secondary)
                     LazyVStack(spacing: 12) {
                         ForEach(library.albums) { item in
@@ -140,7 +129,7 @@ struct AlbumsView: View {
                             }.buttonStyle(.plain)
                         }
                     }
-                    Label("顺序读取待验证 · 以人工逐项比对为准", systemImage: "arrow.up.arrow.down")
+                    Label("照片顺序会按相册原样保存", systemImage: "arrow.up.arrow.down")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }.padding(20)
@@ -194,36 +183,60 @@ struct AlbumProbeView: View {
     @State private var showOriginalExport = false
     var body: some View {
         List {
-            Section("读取方式 · 不指定排序字段") {
-                Picker("选项", selection: $mode) { ForEach(FetchMode.allCases) { Text($0.label).tag($0) } }
-                Text("索引是 PhotoKit 原始返回位置，不代表已通过系统照片比对。")
-                Text("\(assets.count) 个可见成员 · \(library.permissionName)")
+            Section("相册顺序") {
+                Text("按系统照片中的当前顺序显示，共 \(assets.count) 张")
                 Button("重新读取") { reload() }
-                Button("保存本地诊断 JSON") { save() }.disabled(snapshot == nil)
-                if let exportURL { ShareLink("主动分享诊断文件", item: exportURL) }
+                Button("保存详细记录") { save() }.disabled(snapshot == nil)
+                if let exportURL { ShareLink("分享详细记录", item: exportURL) }
                 if let error { Text(error).foregroundStyle(.red) }
             }
-            Section("与照片 App 人工逐项核对") {
-                Text("在系统照片中选自定义顺序。用有醒目编号的 20 张测试照片核对下方位置与编号，独立填比较表。移动五张后重新读取。两种读取方式分别测试。")
-                Text("受限权限、智能/共享相簿和系统图库视图不属于全相簿通过范围。")
+            Section("确认顺序") {
+                Text("打开系统“照片”，选择自定义顺序，再和下面的缩略图从第 1 张开始逐张核对。移动几张照片后重新读取即可再次确认。")
+                Text("相册顺序以系统照片为准；这里只显示读取到的结果。")
             }
-            Section("原始资源 · 以本次校验结果为准") {
-                Button("导出原始资源到本机暂存") { showOriginalExport = true }
+            Section("保存照片") {
+                Button("开始保存到 Mac") { showOriginalExport = true }
                     .disabled(library.authorization != .authorized)
-                Text("全部资源逐项 SHA-256；不转码、不改内部元数据。完整照片往返尚未验证。")
+                Text("完整保存原图和 Live Photo，不压缩、不改变照片里的拍摄信息。")
             }
-            Section("相簿标识") { Text(collection.localIdentifier).font(.caption.monospaced()).textSelection(.enabled) }
-            ForEach(Array(assets.enumerated()), id: \.element.localIdentifier) { index, asset in
-                HStack(alignment: .top) {
-                    AssetThumbnail(asset: asset).frame(width: 72, height: 72).clipShape(RoundedRectangle(cornerRadius: 12))
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(String(format: "%04d", index + 1)).font(.headline.monospacedDigit())
-                        Text(asset.localIdentifier).font(.caption.monospaced()).textSelection(.enabled)
-                        if let date = asset.creationDate { Text(date, style: .date).font(.caption).foregroundStyle(.secondary) }
+            Section("照片顺序") {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 4)], spacing: 4) {
+                    ForEach(Array(assets.enumerated()), id: \.element.localIdentifier) { index, asset in
+                        NavigationLink {
+                            AssetDetailView(asset: asset, ordinal: index + 1)
+                        } label: {
+                            ZStack(alignment: .bottomLeading) {
+                                AssetThumbnail(asset: asset)
+                                    .frame(height: 104)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                Text(String(format: "%04d", index + 1))
+                                    .font(.caption2.monospacedDigit().weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6).padding(.vertical, 4)
+                                    .background(.black.opacity(0.58), in: Capsule())
+                                    .padding(6)
+                            }
+                        }
+                        .buttonStyle(.plain)
                     }
-                }.accessibilityElement(children: .combine)
+                }
+                Text("点按照片查看详情。编号就是它在相册中的位置。")
+                    .font(.caption).foregroundStyle(.secondary)
             }
-        }.navigationTitle(collection.localizedTitle ?? "相簿诊断")
+            DisclosureGroup("查看详细信息") {
+                Text("相册内部编号").font(.caption).foregroundStyle(.secondary)
+                Text(collection.localIdentifier).font(.caption.monospaced()).textSelection(.enabled)
+                ForEach(Array(assets.enumerated()), id: \.element.localIdentifier) { index, asset in
+                    HStack(alignment: .top) {
+                        Text(String(format: "%04d", index + 1)).font(.caption.monospacedDigit())
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(asset.localIdentifier).font(.caption.monospaced()).textSelection(.enabled)
+                            if let date = asset.creationDate { Text(date, style: .date).font(.caption).foregroundStyle(.secondary) }
+                        }
+                    }.accessibilityElement(children: .combine)
+                }
+            }
+        }.navigationTitle(collection.localizedTitle ?? "相册详情")
             .sheet(isPresented: $showOriginalExport) { OriginalExportView(collection: collection) }
             .task { reload() }.onChange(of: mode) { _ in reload() }
             .onChange(of: scene) { if $0 == .active { reload() } }
@@ -243,5 +256,42 @@ struct AlbumProbeView: View {
             let url = dir.appendingPathComponent("order-probe.json")
             try snapshot.json().write(to: url, options: .withoutOverwriting); exportURL = url
         } catch { self.error = error.localizedDescription }
+    }
+}
+
+struct AssetDetailView: View {
+    let asset: PHAsset
+    let ordinal: Int
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                AssetThumbnail(asset: asset)
+                    .frame(maxWidth: .infinity).frame(height: 340)
+                    .clipShape(RoundedRectangle(cornerRadius: 24))
+                Text(String(format: "第 %d 张", ordinal)).font(.title2.bold())
+                if let date = asset.creationDate {
+                    Label(date.formatted(date: .complete, time: .shortened), systemImage: "calendar")
+                        .foregroundStyle(.secondary)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("照片文件")
+                        .font(.headline)
+                    ForEach(Array(PHAssetResource.assetResources(for: asset).enumerated()), id: \.offset) { index, resource in
+                        HStack {
+                            Text("\(index + 1)").font(.caption.monospacedDigit())
+                            Text(resource.originalFilename).lineLimit(1)
+                            Spacer()
+                            Text(resource.type == .photo ? "照片" : "配套文件").font(.caption).foregroundStyle(.secondary)
+                        }
+                        .font(.subheadline)
+                    }
+                }
+                Text("这些是照片包含的文件。保存时会逐个检查，确保没有缺少。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(20)
+        }
+        .navigationTitle("照片详情")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

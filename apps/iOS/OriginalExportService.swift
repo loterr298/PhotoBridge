@@ -11,6 +11,7 @@ struct StagingCandidate: Identifiable {
     @Published var busy = false
     @Published var message = "尚未导出"
     @Published var resourcesCompleted = 0
+    @Published var totalResources = 0
     @Published var bytesCompleted = 0
     @Published var reusedResources = 0
     @Published var photoKitResourcesRead = 0
@@ -64,7 +65,7 @@ struct StagingCandidate: Identifiable {
     }
     func start(collection: PHAssetCollection, allowNetwork: Bool, resumeSession: String? = nil, stopAfterResources: Int? = nil) async {
         guard !busy else { return }
-        busy = true; stopRequested = false; resourcesCompleted = 0; bytesCompleted = 0
+        busy = true; stopRequested = false; resourcesCompleted = 0; totalResources = 0; bytesCompleted = 0
         reusedResources = 0; photoKitResourcesRead = 0; sessionName = nil
         defer { busy = false }
         var directory: URL?; var previous: URL?; var previousDigest: String?
@@ -86,6 +87,7 @@ struct StagingCandidate: Identifiable {
             try checkPermission()
             let captured = try capture(collection); let sources = captured.assets
             guard !sources.isEmpty else { throw ExportError.invalidManifest("相簿为空或不可访问") }
+            totalResources = sources.reduce(0) { $0 + $1.resources.count }
             let name = captured.name
             var snapshot = OrderSnapshot(albumName: name, albumIdentifier: collection.localIdentifier,
                 authorization: "full", fetchMode: "nil-options", identifiers: sources.map(\.identifier),
@@ -127,7 +129,7 @@ struct StagingCandidate: Identifiable {
                     let relative = ResourcePaths.make(ordinal: index + 1, resourceIndex: resourceIndex + 1, originalFilename: resource.originalFilename)
                     let completed: ExportResource
                     if let cached = reusable[relative], let previous {
-                        message = "正在校验并复用第 \(index + 1) 项已完成资源"
+                        message = "正在准备第 \(index + 1) 张照片"
                         try await Task.detached(priority: .utility) { try StagingResume.copy(cached, from: previous, to: dir) }.value
                         completed = cached
                     } else {
@@ -137,7 +139,7 @@ struct StagingCandidate: Identifiable {
                         guard !FileManager.default.fileExists(atPath: part.path), !FileManager.default.fileExists(atPath: destination.path) else {
                             throw ExportError.invalidManifest("暂存路径冲突，停止以避免覆盖")
                         }
-                        message = "正在读取第 \(index + 1)/\(sources.count) 项，第 \(resourceIndex + 1)/\(resources.count) 个资源"
+                        message = "正在保存第 \(index + 1)/\(sources.count) 张照片，第 \(resourceIndex + 1)/\(resources.count) 个文件"
                         let options = PHAssetResourceRequestOptions(); options.isNetworkAccessAllowed = allowNetwork
                         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                             PHAssetResourceManager.default().writeData(for: resource, toFile: part, options: options) { error in
@@ -184,18 +186,18 @@ struct StagingCandidate: Identifiable {
             try manifest.json().write(to: manifestPart, options: .withoutOverwriting)
             try StagingFiles.commit(part: manifestPart, destination: dir.appendingPathComponent("album-order.json"))
             try journal("STAGED")
-            message = "本机暂存完成：\(sources.count) 项、\(resourcesCompleted) 个资源；复用 \(reusedResources) 个，重新读取 \(photoKitResourcesRead) 个。USB 复制与校验尚未执行。"
+            message = "保存完成：\(sources.count) 张照片，\(resourcesCompleted) 个文件已检查。等待 Mac 保存。"
         } catch {
             let e = error as NSError; let detail = "\(e.domain) / \(e.code)：\(e.localizedDescription)"
             try? journal(stopRequested ? "STOPPED" : "FAILED", error: detail)
-            message = "未完成：\(detail)。已完成和部分暂存均保留；可刷新未完成会话继续。旧版无检查点会话不能继续，原件在 iCloud 时可能需要显式开启下载。"
+            message = "没有完成：\(detail)。已完成和部分暂存均保留；可以查找上次进度继续。旧版本的备份不能继续，云端原图可能需要打开下载选项。"
         }
     }
     private func checkPermission() throws {
         try PhotoOperationChecks.requireFullAccess()
     }
     private func checkStopAndPermission() throws {
-        if stopRequested || Task.isCancelled { throw ExportError.invalidManifest("已在资源边界停止；旧会话保留，可刷新后继续到新会话") }
+        if stopRequested || Task.isCancelled { throw ExportError.invalidManifest("已暂停，之前的进度已保留，可以查找后继续") }
         try checkPermission()
     }
 }

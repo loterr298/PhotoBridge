@@ -2,24 +2,24 @@ import SwiftUI
 import PhotoBridgeCore
 
 struct USBProbeView: View {
-    @State private var status = "尚未执行双向 USB 校验"
+    @State private var status = "还没有进行连接检查"
     @State private var busy = false
     var body: some View {
         NavigationStack {
             Form {
-                Section("USB / AFC 真机探针") {
-                    Text("链路由 Mac 检测 · 本页不显示实时连接状态")
-                    Text("生成的是随机测试数据，不读取照片。每次约占 100 MiB，测试文件保留，可在文件 App 手动清理。")
-                    Button("生成 iPhone → Mac 100 MiB 文件") { generate() }.disabled(busy)
-                    Button("校验 Mac → iPhone 收件文件") { validate() }.disabled(busy)
+                Section("连接帮助") {
+                    Text("这里可以检查数据线和 Mac 是否能正常传输文件，不会读取或修改照片。")
+                    Text("测试文件约占 100 MB。完成后可在“文件”App 中删除测试文件。")
+                    Button("生成连接测试文件") { generate() }.disabled(busy)
+                    Button("检查 Mac 发来的文件") { validate() }.disabled(busy)
                     if busy { ProgressView() }
                     Text(status).textSelection(.enabled)
                 }
-                Section("真 USB 验证方法") {
-                    Text("连接并信任 Mac，关闭两端 Wi-Fi 及 iPhone 个人热点。Mac 脚本只选择 USB 设备。先下载 Outbox 探针，再上传另一份到 Inbox，最后点校验。")
-                    Text("沙盒文件 hash 通过仅验证数据通道；原图、PhotoKit 导回及相簿恢复仍待下一阶段。")
+                Section("怎么使用") {
+                    Text("用数据线连接 iPhone，解锁后点“信任”。如果连接不稳定，暂时关闭 Wi-Fi 和个人热点，再重新检查。")
+                    Text("这项检查只确认文件传输正常，不代表照片备份已经完成。")
                 }
-            }.navigationTitle("传输诊断")
+            }.navigationTitle("连接帮助")
         }
     }
     private func generate() {
@@ -32,10 +32,10 @@ struct USBProbeView: View {
                     try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
                     let receipt = try ProbeFiles.generate(at: dir.appendingPathComponent("probe.bin"), origin: "iPhone")
                     try JSONEncoder().encode(receipt).write(to: dir.appendingPathComponent("receipt.json"), options: .withoutOverwriting)
-                    return "已生成：\(dir.lastPathComponent)\n100 MiB · SHA-256 \(receipt.sha256)\n仅本机生成，USB 待测"
+                    return "测试文件已准备好：\(dir.lastPathComponent)\n约 100 MB，等待 Mac 检查"
                 }.value
                 status = message
-            } catch { status = "失败：\(error.localizedDescription)" }
+            } catch { status = "没有完成：\(error.localizedDescription)" }
             busy = false
         }
     }
@@ -56,7 +56,7 @@ struct USBProbeView: View {
                             }
                             let actual = try ProbeFiles.inspect(dir.appendingPathComponent("probe.bin"))
                             let match = actual.sha256 == expected.sha256 && actual.byteCount == expected.byteCount
-                            let text = "\(dir.lastPathComponent): \(match ? "HASH_PASS" : "HASH_FAIL") · \(actual.byteCount) bytes\n\(actual.sha256)"
+                            let text = "\(dir.lastPathComponent)：\(match ? "检查通过" : "检查失败")"
                             let record = ["result": match ? "HASH_PASS" : "HASH_FAIL", "sha256": actual.sha256,
                                           "byteCount": String(actual.byteCount), "usbPhysicalTest": "requires Wi-Fi-off external evidence"]
                             let output = dir.appendingPathComponent("iphone-readback-\(UUID().uuidString).json")
@@ -66,7 +66,7 @@ struct USBProbeView: View {
                     }
                     return reports.isEmpty ? "没有 Mac 收件测试文件" : reports.joined(separator: "\n\n")
                 }.value
-            } catch { status = "未完成：\(error.localizedDescription)" }
+            } catch { status = "没有完成：\(error.localizedDescription)" }
             busy = false
         }
     }
