@@ -42,7 +42,9 @@ bash scripts/verify-delivery.sh
 
 删除了重复的功能介绍、泛化的“传输”页面和不必要的高级入口。两端的底层续传、校验和原顺序逻辑保持不变。
 
-本地验证：iOS/Intel Swift 语法解析通过，Intel x86_64 打包通过，Python 63 项测试通过，`git diff --check` 通过；新的云编译待本轮提交后取得。
+本地验证：iOS/Intel Swift 语法解析通过，Intel x86_64 打包通过，Python 63 项测试通过，`git diff --check` 通过；GitHub Actions #72 已完成本轮云构建。
+
+本轮核心流程包：iPhone IPA SHA-256 `f883dfcdcf82463ce5039e1817a3c45e8615ab9f984558672f1ae73679575976`；Intel Mac ZIP SHA-256 `c5dab0790f15e7b290e74d794e790202d8d10ee46a2a56575482876cc9e6fff2`；artifact digest `sha256:7a4022f05fa5cf53989e0a522ab9a11c9d578f42a90f9bd75e8b43242e0fd845`。
 
 ### M4.13 卡片亮度微调（2026-10-24）
 
