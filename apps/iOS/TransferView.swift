@@ -44,90 +44,50 @@ final class TransferHistoryModel: ObservableObject {
 }
 
 struct TransferView: View {
-    @EnvironmentObject private var library: LibraryProbe
     @Environment(\.scenePhase) private var scene
     @StateObject private var history = TransferHistoryModel()
-
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 14) {
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("传输").font(.largeTitle.bold())
-                            Text("把照片保存到 Mac，随时可以继续")
-                                    .foregroundStyle(.secondary)
+            ZStack {
+                BridgeBackground()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        VStack(alignment: .leading, spacing: 7) {
+                            Text("传输").font(.system(size: 34, weight: .bold, design: .rounded)).foregroundStyle(Color.bridgeInk)
+                            Text("查看正在保存和已经保存的照片").foregroundStyle(.secondary)
+                        }
+                        BridgeCard {
+                            HStack(spacing: 14) {
+                                BridgeIconCircle(systemImage: "arrow.left.arrow.right", tint: .bridgeBlue)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("USB 传输").font(.headline)
+                                    Text("iPhone 和 Mac 之间直接传输，不经过云端").font(.subheadline).foregroundStyle(.secondary)
+                                }
                             }
+                        }
+                        HStack {
+                            Text("最近保存").font(.title2.bold()).foregroundStyle(Color.bridgeInk)
                             Spacer()
-                            Label("等待 Mac 连接", systemImage: "cable.connector")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 10).padding(.vertical, 8)
-                                .background(Color.secondary.opacity(0.1), in: Capsule())
+                            Button("刷新") { history.reload() }.foregroundStyle(Color.bridgeBlue)
                         }
-                        Text("iPhone 先准备照片，Mac 再保存到你选择的文件夹。原照片始终保留。")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                        NavigationLink {
-                            AlbumTransferPicker()
-                        } label: {
-                            Label("备份一个相册", systemImage: "arrow.down.to.line.compact")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        NavigationLink {
-                            BatchExportView()
-                        } label: {
-                            Label("同时备份多个相册", systemImage: "checklist")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                    .padding(22)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 26))
-
-                    HStack {
-                        Text("最近备份").font(.title2.bold())
-                        Spacer()
-                        Button("刷新") { history.reload() }
-                            .font(.subheadline)
-                    }
-                    if history.sessions.isEmpty {
-                        VStack(spacing: 10) {
-                            Image(systemName: "tray")
-                                .font(.title2)
-                                .foregroundStyle(.secondary)
-                            Text("还没有备份")
-                                .font(.headline)
-                            Text("选择一个相册，照片会显示在这里。")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 28)
-                    } else {
-                        LazyVStack(spacing: 12) {
-                            ForEach(history.sessions) { summary in
-                                TransferSessionCard(summary: summary)
+                        if history.sessions.isEmpty {
+                            BridgeCard {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("还没有保存记录").font(.headline)
+                                    Text("在“相册”里选择相册后开始导出。此处会显示真实进度。") .font(.subheadline).foregroundStyle(.secondary)
+                                }
+                            }
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(history.sessions) { summary in TransferSessionCard(summary: summary) }
                             }
                         }
                     }
-
-                    NavigationLink {
-                        USBProbeView()
-                    } label: {
-                        Label("连接帮助", systemImage: "questionmark.circle")
-                    }
-                    .buttonStyle(.bordered)
-                    Text("遇到连接问题？打开连接帮助，按提示检查数据线和信任设置。")
-                        .font(.caption).foregroundStyle(.secondary)
+                    .padding(20)
                 }
-                .padding(20)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("备份")
-            .task { library.reload(); history.reload() }
+            .navigationBarHidden(true)
+            .task { history.reload() }
             .onChange(of: scene) { if $0 == .active { history.reload() } }
         }
     }
@@ -136,31 +96,27 @@ struct TransferView: View {
 struct AlbumTransferPicker: View {
     @EnvironmentObject private var library: LibraryProbe
     var body: some View {
-        List {
-            Section("选择来源相簿") {
-                if library.albums.isEmpty {
-                    Button("读取照片相簿") { Task { await library.request() } }
-                }
-                ForEach(library.albums) { item in
-                    NavigationLink {
-                        OriginalExportView(collection: item.collection)
-                    } label: {
-                        HStack(spacing: 14) {
-                            AssetThumbnail(asset: item.cover)
-                                .frame(width: 64, height: 64)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text(item.collection.localizedTitle ?? "未命名相簿")
-                                    .foregroundStyle(.primary)
-                                Text("\(item.count) 个成员")
-                                    .font(.subheadline).foregroundStyle(.secondary)
+        ZStack {
+            BridgeBackground()
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    if library.albums.isEmpty {
+                        BridgeCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("请允许访问照片").font(.headline)
+                                BridgePrimaryButton(action: { Task { await library.request() } }) { Text("读取相册") }
                             }
                         }
                     }
+                    ForEach(library.albums) { item in
+                        NavigationLink { OriginalExportView(collection: item.collection) } label: { AlbumRow(item: item) }.buttonStyle(.plain)
+                    }
                 }
+                .padding(20)
             }
         }
-        .navigationTitle("选择相簿")
+        .navigationTitle("选择相册")
+        .navigationBarTitleDisplayMode(.inline)
         .task { library.reload() }
     }
 }
@@ -176,43 +132,24 @@ struct TransferSessionCard: View {
         default: return "处理中"
         }
     }
-    private var tint: Color {
-        switch summary.status {
-        case "STAGED", "VERIFIED", "COMMITTED": return .green
-        case "FAILED": return .red
-        default: return .blue
-        }
-    }
+    private var tint: Color { summary.status == "FAILED" ? .red : (summary.status == "STAGED" || summary.status == "VERIFIED" || summary.status == "COMMITTED" ? .green : .bridgeBlue) }
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label(stateLabel, systemImage: summary.status == "FAILED" ? "exclamationmark.triangle" : "arrow.triangle.2.circlepath")
-                    .foregroundStyle(tint)
-                Spacer()
-                Text(String(summary.identifier.prefix(8)))
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-            }
-            if let albumName = summary.albumName, !albumName.isEmpty {
-                Text(albumName).font(.headline)
-            }
-            if summary.totalBytes > 0 {
-                ProgressView(value: summary.fraction)
+        BridgeCard {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text("\(summary.completed)/\(summary.total) 项")
-                    Text("\(ByteCountFormatter.string(fromByteCount: summary.bytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file))")
+                    Label(stateLabel, systemImage: summary.status == "FAILED" ? "exclamationmark.triangle" : "checkmark.circle")
+                        .foregroundStyle(tint)
+                    Spacer()
+                    Text(String(summary.identifier.prefix(8))).font(.caption.monospaced()).foregroundStyle(.secondary)
                 }
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-            } else {
-                Text("已保存 \(summary.completed) 项")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            if let error = summary.error, !error.isEmpty {
-                Text(error).font(.caption).foregroundStyle(.red).lineLimit(2)
+                if let albumName = summary.albumName, !albumName.isEmpty { Text(albumName).font(.headline) }
+                if summary.totalBytes > 0 {
+                    ProgressView(value: summary.fraction).tint(.bridgeBlue)
+                    HStack { Text("\(summary.completed)/\(summary.total) 项"); Spacer(); Text("\(ByteCountFormatter.string(fromByteCount: summary.bytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file))") }
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                } else { Text("已保存 \(summary.completed) 项").font(.caption).foregroundStyle(.secondary) }
+                if let error = summary.error, !error.isEmpty { Text(error).font(.caption).foregroundStyle(.red).lineLimit(2) }
             }
         }
-        .padding(16)
-        .background(.background, in: RoundedRectangle(cornerRadius: 22))
     }
 }
