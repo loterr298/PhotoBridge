@@ -33,6 +33,19 @@ bash scripts/verify-delivery.sh
 
 更新：2026-10-23。历史阶段记录从下方开始。
 
+### M4.12 参考图视觉重做（2026-10-24）
+
+根据 `download.png` 和 `assets/iphone-ui-minimal.png` 的确认稿，双端页面已改为同一套浅蓝、白色半透明卡片和系统圆角视觉：
+
+- iPhone 首页恢复四个用户可见入口：相册、传输、恢复、设置；相册页加入顶部连接状态、设备卡片、开始导出/导入到 iPhone、真实相册封面列表和顺序保留提示。
+- iPhone 传输、恢复、设置页统一卡片间距和文案，隐藏工程编号、诊断术语和底层传输细节；真实进度、失败和可继续状态仍保留。
+- Intel Mac 改为侧栏 + 主内容布局，顶部连接状态卡片，中部“开始导出”和“导入到 iPhone”两个主操作卡片，底部显示真实进度和完整保存路径。
+- 不使用参考图作为静态屏幕，所有封面、数量、状态和进度仍来自 PhotoKit/USB 实际数据。
+
+本地验证：`swiftc -parse apps/iOS/*.swift`、`swiftc -parse Sources/PhotoBridgeMac/PhotoBridgeMac.swift`、`swift build --product PhotoBridgeMac`、`bash scripts/build-mac.sh`、Python 63 项测试和 `git diff --check` 均通过。GitHub Actions #61 已完成本轮 iOS arm64 unsigned build、Intel macOS build 和交付闸门。
+
+本轮云包：iOS IPA SHA-256 `1165522352ccdf06748c08d7cf8c095a4cd81177c7e23fe63b669cc8af36748f`；Intel Mac ZIP SHA-256 `d6529897e16a4f9c704b9f859252ad7e30ef06279d6655c5145fbc6181947e86`；artifact digest `sha256:8e5e95327dd6691dc906151d75537d5d374ca9fe24ba8d4f7d6aeeebcd0f710d`。
+
 ### M4.11 面向最终用户的双端交付收口（2026-10-24）
 
 本轮根据实际使用反馈，产品界面只保留两条主流程：
