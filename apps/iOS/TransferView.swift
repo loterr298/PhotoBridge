@@ -94,7 +94,18 @@ struct TransferView: View {
                             .font(.subheadline)
                     }
                     if history.sessions.isEmpty {
-                        ContentUnavailableView("还没有备份", systemImage: "tray", description: Text("选择一个相册，照片会显示在这里。"))
+                        VStack(spacing: 10) {
+                            Image(systemName: "tray")
+                                .font(.title2)
+                                .foregroundStyle(.secondary)
+                            Text("还没有备份")
+                                .font(.headline)
+                            Text("选择一个相册，照片会显示在这里。")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 28)
                     } else {
                         LazyVStack(spacing: 12) {
                             ForEach(history.sessions) { summary in
