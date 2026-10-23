@@ -89,7 +89,7 @@ final class MacTransferModel: ObservableObject {
         userMessage = "正在把照片保存到你选择的文件夹…"
         runScript("album_export.py", arguments: ["download", "--remote", "Exports/\(selectedSession)", "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
-            self?.userMessage = result.success ? "已保存到：\(folder.lastPathComponent)" : "保存没有完成，请重新连接 iPhone 后继续。"
+            self?.userMessage = result.success ? "已保存到：\(folder.path)" : "保存没有完成，请重新连接 iPhone 后继续。"
             if result.success { self?.loadPreview(from: folder) }
         }
     }
@@ -103,7 +103,7 @@ final class MacTransferModel: ObservableObject {
         userMessage = "正在继续保存…"
         runScript("album_resume.py", arguments: ["--remote", "Exports/\(selectedSession)", "--from-directory", previous.path, "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
-            self?.userMessage = result.success ? "已保存到：\(folder.lastPathComponent)" : "继续保存没有完成，请重试。"
+            self?.userMessage = result.success ? "已保存到：\(folder.path)" : "继续保存没有完成，请重试。"
             if result.success { self?.loadPreview(from: folder) }
         }
     }
