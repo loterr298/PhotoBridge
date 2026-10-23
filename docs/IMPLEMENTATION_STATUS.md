@@ -592,3 +592,12 @@ iPhone 首页状态文案明确为“未连接 · USB 由 Mac 检测”，设备
 - `PhotoBridgeOrderProbe-unsigned.app.zip`：`e859d8268523da8b488cc525991a25e2eb3c1633fe8211f277329cd2186c97e1`
 
 IPA 仍是 unsigned，需要用户自己的 Apple ID 签名；Mac 包为 Intel x86_64。云端检查通过不等于已完成真机视觉验收，真机仍需安装本包后按文档验收。
+
+### M4.8 交付收口修复（2026-10-24）
+
+恢复页验收卡已改为依据真实恢复完成状态显示“已完成”和“顺序已恢复”，不再依赖已经移除的旧提示文本。iOS 源 Info.plist 统一为用户看到的 `PhotoBridge`、0.3.8/build12；CI 增加编译后显示名称断言。源码解析、CoreChecks 11、StagingChecks 23、RecoveryChecks 57、Python 63 和 Intel x86_64 构建均通过。
+
+远程 Actions #36（run `40001623654`）成功，提交 `322e61a900b251aed9bee40d82c0541d4cd6f88f`。最新云包归档 digest：`sha256:c87203594569ca378afb9b1ed351885922a4e656b826c2eddfa3c1b7096fc4a6`。
+
+- `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`51a8204d04318823cc5f2f85a7e76b8c0a8bb9122c76852287ad74360c051082`
+- `PhotoBridgeMac-Intel.zip`：`4467e6074384333d6ad3c80dfb0290dabd3c67de4c869f73f80252a1ed6367d8`
