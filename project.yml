@@ -19,6 +19,8 @@ targets:
         excludes: [PrivacyInfo.xcprivacy]
       - path: apps/iOS/PrivacyInfo.xcprivacy
         buildPhase: resources
+    resources:
+      - path: apps/iOS/Assets.xcassets
     dependencies:
       - package: PhotoBridge
         product: PhotoBridgeCore
@@ -29,6 +31,7 @@ targets:
         TARGETED_DEVICE_FAMILY: '1,2'
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         MARKETING_VERSION: 0.3.8
         CURRENT_PROJECT_VERSION: 12
 schemes:
