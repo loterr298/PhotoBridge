@@ -1,6 +1,37 @@
 # 实施状态记录
 
-更新：2026-10-19。**M0 取得限定设备的人工顺序及合成 USB 通过证据。M1 0.2.0 实编译通过，但首次原图真机测试暴露硬链接 AFC 问题；0.2.1 已修复代码，仍需新包设备验证。原图与恢复尚未验收，详见文末。**
+## 当前交付快照（2026-10-23）
+
+这是仓库当前源码的最新状态摘要；下面的历史记录保留每个阶段的原始证据，不能覆盖本节结论。
+
+| 范围 | 当前状态 | 证据边界 |
+|---|---|---|
+| iOS SwiftUI 用户端 | **代码已实现，可生成未签名 iOS 包** | PhotoKit 相簿读取、原始资源暂存、SHA-256、断点恢复、PhotoKit 回写、权限/空间/时间策略均有真实实现；当前分支的完整 Xcode 编译仍需 GitHub Actions 或安装 Xcode 的机器 |
+| Intel macOS 用户端 | **代码已实现，可生成 x86_64 App** | `scripts/build-mac.sh` 会打包 AFC/House Arrest、PTP 诊断、下载/上传/续传、原子校验和进度 UI |
+| 自动化验证 | **本地可执行** | `bash scripts/verify-delivery.sh` 运行 Swift Package、CoreChecks、StagingChecks、RecoveryChecks、Python 测试、iOS Swift 语法解析和 Intel 打包；报告写入 `build/verification/delivery-gate.json` |
+| 真机与系统 Photos 验收 | **按证据分级，不能扩大宣称** | 已有目标设备的限定范围顺序、USB 合成探针和部分原始资源/恢复证据；HEIC/PNG/RAW/DNG、大批量、macOS 13/14、签名安装和异常注入仍需对应设备日志 |
+| 云编译 | **最近一次记录为远程 main 的基线构建** | Actions #28 成功，但源码 commit `4b22c46` 早于当前本地提交；没有把它当作当前 UI 的编译证据。当前分支无法从本机 Git CLI 推送（无 GitHub CLI 凭据） |
+
+可交付文件：本地 `build/PhotoBridgeMac-Intel.zip`；iOS 需要 Actions 生成 unsigned IPA 后用用户自己的 Apple ID 签名。未签名 IPA 不能直接安装。真机未覆盖的项目在 UI 和文档中保持“待验证”，不会显示“已通过”。
+
+### M4.6 面向用户的界面文案收口（2026-10-23）
+
+根据最新交付审查，iPhone 和 Intel Mac 的主流程已改为普通用户语言：
+
+- “备份相册 / 保存到 Mac / 继续上次保存 / 恢复到新相册 / 连接帮助”成为主要动作；USB、AFC、PhotoKit、SHA-256、localIdentifier 等工程词移到详细信息或高级设置。
+- iPhone 的连接、保存、恢复、暂停、失败和完成状态都改为“发生了什么 + 下一步怎么做”的短句；相册编号和内部标识只在“查看详细信息”中显示。
+- Mac 端把“检测 USB、收件会话、真实输出、续传”改成连接、手机备份、详细信息和继续上次保存；底层日志仍保留，方便排查但不打扰日常使用。
+- 本轮 `swiftc -parse apps/iOS/*.swift`、`swift build --product PhotoBridgeMac`、Python 63 项、CoreChecks 49 项、StagingChecks 23 项、RecoveryChecks 57 项均通过。
+
+本次总门禁命令：
+
+```bash
+bash scripts/verify-delivery.sh
+```
+
+只有没有 Xcode 的环境可使用 `bash scripts/verify-delivery.sh --core-only`；这不会绕过测试，只跳过本地 Intel 打包。GitHub Actions 会执行同一门禁的 `--core-only` 模式，再执行实际 iOS device build 和 Intel package build。
+
+更新：2026-10-23。历史阶段记录从下方开始。
 
 规格包从 `/Users/l/Downloads/PhotoBridge-AI-Project` 导入当前工作区 `PhotoBridge/`，原包未改动。私有 GitHub 仓库：[loterr298/PhotoBridge](https://github.com/loterr298/PhotoBridge)。
 
@@ -47,6 +78,8 @@
 5. CI 存在 actions v4 的 Node 20 弃用提示，runner 强制使用 Node 24；目前构建成功，完整警告保留日志。
 
 ## 设备待验证 / 后续阶段
+
+下表是当时闸门的原始快照，保留用于审计历史；当前源码的逐项结论以 [FINAL_DELIVERY_AUDIT.md](FINAL_DELIVERY_AUDIT.md) 和本文件顶部“当前交付快照”为准。
 
 | 验收 | 状态 |
 |---|---|
@@ -483,3 +516,79 @@ Mac SwiftUI 已从只读说明页升级为可操作的传输工作台：可在 A
 iPhone 首页补充真实状态边界、原图只读与 SHA-256 提示，并提供“读取照片相簿”和进入恢复页的主要入口；不在手机端虚构 USB 已连接。现有相簿顺序诊断、原始资源导出、预检和恢复逻辑保持不变。SwiftUI 源码解析、57 Python、57 RecoveryChecks、15 CoreChecks、23 StagingChecks 与 Intel x86_64 release 构建通过；iOS 完整编译仍交由下一次 Actions。M4 尚未完成：批量选择/速度图表、macOS 13/14 实机兼容、所有格式压力测试和最终视觉验收。
 
 M4 云编译验证：iPhone 首页提交 `f4640d7f48c9e77c9eb86183f766acb88cbdb334` 的 Actions #25 成功，run `39819409819`，耗时 1m16s，artifact `12443921629`，digest `sha256:aafb694d01c7983301fa28b4efc0497659be246100ba4e716ebbaa2f42e59e0c`。Mac 传输工作台提交 `b6fae79db6ec4d508296f42ba39c96c477def0d4` 的 Actions #26 成功，run `39819964248`，耗时 1m19s，artifact `12444076831`，digest `sha256:a97ffbe6f037a12bdc76505a235ae8932b69478ab5285edbca49c89be57659a9`。两次均执行 iOS unsigned build、Swift/Python 检查、Mac x86_64 build 和包内断言；警告仍只有 Actions 的 Node.js 20 弃用和 macOS arm64 runner 容量提示。
+
+### M4.1 成品审计与真实传输进度补齐（当前工作区）
+
+重新按 `AGENTS.md`、`PROJECT_PROMPT.md`、`docs/UI_DESIGN.md` 和验收矩阵审计后，确认当前产品仍有明确边界：PhotoKit 顺序诊断、原始资源清单/SHA-256、AFC 双向样本、5 秒文件系统时间、受控续传和 3-Live Photo 恢复样本已有真实证据；但双端还不是完整的一体化传输产品。iPhone“传输”页仍是合成 USB 探针，Mac 端此前只能等待一次性脚本结束，缺少实时字节/速度/剩余时间；批量相簿选择、传输历史、暂停/取消、PNG/RAW/大规模压力、macOS 13/14 真机和最终视觉验收仍未完成。上述缺口不能用 M4 云构建成功替代。
+
+本轮先修复最直接的成品缺口，同时保持数据路径不变：新增 `scripts/transfer_progress.py` 的真实进度计算；`album_export.py` 和 `album_restore.py` 在原子进度日志中记录总资源/总字节、当前资源、已校验字节、真实吞吐和可计算时的 ETA；Mac SwiftUI 在下载或上传运行期间轮询这些日志，显示真实进度、速度、当前资源和剩余时间，无法测量时显示“测量中/待测量”，不填随机值。未新增删除、覆盖、媒体转码或 EXIF/GPS/MakerNotes 写入路径。
+
+验证：本机 Python **59 项**通过；`CoreChecks` 11、`StagingChecks` 23、`RecoveryChecks` 57 通过；Intel `PhotoBridgeMac` x86_64 release 构建、严格签名和打包通过。新 Mac 包尚未经过 GitHub Actions 云构建和用户真机视觉验收，不能标记 M4 完成。下一步仍是将该进度状态接入 iPhone 的真实导出页，并补传输取消/安全停止、批量选择和历史记录，再做新的云包与最小真机复验。
+
+### M4.2 iPhone 真实传输任务中心（当前工作区）
+
+将 iPhone 底部“传输”页从合成 USB 探针改为真实本机暂存任务中心：读取 `Documents/Exports/<session>` 的 `export-progress.json` 和最终 `album-order.json`，展示已完成资源、总资源、字节进度、错误和会话前缀；从任务中心选择真实 PhotoKit 相簿进入原始资源导出。原 USB/AFC 合成文件探针保留为单独“USB / AFC 诊断”入口，并明确不代表原图传输。
+
+新增 `TransferSessionSummary`，同时解析 iPhone 的 `resourcesCompleted/bytesCompleted` 和 Mac 的 `resourcesVerified/bytesVerified` 日志；缺少总量时显示待定，不计算虚假百分比。`CoreChecks` 新增两项解析检查，先记录缺失类型的编译 RED，补实现后通过。iOS 源码 parse、Python 59 项和 CoreChecks 均已执行；完整 iOS Xcode 编译、真机安装与视觉验收待下一次云构建，不能标记 M4 完成。
+
+相簿诊断页也补上真实成员网格和点按详情：缩略图来自对应 `PHAsset`，每格保留 PhotoKit 原始返回位置，详情继续显示 `localIdentifier`、创建日期和资源角色；人工顺序核对提示仍明确为待独立观察，不把视觉改动当作验收通过。iOS 源码 parse 已通过，完整 Xcode 编译和最终视觉验收仍待云端与真机。
+
+Mac 传输工作台新增“从旧备份续传”：选择已有未完成目录后，`album_resume.py` 只读验证旧文件并写入新的目标目录，旧目录不覆盖；新目录沿用同一份真实进度日志，USB 断线后的续传能力不再只存在命令行入口。Intel release 构建已重新通过；物理拔线续传仍需真机重新执行，不能用 GUI 编译替代。
+
+M4.3 增加协作式安全停止：Mac 工作台向下载、续传和上传脚本传入一次性取消标记；脚本只在资源边界检查标记，失败现场写为 `STOPPED`，不发布完成清单、不强杀进程、不覆盖旧目录。新增 2 项取消标记检查，当前本机 Python **61 项**通过，Intel x86_64 构建通过。正在写入的单个底层 AFC/PhotoKit 操作仍会先返回或失败后才响应停止；这不是强杀故障验收，物理拔线和系统终止仍需真机测试。
+
+### M4.4 批量相簿导出队列（当前工作区）
+
+iPhone 传输中心新增“批量选择多个相簿”。队列使用 `BatchQueuePlan` 保持用户选择的相簿标识顺序并拒绝空值/重复项，然后逐个调用现有 `OriginalExportService`；每个相簿仍独立生成 PhotoKit 顺序清单、原始资源 SHA-256 和检查点。某个相簿失败或安全停止时队列停止，已完成相簿不回滚，也不会把未处理相簿显示为完成。
+
+新增 3 项 CoreChecks（队列顺序、重复、空队列），本机 Python **61 项**、CoreChecks（含批量队列）和 Intel x86_64 构建通过；iOS 只完成源码 parse，完整 Xcode 编译、批量真机运行和大型队列性能仍待云构建/设备验证。
+
+批量队列页进一步绑定现有 `OriginalExportService` 的真实运行状态：运行期间同步显示当前相簿名、PhotoKit 已读取资源数、字节数和服务原始消息；队列级完成数与资源级进度分开显示。没有新增模拟进度，iOS 完整编译和设备运行仍待云端验证。
+
+Mac 恢复工作台现已同时支持“继续未完成上传”：自动选择备份目录中最近的 `restore-uploads/*.json`，调用已有 `upload_resume.py`，继续前重新验证源清单、已完成文件和部分前缀；上传续传也接受同一安全停止标记并保持 `STOPPED` 日志。Python 61 项和 Intel x86_64 构建通过，物理 USB 上传续传仍以设备证据为准。
+
+任务历史现在从真实 `source-order.json`/`album-order.json` 读取相簿名，批量或单相簿暂存记录不再只显示 UUID 前缀。新增下载取消回归：取消标记在创建本地备份前即停止，绝不产生伪造目录；本机 Python 检查计数更新为 **62 项**。完整 iOS 编译仍待云端。
+
+Mac 工作台记住最近 8 个由用户选择的备份目录（仅本机 UserDefaults 路径），重启后展示目录名，方便继续下载/续传；不保存照片内容、清单或设备标识。Intel 构建重新通过，属于本地用户体验改进，未改变传输安全边界。
+
+iPhone 单相簿导出页现在在 PhotoKit 捕获当前资源目录后计算真实总资源数，显示资源级进度条；相簿为空、权限不足或目录不稳定时仍停止并显示错误，不显示估算百分比。iOS 源码 parse 通过，完整 Xcode/真机验证仍待云端。
+
+恢复页同步显示真实照片事务进度（已提交/总资产），总数来自已校验收件清单；权限、空间或 PhotoKit 事务失败时保持失败现场，不将进度条当作恢复成功。iOS 源码 parse 通过，真实设备验证仍按既有样本边界记录。
+
+补充格式回归覆盖：单个资产可包含 PNG、RAW/DNG 与 MOV 配对资源，清单校验保持同一 `resourceGroupId`、独立资源索引和安全扩展名；新增 Python 检查后本机总计 **63 项**通过。README 增加当前用户端完整操作路径和停止/续传边界。
+
+### M4.5 用户端页面视觉收口（当前工作区）
+
+iPhone 首页状态文案明确为“未连接 · USB 由 Mac 检测”，设备卡增加轻阴影和更清晰的主次操作层级；相簿成员网格收紧为照片式间距并保留动态缩略图。Mac 工作台新增真实下载完成后的备份内容预览表（位置、原始文件名、资源数、大小），只读取已校验的 `album-order.json`，不展示假缩略图或假完成状态。Intel 构建、iOS 源码 parse、Python **63 项**通过；最终 iOS 视觉验收仍需云包和真机。
+
+恢复页新增两个独立验收卡：`文件完整性` 和 `自建相簿顺序`。前者只在真实收件预检或照片库资源回读达到对应状态时改变，后者明确区分 PhotoKit 回读顺序与系统照片人工观察；不再用单一完成文案覆盖未执行的人工核对。
+
+设置页完成产品化：展示真实版本/构建号、原图只读、SHA-256、元数据保护、5 秒逻辑时间、权限和签名边界，并提供 USB/AFC 诊断入口。固定安全策略使用说明卡而非无效开关；iOS 源码 parse 和 Python 63 项通过。
+
+### 最终交付闸门（2026-10-23）
+
+| 项目 | 当前状态 | 证据/剩余动作 |
+| --- | --- | --- |
+| 本地 iOS 用户界面 | **代码完成，待云编译** | 相册、传输、批量导出、恢复双状态、设置页均为真实 SwiftUI；本机 `swiftc -parse apps/iOS/*.swift` 通过。 |
+| 本地 Mac 用户界面 | **已构建** | 真实 USB/AFC、进度/速度/ETA、安全停止、下载/上传续传、备份内容预览；Intel x86_64 包已生成。 |
+| 自动化检查 | **通过** | Python 63 项；CoreChecks、StagingChecks、RecoveryChecks 持续通过。 |
+| GitHub Actions 当前源码 | **阻塞** | 本机没有 Xcode，且 Git HTTPS/CLI 没有写入凭据；当前本地提交 `68468e2` 尚未进入 `main`，不能把旧的 0.3.8 云包当作本轮 UI 包。 |
+| iOS 签名 IPA | **待云包** | 云端 unsigned IPA 仍需用户 Apple ID 个人签名；仓库不保存证书或密码。 |
+| 真机最终视觉验收 | **待安装当前云包** | 需要安装包含本轮 UI 的新包后检查窄屏、动态字体、VoiceOver、暗色模式和真实任务状态。 |
+| 广泛设备验收 | **未完成** | PNG/RAW/DNG 真实资源、万张压力、macOS 13/14、Photos 提交中强杀、iCloud/磁盘故障仍需对应设备和样本。 |
+
+因此当前“完整成品”还差一个外部交付闭环：推送 `68468e2`（及其父提交）到 GitHub `main` → Actions 云编译 → 下载新 IPA/Mac 包 → 个人签名安装 → 最小真机视觉复验。代码端不再需要用户逐步操作才能继续开发；这些剩余项分别受 GitHub 写权限、Apple 签名和真实设备状态限制。
+
+已手动触发远端 Actions #28：run `39952582245`，状态 **Success**，耗时 1 分 16 秒，远端提交为 `4b22c46`。该 run 的 iOS unsigned build、Swift/Python 检查和 Intel Mac 构建均完成；GitHub 仅报告 Node.js 20 弃用和 macOS arm64 runner 容量提示。由于本机最新提交 `252cdb8` 尚未推送，#28 只能作为远端基线构建证据，不能作为本轮最新 UI 交付包。
+
+### M4.7 云编译交付（2026-10-24）
+
+已将 iOS 16 兼容修复提交到远程 `main`（GitHub commit `6f5f4778985058089d8457101671ffa9d059bbeb`）。GitHub Actions run **#32**（`39998331913`）完成且成功，包含 Xcode iOS 真机目标编译、Intel x86_64 Mac 构建及自动化检查。云端产物归档摘要：`sha256:5a1a97f71b7b938962dd3acb77696c422549b670935cdcd4b2b0f7373b4196ff`。
+
+云端归档内的可交付文件：
+
+- `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`6b967dac62ce7d60ecfe8cbae070fa6f910e2612b0c1a69e905f367595a3977f`
+- `PhotoBridgeMac-Intel.zip`：`99266db8fe9c0def3dfb2992b9ba8cd3a930e68ef5644c284c10cffda09dcf12`
+- `PhotoBridgeOrderProbe-unsigned.app.zip`：`e859d8268523da8b488cc525991a25e2eb3c1633fe8211f277329cd2186c97e1`
+
+IPA 仍是 unsigned，需要用户自己的 Apple ID 签名；Mac 包为 Intel x86_64。云端检查通过不等于已完成真机视觉验收，真机仍需安装本包后按文档验收。
