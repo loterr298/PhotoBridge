@@ -39,6 +39,10 @@ jobs:
             ACTUAL_SDK=$(xcrun --sdk iphoneos --show-sdk-version)
             python3 -c 'import sys; assert int(sys.argv[1].split(".")[0]) >= int(sys.argv[2]), "Requested SDK unavailable"' "$ACTUAL_SDK" "$MINIMUM_SDK"
           fi
+      - name: Run reproducible delivery gate
+        run: |
+          set -o pipefail
+          bash scripts/verify-delivery.sh --core-only 2>&1 | tee build/logs/delivery-gate.log
       - name: Unit tests
         run: |
           set -o pipefail
@@ -65,7 +69,7 @@ jobs:
           import pathlib, plistlib
           app = pathlib.Path('build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app')
           info = plistlib.loads((app / 'Info.plist').read_bytes())
-          expected = {'CFBundleShortVersionString': '0.3.8', 'CFBundleVersion': '12', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
+          expected = {'CFBundleDisplayName': 'PhotoBridge', 'CFBundleShortVersionString': '0.3.8', 'CFBundleVersion': '12', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
           for key, value in expected.items():
               assert info.get(key) == value, f'Invalid compiled Info.plist: {key}'
           privacy = plistlib.loads((app / 'PrivacyInfo.xcprivacy').read_bytes())
@@ -93,6 +97,7 @@ jobs:
             build/*.zip
             build/*.ipa
             build/SHA256SUMS.txt
+            build/verification/
             build/logs/
             PhotoBridge.xcodeproj/project.pbxproj
           if-no-files-found: error
