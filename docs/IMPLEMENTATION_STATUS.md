@@ -609,3 +609,11 @@ IPA 仍是 unsigned，需要用户自己的 Apple ID 签名；Mac 包为 Intel x
 - 云端归档 digest：`sha256:53fbad07af026f997c92954f732830c266207d601ebb0da247df3f123bc2a47c`
 - `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`df3d21c0156edf7d9a5cab97c74caf4b838e105f265afd90f7e70b985a8a44e1`
 - `PhotoBridgeMac-Intel.zip`：`26e2e6764b758ef354da7d611e4bf406e028777643bd1b9244c91148ea9b11c1`
+
+### M4.10 核心流程收口与大相册稳定性（2026-10-24）
+
+根据真机反馈收口用户端：iPhone 主界面只保留“保存到 Mac”和“恢复到 iPhone”；Mac 主界面只保留“iPhone → Mac”和“Mac → iPhone”，隐藏相机目录、诊断输出、测试暂停和内部清单字段。恢复仍按原相册顺序写入新相册。
+
+导出末尾的内存峰值已修复：`OriginalExportService` 不再把整个相簿的 `ExportAsset` 数组留在内存后一次性编码，而是在每个资源组完成时增量写入 `album-order.json.part`，最后只做原子收尾。保存页明确显示照片暂存在 iPhone 的 PhotoBridge 文件区，Mac 通过“查找手机保存”选择目标文件夹。
+
+本机验证：iOS/macOS Swift 语法解析通过；Intel x86_64 Mac 构建通过；Python 63 项通过。iOS 完整 Xcode 编译和大相册真机复测待下一次云包，不能提前标记设备通过。
