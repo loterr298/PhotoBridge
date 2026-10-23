@@ -8,6 +8,7 @@ APP=build/PhotoBridgeMac.app
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/PhotoBridgeMac" "$APP/Contents/MacOS/PhotoBridgeMac"
 cp apps/macOS/Info.plist "$APP/Contents/Info.plist"
+cp apps/macOS/PhotoBridge.icns "$APP/Contents/Resources/PhotoBridge.icns"
 mkdir -p "$APP/Contents/Resources/scripts"
 cp scripts/*.py scripts/*.sh "$APP/Contents/Resources/scripts/"
 codesign --force --sign - "$APP"
