@@ -340,7 +340,7 @@ private struct MacStatusPill: View {
     var body: some View {
         HStack(spacing: 7) {
             Circle().fill(connected ? .green : .gray.opacity(0.6)).frame(width: 9, height: 9)
-            Text(connected ? "已连接 · USB" : "等待连接").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+            Text(connected ? "已连接 · 数据线" : "等待连接").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(Color(nsColor: .controlBackgroundColor).opacity(0.92), in: Capsule())
@@ -350,111 +350,89 @@ private struct MacStatusPill: View {
 @main
 struct PhotoBridgeMacApp: App {
     @StateObject private var transfer = MacTransferModel()
-    @State private var section = "home"
     var body: some Scene {
         WindowGroup("PhotoBridge") {
-            NavigationSplitView {
-                List(selection: $section) {
-                    Section {
-                        Label("照片传输", systemImage: "photo.on.rectangle.angled").tag("home")
-                        Label("iPhone → Mac", systemImage: "arrow.down.to.line.compact").tag("export")
-                        Label("Mac → iPhone", systemImage: "arrow.up.to.line.compact").tag("import")
-                    }
-                    Section("最近保存") {
-                        if transfer.recentBackups.isEmpty { Text("还没有保存记录").foregroundStyle(.secondary) }
-                        else { ForEach(transfer.recentBackups, id: \.self) { path in Text(URL(fileURLWithPath: path).lastPathComponent).tag(path) } }
-                    }
-                }
-                .listStyle(.sidebar)
-                .navigationTitle("PhotoBridge")
-                .frame(minWidth: 210)
-            } detail: {
-                ZStack {
-                    MacBackground()
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 22) {
-                            HStack(alignment: .top) {
-                                VStack(alignment: .leading, spacing: 7) {
-                                    Text("照片传输").font(.system(size: 34, weight: .bold, design: .rounded)).foregroundStyle(Color.macBridgeInk)
-                                    Text("在 iPhone 和 Mac 之间保留原相册顺序").font(.title3).foregroundStyle(.secondary)
+            ZStack {
+                MacBackground()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: 7) {
+                                Text("照片传输").font(.system(size: 34, weight: .bold, design: .rounded)).foregroundStyle(Color.macBridgeInk)
+                                Text("两步完成照片备份和导入").font(.title3).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            MacStatusPill(connected: transfer.usbState == "已连接")
+                        }
+
+                        MacCard {
+                            HStack(spacing: 16) {
+                                MacIconCircle(systemImage: "iphone.gen3", tint: .macBridgeBlue)
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(transfer.usbState == "已连接" ? "iPhone 已连接" : "请连接 iPhone") .font(.title3.weight(.semibold))
+                                    Text(transfer.usbState == "已连接" ? "数据线连接已就绪" : "解锁 iPhone 并点“信任此电脑”") .font(.subheadline).foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                MacStatusPill(connected: transfer.usbState == "已连接")
+                                Button("检查连接") { transfer.discover() }.buttonStyle(.bordered).controlSize(.large)
                             }
-
-                            MacCard {
-                                HStack(spacing: 16) {
-                                    MacIconCircle(systemImage: "iphone.gen3", tint: .macBridgeBlue)
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text(transfer.usbState == "已连接" ? "已连接到 iPhone" : "连接 iPhone 后开始") .font(.title3.weight(.semibold))
-                                        Text(transfer.usbState == "已连接" ? "USB 有线连接" : "解锁 iPhone 并点“信任此电脑”") .font(.subheadline).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Button("检查连接") { transfer.discover() }.buttonStyle(.bordered).controlSize(.large)
-                                }
-                            }
-
-                            HStack(alignment: .top, spacing: 16) {
-                                MacActionCard(title: "开始导出", subtitle: "将 iPhone 相册保存到 Mac", icon: "arrow.down.to.line.compact", tint: .macBridgeBlue) {
-                                    transfer.refreshSessions()
-                                } secondary: {
-                                    if transfer.sessions.isEmpty { Text("先在 iPhone 选择相册并开始准备").font(.caption).foregroundStyle(.secondary) }
-                                    else {
-                                        Picker("手机保存", selection: $transfer.selectedSession) { ForEach(transfer.sessions, id: \.self) { value in Text(String(value.prefix(8))).tag(value) } }
-                                        Button("选择文件夹并保存") { transfer.downloadSelected() }.buttonStyle(.borderedProminent).tint(.macBridgeBlue)
-                                    }
-                                }
-                                MacActionCard(title: "导入到 iPhone", subtitle: "从 Mac 选择照片文件夹", icon: "arrow.up.to.line.compact", tint: .macBridgeBlue) {
-                                    transfer.uploadBackup()
-                                } secondary: {
-                                    Text("按原相册顺序发送，回到 iPhone 完成恢复").font(.caption).foregroundStyle(.secondary)
-                                }
-                            }
-
-                            if transfer.busy {
-                                MacCard {
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack { Text(transfer.progressText).font(.callout.monospacedDigit()); Spacer(); Text(transfer.speedText).font(.caption).foregroundStyle(.secondary) }
-                                        ProgressView(value: transfer.progressFraction).tint(.macBridgeBlue)
-                                        HStack { Text(transfer.etaText).font(.caption).foregroundStyle(.secondary); Spacer(); Button("暂停并保留进度") { transfer.requestCancel() }.buttonStyle(.bordered) }
-                                    }
-                                }
-                            }
-
-                            Text(transfer.userMessage).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
-                            Text("原照片不会删除、覆盖或改变。").font(.caption).foregroundStyle(.secondary)
                         }
-                        .padding(30).frame(maxWidth: 980, alignment: .leading)
-                    }
-                }
-                .onAppear { transfer.discover(); transfer.refreshSessions() }
-            }
-            .frame(minWidth: 940, minHeight: 640)
-        }
-    }
-}
 
-private struct MacActionCard<Secondary: View>: View {
-    let title: String
-    let subtitle: String
-    let icon: String
-    let tint: Color
-    let action: () -> Void
-    let secondary: Secondary
-    init(title: String, subtitle: String, icon: String, tint: Color, action: @escaping () -> Void, @ViewBuilder secondary: () -> Secondary) {
-        self.title = title; self.subtitle = subtitle; self.icon = icon; self.tint = tint; self.action = action; self.secondary = secondary()
-    }
-    var body: some View {
-        MacCard {
-            VStack(alignment: .leading, spacing: 14) {
-                MacIconCircle(systemImage: icon, tint: tint)
-                Text(title).font(.title3.weight(.semibold))
-                Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
-                Button("开始") { action() }.buttonStyle(.borderedProminent).tint(tint).controlSize(.large)
-                secondary
+                        MacCard {
+                            VStack(alignment: .leading, spacing: 14) {
+                                HStack(spacing: 12) {
+                                    Text("1").font(.headline).foregroundStyle(.white).frame(width: 30, height: 30).background(Color.macBridgeBlue, in: Circle())
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("备份 iPhone 照片到 Mac").font(.title3.weight(.semibold))
+                                        Text("先在 iPhone 选择相册并开始备份，再在这里保存到文件夹").font(.subheadline).foregroundStyle(.secondary)
+                                    }
+                                }
+                                Button("查找手机备份") { transfer.refreshSessions() }.buttonStyle(.borderedProminent).tint(.macBridgeBlue).controlSize(.large)
+                                if transfer.sessions.isEmpty {
+                                    Text("还没有找到手机备份").font(.subheadline).foregroundStyle(.secondary)
+                                } else {
+                                    Picker("选择备份", selection: $transfer.selectedSession) {
+                                        ForEach(transfer.sessions, id: \.self) { value in Text("备份 \(value.prefix(8))").tag(value) }
+                                    }
+                                    Button("选择文件夹并保存") { transfer.downloadSelected() }.buttonStyle(.bordered).controlSize(.large)
+                                }
+                            }
+                        }
+
+                        MacCard {
+                            VStack(alignment: .leading, spacing: 14) {
+                                HStack(spacing: 12) {
+                                    Text("2").font(.headline).foregroundStyle(.white).frame(width: 30, height: 30).background(Color.macBridgeBlue, in: Circle())
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("从 Mac 导出到 iPhone").font(.title3.weight(.semibold))
+                                        Text("选择 Mac 上的照片文件夹，按原顺序发送到 iPhone").font(.subheadline).foregroundStyle(.secondary)
+                                    }
+                                }
+                                HStack(spacing: 10) {
+                                    Button("选择文件夹并发送") { transfer.uploadBackup() }.buttonStyle(.borderedProminent).tint(.macBridgeBlue).controlSize(.large)
+                                    Button("继续上次发送") { transfer.resumeUpload() }.buttonStyle(.bordered).controlSize(.large)
+                                }
+                            }
+                        }
+
+                        if transfer.busy {
+                            MacCard {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    HStack { Text("当前进度").font(.headline); Spacer(); Text(transfer.speedText).font(.caption).foregroundStyle(.secondary) }
+                                    ProgressView(value: transfer.progressFraction).tint(.macBridgeBlue)
+                                    HStack { Text(transfer.progressText).font(.callout.monospacedDigit()); Spacer(); Text(transfer.etaText).font(.caption).foregroundStyle(.secondary) }
+                                    Button("暂停并保留进度") { transfer.requestCancel() }.buttonStyle(.bordered)
+                                }
+                            }
+                        }
+
+                        Text(transfer.userMessage).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+                        Text("原照片不会删除、覆盖或改变。").font(.caption).foregroundStyle(.secondary)
+                    }
+                    .padding(30).frame(maxWidth: 900, alignment: .leading)
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minWidth: 760, minHeight: 650)
+            .onAppear { transfer.discover(); transfer.refreshSessions() }
         }
-        .frame(maxWidth: .infinity)
     }
 }
