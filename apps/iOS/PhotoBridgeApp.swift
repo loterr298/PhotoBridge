@@ -7,10 +7,8 @@ import PhotoBridgeCore
     var body: some Scene {
         WindowGroup {
             TabView {
-                AlbumsView().tabItem { Label("相册", systemImage: "photo.on.rectangle") }
-                TransferView().tabItem { Label("备份", systemImage: "arrow.left.arrow.right") }
-                RestoreView().tabItem { Label("恢复", systemImage: "clock.arrow.circlepath") }
-                SettingsView().tabItem { Label("设置", systemImage: "gearshape") }
+                AlbumsView().tabItem { Label("保存到 Mac", systemImage: "arrow.down.to.line.compact") }
+                RestoreView().tabItem { Label("恢复到 iPhone", systemImage: "arrow.up.to.line.compact") }
             }.environmentObject(library)
         }
     }
@@ -70,72 +68,52 @@ enum FetchMode: String, CaseIterable, Identifiable {
 
 struct AlbumsView: View {
     @EnvironmentObject var library: LibraryProbe
-    @Environment(\.scenePhase) private var scene
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("照片传输").font(.largeTitle.bold())
-                                Text("把照片安全保存到 Mac")
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Label("等待连接 Mac", systemImage: "cable.connector")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 8)
-                                .background(Color.secondary.opacity(0.1), in: Capsule())
-                        }
-                        HStack(spacing: 12) {
-                            Label("保留原图", systemImage: "lock.shield")
-                            Label("逐张检查", systemImage: "checkmark.shield")
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        HStack(spacing: 12) {
-                            Button("查看我的相册") { Task { await library.request() } }
-                                .buttonStyle(.borderedProminent)
-                                .controlSize(.large)
-                            NavigationLink("从 Mac 恢复") { RestoreView() }
-                                .buttonStyle(.bordered)
-                                .controlSize(.large)
-                        }
-                        Text("用数据线连接 iPhone 后，Mac 会自动检查连接状态。")
-                            .font(.caption)
+            List {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("保存照片到 Mac").font(.title2.bold())
+                        Text("选择一个相册，照片会按原来的顺序准备好。")
                             .foregroundStyle(.secondary)
+                        Button("允许访问照片") { Task { await library.request() } }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
                     }
-                    .padding(22)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 26))
-                    .overlay(RoundedRectangle(cornerRadius: 26).stroke(Color.white.opacity(0.45)))
-                    .shadow(color: .black.opacity(0.06), radius: 18, y: 8)
-                    Text("我的相册").font(.title.bold())
-                    Text(library.message).font(.subheadline).foregroundStyle(.secondary)
-                    LazyVStack(spacing: 12) {
+                    .padding(.vertical, 8)
+                }
+                Section("选择相册") {
+                    if library.albums.isEmpty {
+                        Text(library.message).foregroundStyle(.secondary)
+                        Button("重新读取相册") { Task { await library.request() } }
+                    } else {
                         ForEach(library.albums) { item in
-                            NavigationLink { AlbumProbeView(collection: item.collection) } label: {
-                                HStack(spacing: 16) {
-                                    AssetThumbnail(asset: item.cover).frame(width: 76, height: 76).clipShape(RoundedRectangle(cornerRadius: 14))
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(item.collection.localizedTitle ?? "未命名相簿").font(.headline).foregroundStyle(.primary)
-                                        Text("\(item.count) 个可见成员").font(.subheadline).foregroundStyle(.secondary)
+                            NavigationLink { OriginalExportView(collection: item.collection) } label: {
+                                HStack(spacing: 14) {
+                                    AssetThumbnail(asset: item.cover)
+                                        .frame(width: 64, height: 64)
+                                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(item.collection.localizedTitle ?? "未命名相册")
+                                            .font(.headline)
+                                        Text("\(item.count) 张照片")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
                                     }
-                                    Spacer(); Image(systemName: "chevron.right").foregroundStyle(.secondary)
-                                }.padding(16).background(.background, in: RoundedRectangle(cornerRadius: 24))
-                            }.buttonStyle(.plain)
+                                }
+                            }
                         }
                     }
-                    Label("照片顺序会按相册原样保存", systemImage: "arrow.up.arrow.down")
+                }
+                Section {
+                    Text("原图不会删除、覆盖或压缩。完成后请在 Mac 上选择保存文件夹。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                }.padding(20)
-            }.background(Color(uiColor: .systemGroupedBackground)).navigationTitle("照片传输")
-                .toolbar { Button("刷新") { library.reload() } }
-                .task { library.reload() }.onChange(of: scene) { if $0 == .active { library.reload() } }
+                }
+            }
+            .navigationTitle("保存到 Mac")
+            .toolbar { Button("刷新") { library.reload() } }
+            .task { library.reload() }
         }
     }
 }

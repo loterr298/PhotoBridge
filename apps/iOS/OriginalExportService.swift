@@ -7,6 +7,42 @@ struct StagingCandidate: Identifiable {
     let capturedAt: Date
 }
 
+/// Writes the manifest incrementally so large albums do not build a second full
+/// copy of every resource in memory at the end of the export.
+private final class StreamingManifestWriter {
+    private let handle: FileHandle
+    private var firstAsset = true
+    private let encoder: JSONEncoder
+
+    init(sessionID: String, sourceOrder: OrderSnapshot, to url: URL) throws {
+        handle = try FileHandle(forWritingTo: url)
+        encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let source = try encoder.encode(sourceOrder)
+        let id = try encoder.encode(sessionID)
+        let prefix = Data("{\"schemaVersion\":\"1.0.0\",\"kind\":\"PhotoBridgeOriginalExport\",\"sessionID\":".utf8)
+        try handle.write(contentsOf: prefix)
+        try handle.write(contentsOf: id)
+        try handle.write(contentsOf: Data(",\"sourceOrder\":".utf8))
+        try handle.write(contentsOf: source)
+        try handle.write(contentsOf: Data(",\"assets\":[".utf8))
+    }
+
+    func append(_ asset: ExportAsset) throws {
+        if !firstAsset { try handle.write(contentsOf: Data(",".utf8)) }
+        firstAsset = false
+        try handle.write(contentsOf: encoder.encode(asset))
+    }
+
+    func finish() throws {
+        try handle.write(contentsOf: Data("],\"status\":\"staged\",\"intervalSeconds\":5,\"timestampScope\":\"new-Mac-copies-filesystem-only\",\"restorationStatus\":\"NOT_RUN: staged resource backup only\"}".utf8))
+        try handle.synchronize()
+        try handle.close()
+    }
+
+    deinit { try? handle.close() }
+}
+
 @MainActor final class OriginalExportService: ObservableObject {
     @Published var busy = false
     @Published var message = "尚未导出"
@@ -120,7 +156,8 @@ struct StagingCandidate: Identifiable {
             let records = dir.appendingPathComponent("asset-records")
             try FileManager.default.createDirectory(at: records, withIntermediateDirectories: false)
             try journal("EXPORTING")
-            var groups: [ExportAsset] = []
+            let manifestPart = dir.appendingPathComponent("album-order.json.part")
+            let manifestWriter = try StreamingManifestWriter(sessionID: session, sourceOrder: snapshot, to: manifestPart)
             for (index, source) in sources.enumerated() {
                 var exported: [ExportResource] = []
                 for resourceIndex in source.resources.indices {
@@ -169,7 +206,7 @@ struct StagingCandidate: Identifiable {
                     mediaSubtypes: source.mediaSubtypes, resources: exported)
                 let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
                 try encoder.encode(group).write(to: records.appendingPathComponent(String(format: "%06d.json", index + 1)), options: .withoutOverwriting)
-                groups.append(group)
+                try manifestWriter.append(group)
             }
             try checkStopAndPermission()
             let checked = try await Task.detached(priority: .utility) { try StagingResume.reusable(in: dir, plan: plan, digest: digest) }.value
@@ -180,10 +217,9 @@ struct StagingCandidate: Identifiable {
             let current = try capture(collection)
             try plan.validateCurrent(albumIdentifier: collection.localIdentifier, albumName: current.name, assets: current.assets, requireEditVersion: resumeSession != nil)
             try checkStopAndPermission()
-            let manifest = AlbumExportManifest(sessionID: session, sourceOrder: snapshot, assets: groups)
-            try journal("READY_TO_COMMIT")
-            let manifestPart = dir.appendingPathComponent("album-order.json.part")
-            try manifest.json().write(to: manifestPart, options: .withoutOverwriting)
+            try journal("FINALIZING_MANIFEST")
+            message = "正在整理保存记录，请不要关闭 App"
+            try manifestWriter.finish()
             try StagingFiles.commit(part: manifestPart, destination: dir.appendingPathComponent("album-order.json"))
             try journal("STAGED")
             message = "保存完成：\(sources.count) 张照片，\(resourcesCompleted) 个文件已检查。等待 Mac 保存。"
