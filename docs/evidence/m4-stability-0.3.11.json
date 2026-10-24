@@ -1,0 +1,38 @@
+{
+  "version": "0.3.11",
+  "build": 15,
+  "issues": {
+    "metadataSnapshot": "transient AFC error 1 recovered with fresh buffers",
+    "serviceConnection": "AFC MUX error 30: reconnect same USB device; media retry uses a new partial file",
+    "phoneBackground": "user confirmed switching to background; not counted as proven app crash",
+    "hashTemporaryMemory": "reproduced on Darwin; chunk autorelease lifetime fixed"
+  },
+  "memoryRegression": {
+    "syntheticTotalReadBytes": 536870912,
+    "beforePeakRSSGrowthBytes": 537219072,
+    "afterPeakRSSGrowthBytes": 1277952,
+    "allowedGrowthBytes": 67108864,
+    "hashAndLength": "PASS",
+    "oldCode": "RED assertion failed",
+    "fixedCode": "GREEN"
+  },
+  "localChecks": {
+    "python": 78,
+    "MemoryChecks": "PASS",
+    "core": "PASS",
+    "stagingRecovery": 23,
+    "photosRecovery": 57,
+    "iOSSyntax": "PASS",
+    "IntelMacPackage": "PASS",
+    "XCTest": "BLOCKED no full local Xcode"
+  },
+  "newPhoneRealDeviceAcceptance": "NOT_RUN: updated phone package not installed",
+  "previousLiveExportPartial": {
+    "assetsVerified": 2707,
+    "fullAlbumCount": 7402,
+    "status": "FAILED error 30; files preserved"
+  },
+  "cloudBuild": "PENDING",
+  "sourceMediaModified": false,
+  "photosImported": 0
+}
