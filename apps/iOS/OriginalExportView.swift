@@ -77,7 +77,11 @@ struct OriginalExportView: View {
             .navigationTitle("备份到 Mac")
         }
         .task {
-            memberCount = PHAsset.fetchAssets(in: collection, options: nil).count
+            let collectionIdentifier = collection.localIdentifier
+            memberCount = await Task.detached(priority: .utility) {
+                guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [collectionIdentifier], options: nil).firstObject else { return 0 }
+                return PHAsset.fetchAssets(in: current, options: nil).count
+            }.value
             await exporter.refreshCandidates(collection: collection)
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             if let attributes = try? FileManager.default.attributesOfFileSystem(forPath: docs.path),
