@@ -806,3 +806,12 @@ GitHub Actions **#105**（commit `ee0f11a`）已成功完成 iOS arm64 未签名
 
 
 本轮云端失败及修复：Actions #106（40118401099）因远程遗漏 `transfer_progress.py`，Python 导入失败，未生成可交付新包。下载远程完整源码并逐文件核对后，补齐 `transfer_control.py`、进度组件、暂停/续传脚本及此前漏同步的回归检查。没有通过屏蔽测试绕过错误。本机再次运行 Python 全套 72 项通过（build/live-python-final.log）；后续云端构建结果单独补记。
+
+
+最终 Actions **#108**（[40118911374](https://github.com/loterr298/PhotoBridge/actions/runs/40118911374)，commit `4e12a047733cfd63635754a636c8e5091bbd572c`）**SUCCESS**。远程完整快照与本机 82 个构建/测试文件逐字节一致。云端实际工具链为 Xcode 16.4、iOS SDK 18.5、Swift 6.1.2，不声称使用不存在的目标 Beta SDK。Python 72 项、XCTest 7 项、核心检查、StagingChecks 23 项、RecoveryChecks 57 项通过；iOS arm64 与 Mac x86_64 编译成功。下载 ZIP CRC、artifact SHA-256、内部安装包清单和版本 0.3.9/build13 均通过；Mac 包内所有传输脚本与测试源码一致。
+
+- IPA SHA-256：`e22ecd4115e1ab71dd373bcee3c102695b95663ed94d7c9f19897006cebc529d`
+- Intel Mac ZIP SHA-256：`d1b5689cc6d1a7643e24c824946941b2f2bdf7256c155c31c79843145ce2e5ea`
+- 产物：`build/PhotoBridge-0.3.9-LiveExport/`；云端原始日志：`build/cloud-108/build/logs/`；[结构化验收记录](evidence/m4-live-export-build-verified.json)。
+- 已直接将 `/Applications/PhotoBridgeMac.app` 更新为该云包的 0.3.9/build13，校验签名及可执行文件一致，并启动读取实际主界面。旧应用保留在 `build/installed-backups/PhotoBridgeMac-before-0.3.9-20261025-030552.app`，未碰用户备份和照片。截图 `build/PhotoBridge-0.3.9-LiveExport/mac-installed.png`。
+- 当前 USB-only 检测没有设备（-3），新实时导出真机验收未执行。iPhone IPA 未签名，需用户个人签名覆盖更新；不得把新流程、大相簿压力或此前闪退的真机修复验收标为通过。
