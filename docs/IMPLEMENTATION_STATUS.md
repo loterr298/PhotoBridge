@@ -829,3 +829,17 @@ GitHub Actions **#105**（commit `ee0f11a`）已成功完成 iOS arm64 未签名
 
 
 运行中真机核对：Mac 已覆盖为 0.3.10/build14，用户打开手机前台后，已从上一份未完成目录启动继续导出。运行中另做只读元数据压力检查：1000 次完整快照读取共调用 AFC 1002 次，实际捕获并恢复 2 次 error 1，0 次快照失败，绑定 requestID 与 JSON 均正确；手机保持 STAGING。该结果是实际重试证据，与此前空闲时没有触发错误的 1000 次检查区分记录。新导出已超过此前 93 张故障点（完整 7402 张结果后续单独记录）。
+
+
+后续真实运行在 2707 张后另遇 `AFC open read: error 30`，未伪称全量完成。IOUSB 仍有 iPhone，新建 USB-only House Arrest 后能读取同一会话后续记录，因此额外实现了固定原设备标识的连接恢复：仅识别读操作的 MUX error 30，元数据重新完整读取；媒体从头写入新的专属临时文件，旧部分文件保留，完整大小/hash 校验通过后才提交。重连或三次读取仍失败则保留失败记录，权限、磁盘、hash 错误不掩盖。不重放上传或 Photos 写入。设备标识只在内存中使用。连接错误定义和设备 ID API 对照上游头文件：<https://github.com/libimobiledevice/libimobiledevice/blob/master/include/libimobiledevice/afc.h>、<https://github.com/libimobiledevice/libimobiledevice/blob/master/include/libimobiledevice/libimobiledevice.h>。
+
+继续按钮也区分手机状态：仍在准备/收尾或已准备完成的同一会话直接接收；已停止/中断会话才从资源检查点继续到新手机会话，避免对已完成会话重复发起 PhotoKit。新增两个服务中断回归断言先失败后通过、一个继续方案检查（最初 RED 为缺少新增 API）；Python 77 项通过，Intel 编译通过。真实同设备重新连接前后状态读取通过；全量导出仍未完成。
+
+
+### M4.22 收尾校验内存与后台状态提示（两端 0.3.11 / build 15，2026-10-25）
+
+用户随后明确说明手机切到了后台。因此前一段“FINALIZING 但进度记录不更新”不能当作已证实的闪退，也不能仅凭数据线连接断言后台任务仍在执行。新版在场景切换时发布明确的前台状态；Mac 保留已经保存和正在接收的文件，提示回到手机 PhotoBridge 继续准备照片，不把后台状态显示为物理 USB 断线。自动防锁屏移到控制服务，避免只在第一个标签页生效。这里不承诺 iOS 可长时间后台运行，真机后台/返回的新版交互仍待安装验收。
+
+另独立复现并修复了原有共享 hash 检查的 Darwin 内存累计问题：`FileHandle.read(upToCount:)` 返回的临时 NSData 在外层任务池结束前未释放。对同一 16 MiB 合成文件连续检查 32 次（总读 512 MiB）时，旧实现 peak RSS 增长 **537219072 bytes**，超过 64 MiB 上限并实际 RED 失败；新实现将每个 1 MiB 块的读取和 SHA 更新放在单独 autoreleasepool，增长降到 **1277952 bytes**，hash/长度一致，GREEN 通过。没有削弱原图、资源清单或最终 hash 校验。这个测试证明内存缺陷和修复效果，不等于已获得旧版 iPhone jetsam 日志或证明本次后台暂停由内存导致。
+
+新增可重复的 `swift run MemoryChecks` 并纳入交付门禁；不是静态源码文本检查。日志 `build/memory-red.log`、`build/memory-green.log`。最终本机全套 Python 78 项（含后台状态传播）、核心检查、23 项暂存恢复、57 项 Photos 恢复、MemoryChecks、iOS 语法和 Intel x86_64 打包通过（`build/stability-final-delivery.log`）；本机 XCTest 仍缺完整 Xcode，云端实际执行结果另记。iPhone 原来的 0.3.9 包没有本次内存/前台信号修复，最终交付需两端更新到 0.3.11，原先“只需 Mac 更新”的说明已被新发现修正。
