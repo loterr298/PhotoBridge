@@ -135,13 +135,14 @@ final class MacTransferModel: ObservableObject {
 
     /// The Mac initiates Photos reading and receives each published asset as
     /// soon as it is ready, without waiting for the whole phone album to stage.
-    func startMacExport(previous: URL? = nil, resumeSession: String? = nil) {
+    func startMacExport(previous: URL? = nil, resumeSession: String? = nil, existingRequestID: String? = nil) {
         guard !busy && !loadingAlbums else { return }
         guard let album = albums.first(where: { $0.id == selectedAlbumID }) else { userMessage = "请先选择一个相册。"; return }
         guard let parent = previous?.deletingLastPathComponent() ?? chooseDirectory(title: "选择照片保存位置") else { return }
-        let requestID = UUID().uuidString
+        let requestID = existingRequestID ?? UUID().uuidString
+        let folderID = existingRequestID == nil ? requestID : UUID().uuidString
         let safeName = album.name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
-        let folder = parent.appendingPathComponent("\(String(safeName.prefix(80)))-\(requestID.prefix(8))", isDirectory: true)
+        let folder = parent.appendingPathComponent("\(String(safeName.prefix(80)))-\(folderID.prefix(8))", isDirectory: true)
         rememberBackup(folder)
         savedFolder = folder
         busy = true; progressIndeterminate = true; progressFraction = 0
@@ -153,10 +154,12 @@ final class MacTransferModel: ObservableObject {
         pendingExportTask = Task { [weak self] in
             guard let self else { return }
             do {
-                var command: [String: Any] = ["id": requestID, "kind": "startExport", "albumIdentifier": album.id, "allowNetwork": allowNetwork]
-                if let resumeSession { command["resumeSession"] = resumeSession }
-                try await sendControl(command, requestID: requestID)
-                _ = try await waitForControlResponse(id: requestID)
+                if existingRequestID == nil {
+                    var command: [String: Any] = ["id": requestID, "kind": "startExport", "albumIdentifier": album.id, "allowNetwork": allowNetwork]
+                    if let resumeSession { command["resumeSession"] = resumeSession }
+                    try await sendControl(command, requestID: requestID)
+                    _ = try await waitForControlResponse(id: requestID)
+                }
                 try Task.checkCancellation()
                 busy = false
                 var arguments = ["live", "--request-id", requestID, "--album-id", album.id,
@@ -197,7 +200,25 @@ final class MacTransferModel: ObservableObject {
             return
         }
         selectedAlbumID = albumID
-        startMacExport(previous: previous, resumeSession: session)
+        busy = true; progressIndeterminate = true; progressText = "正在检查上次保存…"
+        pendingExportTask = Task {
+            do {
+                let result = try await executeScriptAsync("mac_control.py", arguments: ["resume-plan", "--bundle", bundleIdentifier,
+                    "--payload-file", previous.appendingPathComponent("transfer-progress.json").path])
+                try Task.checkCancellation()
+                guard result.success, let data = result.text.data(using: .utf8),
+                      let plan = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                    throw NSError(domain: "PhotoBridgeMac", code: 16, userInfo: [NSLocalizedDescriptionKey: result.text])
+                }
+                busy = false; pendingExportTask = nil
+                // A completed phone export is reused; never ask Photos to restart it.
+                startMacExport(previous: previous, resumeSession: plan["resumeSession"] as? String,
+                               existingRequestID: plan["existingRequestID"] as? String)
+            } catch {
+                busy = false; pendingExportTask = nil
+                userMessage = "暂时无法继续：\(error.localizedDescription)"
+            }
+        }
     }
 
     private func stopPhoneExport(_ target: String) {
@@ -419,6 +440,9 @@ final class MacTransferModel: ObservableObject {
                 progressFraction = scanTotal > 0 ? Double(scanned) / Double(scanTotal) : 0
             } else {
                 progressText = state == "FINALIZING" ? "全部照片已接收，正在核对保存记录…" : "已保存 \(assets.formatted()) / \(total.formatted()) 张"
+            }
+            if json["phoneInForeground"] as? Bool == false {
+                progressText = "请回到 iPhone 的 PhotoBridge，继续准备照片"
             }
             let bytes = (json["bytesVerified"] as? NSNumber)?.int64Value ?? 0
             if let speed = (json["bytesPerSecond"] as? NSNumber)?.doubleValue, speed > 0 {
