@@ -32,7 +32,33 @@
     "fullAlbumCount": 7402,
     "status": "FAILED error 30; files preserved"
   },
-  "cloudBuild": "PENDING",
+  "cloudBuild": {
+    "run": 110,
+    "url": "https://github.com/loterr298/PhotoBridge/actions/runs/40122099953",
+    "commit": "26bae87cb9ffe83b00492f6f862d7c386e762a9e",
+    "status": "SUCCESS",
+    "python": 78,
+    "XCTest": 7,
+    "hashMemoryPeakRSSGrowthBytes": 6160384,
+    "iOSBuild": "PASS arm64",
+    "MacBuild": "PASS x86_64",
+    "sourceFilesCompared": 83,
+    "sourceDifferences": 0,
+    "artifactSHA256": "1de22a65ab65684aa29374e5c53af68b8c115b9828dd7fc77259ecc145982aa4",
+    "packageSHA256": {
+      "PhotoBridgeOrderProbe-0.3.11-unsigned.ipa": "a19a6dd4628fed8eaf1178d22efc2f84b99cb2a92c1692fca4d6188e5b412511",
+      "PhotoBridgeMac-Intel.zip": "ac14508dc65b7731ab4c80d75ee1dcfe7ffd1895910d344f591a83c7f5b7a909"
+    }
+  },
   "sourceMediaModified": false,
-  "photosImported": 0
+  "photosImported": 0,
+  "localMacInstall": {
+    "version": "0.3.11",
+    "build": 15,
+    "path": "/Applications/PhotoBridgeMac.app",
+    "executableAndScriptsMatchCloud": "PASS",
+    "codesign": "PASS ad-hoc",
+    "launch": "PASS",
+    "oldAppPreserved": true
+  }
 }
