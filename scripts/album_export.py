@@ -291,6 +291,8 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
             progress['message'] = value.get('message', '正在读取相册…')
             progress['scannedAssets'] = value.get('scannedAssets', 0)
             progress['scanTotalAssets'] = value.get('scanTotalAssets', 0)
+            if type(value.get('phoneInForeground')) is bool:
+                progress['phoneInForeground'] = value['phoneInForeground']
         if time.monotonic() - last_activity > idle_timeout:
             raise TimeoutError('iPhone 长时间没有新进度，请保持手机解锁并打开 PhotoBridge')
         write_json(journal, progress)
