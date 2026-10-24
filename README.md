@@ -9,10 +9,14 @@
 - iOS：`apps/iOS/`，XcodeGen 2.44.1 从 `project.yml` 生成工程，GitHub Actions 实编译并打包未签名 IPA。
 - macOS：`swift run PhotoBridgeMac`；`bash scripts/build-mac.sh` 生成 Intel App；包内 scripts 携带实际 USB 下载/回传工具。
 - 检查：`swift run CoreChecks`、`python3 -m unittest discover -s tests -v`；完整 Xcode 环境再运行 `swift test`。
-- [实际状态](docs/IMPLEMENTATION_STATUS.md)、[API/许可审查](docs/M0_API_LICENSE_AUDIT.md)、[构建与签名](docs/BUILD_AND_INSTALL.md)。
+- [实际状态](docs/IMPLEMENTATION_STATUS.md)、[最终交付审计](docs/FINAL_DELIVERY_AUDIT.md)、[API/许可审查](docs/M0_API_LICENSE_AUDIT.md)、[构建与签名](docs/BUILD_AND_INSTALL.md)。
+
+## 交付门禁
+
+在仓库根目录执行 `bash scripts/verify-delivery.sh` 可重复运行核心测试、iOS 语法检查和 Intel macOS 打包；结果写入 `build/verification/`。该命令不会把未做的真机 Photos/USB 验收伪装成通过。
 - [M0 真机验收](docs/M0_DEVICE_RUNBOOK.md)、[原始资源备份](docs/M1_DEVICE_RUNBOOK.md)、[USB 回传与新相簿恢复](docs/M2_DEVICE_RUNBOOK.md)。
 
-默认复制，不删除或覆盖原件，不写媒体内部 EXIF/GPS/MakerNotes/私人数据；照片库恢复需在手机点击开始，仅添加新副本和新相簿。真实标识、照片和详细元数据仅留本地。Photos 提交中强杀、资源写入中终止、权限/空间/iCloud故障、全格式/万张压力测试、最终产品化界面仍未完成。
+默认复制，不删除或覆盖原件，不写媒体内部 EXIF/GPS/MakerNotes/私人数据；照片库恢复需在手机点击开始，仅添加新副本和新相簿。真实标识、照片和详细元数据仅留本地。当前产品化界面、导出、USB 续传和恢复路径已在源码中交付；Photos 提交中强杀、资源写入中终止、权限/空间/iCloud 故障、全格式/万张压力测试仍按设备证据单独验收。
 
 [授权边界](docs/PRESERVATION_POLICY.md) · [Mac 下载继续执行](docs/USB_RESUME_RUNBOOK.md)。
 
@@ -21,3 +25,13 @@
 0.3.5新增[iPhone暂存中断恢复](docs/IOS_STAGING_RECOVERY_RUNBOOK.md)：逐资源检查点，旧会话只读，校验复用到新会话；未完成资源完整重读。本机 dw20项/30资源的停止、用户确认重启后继续已通过独立USB审计，复用1/重新读取29、hash30/30及旧文件bytes/mtime/birthtime不变；此结果不代表资源写入中强杀或Photos事务恢复。
 
 0.3.6 新增[Photos 事务恢复协议](docs/PHOTOS_TRANSACTION_RECOVERY_RUNBOOK.md)：按持久化 placeholder 标识核对既有副本，全部重新回读后再创建剩余项；状态不明确及旧版失败会话拒绝重放。新二进制已在本机3-Live样本完成首项提交后停止、用户确认重启、同一会话继续；首个ID与相簿不变、仅创建剩余2项、6资源独立USB字节一致、17旧文件不变，系统照片3张顺序及播放经用户确认。见[限定样本证据](docs/evidence/m3-photos-transaction-device-recovery-verified.json)。提交中强杀/系统终止及权限/空间/iCloud故障仍未验证。
+
+## 当前用户流程（0.3.9 / build 13）
+
+1. 数据线连接 iPhone 和 Mac，解锁手机并打开新版 PhotoBridge，允许访问全部照片。
+2. 在 Mac 点击“读取 iPhone 相册”，选定相册，再点“选择文件夹并开始导出”。所选文件夹内会创建一个以相册名和本次编号命名的新目录。
+3. 扫描时显示真实读取数量；准备好一张的完整资源后，Mac 就接收、校验并保存这一张，同时手机继续处理后续照片。Mac 显示已保存数量、速度和保存位置，可以点击在 Finder 查看。
+4. 需要中断时点击暂停。重新连接后在 Mac 选择“继续未完成的导出”，选择旧目录；程序在新目录复用校验通过的完整文件，旧目录保持不变。未完成资源重新读取。
+5. 从 Mac 导入 iPhone：选择已完成的 PhotoBridge 备份文件夹并上传；再在 iPhone“导入到 iPhone”确认收件并创建新相册。
+
+顺序清单是排序依据；文件系统时间按照片位置间隔 5 秒。原始照片只读复制，不删除或覆盖原件，不主动改写媒体内部 EXIF/GPS/MakerNotes。手机需要保持 App 前台，仍占用暂存空间；完整清单最终校验通过才显示完成。新实时流程及万张压力测试尚待新版真机验收，不能用云编译替代。
