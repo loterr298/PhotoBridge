@@ -11,4 +11,6 @@ PhotoBridge 的 iPhone 端新增独立“照片信息”标签，不改变备份
 - 用 ImageIO 写入新文件，不覆盖原照片；
 - 用 PhotoKit `PHAssetCreationRequest` 直接保存到 iPhone“照片”相册。
 
-网页端的 ExifTool 服务不能直接放进 iOS，因此 iOS 版本使用 ImageIO/PhotoKit。保存后的相册记录由系统生成，原照片不会被修改。当前源码检查通过；完整 Xcode 编译和实体 iPhone 的相机信息显示、HEIC/Live Photo、权限和大图压力仍需云端构建与真机验收。
+网页端的 ExifTool 服务不能直接放进 iOS，因此 iOS 版本使用 ImageIO/PhotoKit。保存后的相册记录由系统生成，原照片不会被修改。GitHub Actions run #91（Xcode 16.4 / iPhoneOS 18.5）已成功编译并产出未签名 IPA；实体 iPhone 的相机信息显示、HEIC/Live Photo、权限和大图压力仍需安装后验收。
+
+构建产物：`PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`，SHA-256 `a6ddc0390a6746e9c525ae28b65b0f039cea234eed721cb9b6478df4ffb91d94`。编辑结果通过 PhotoKit 新建照片，原照片保持不变。
