@@ -8,10 +8,11 @@ import UIKit
 @MainActor
 final class MacControlService: ObservableObject {
     let exporter = OriginalExportService()
-    @Published var active = false
+    @Published var active = false { didSet { updateIdleTimer() } }
     @Published var message = "在 Mac 上选择相册和保存位置即可开始"
     @Published var completed = 0
     @Published var total = 0
+    private var phoneInForeground = true
     private var loop: Task<Void, Never>?
     private var activeRequestID: String?
     private var albumIdentifier = ""
@@ -67,12 +68,27 @@ final class MacControlService: ObservableObject {
                 catch { try? write(["status": "FAILED", "error": error.localizedDescription], to: response) }
             }
         }
+        publishJob()
+    }
+
+    func setForeground(_ foreground: Bool) {
+        phoneInForeground = foreground
+        updateIdleTimer()
+        publishJob()
+    }
+
+    private func updateIdleTimer() {
+        UIApplication.shared.isIdleTimerDisabled = active && phoneInForeground
+    }
+
+    private func publishJob() {
         guard let id = activeRequestID else { return }
         message = exporter.message
         completed = exporter.scanning ? exporter.scannedAssets : exporter.resourcesCompleted
         total = exporter.scanning ? exporter.scanTotalAssets : exporter.totalResources
         let value: [String: Any] = ["requestID": id, "albumIdentifier": albumIdentifier,
             "status": exporter.state, "sessionID": exporter.sessionName ?? "",
+            "phoneInForeground": phoneInForeground,
             "resourcesCompleted": exporter.resourcesCompleted, "totalResources": exporter.totalResources,
             "scannedAssets": exporter.scannedAssets, "scanTotalAssets": exporter.scanTotalAssets,
             "bytesCompleted": exporter.bytesCompleted, "message": exporter.message,
@@ -140,7 +156,7 @@ struct MacExportCompanionView: View {
                             Text(control.active ? "正在向 Mac 提供照片" : "在 Mac 上开始导出").font(.title2.bold())
                             Text("连接数据线，打开 Mac 上的 PhotoBridge，选择相册和保存文件夹。")
                                 .foregroundStyle(Color.bridgeMuted).multilineTextAlignment(.center)
-                            Text("导出期间请保持此 App 打开。")
+                            Text("导出完成前，请保持 PhotoBridge 在前台。切到其他 App 后，手机可能暂停处理。")
                                 .font(.subheadline).foregroundStyle(Color.bridgeMuted)
                         }.frame(maxWidth: .infinity).padding(.vertical, 12)
                     }
@@ -167,7 +183,5 @@ struct MacExportCompanionView: View {
             }
         }
         .task { library.reload() }
-        .onChange(of: control.active) { UIApplication.shared.isIdleTimerDisabled = $0 }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
     }
 }

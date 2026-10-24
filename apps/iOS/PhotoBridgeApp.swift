@@ -4,6 +4,7 @@ import PhotoBridgeCore
 
 @main
 struct PhotoBridgeApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var library = LibraryProbe()
     @StateObject private var macControl = MacControlService()
     var body: some Scene {
@@ -16,7 +17,8 @@ struct PhotoBridgeApp: App {
             .tint(.bridgeBlue)
             .environmentObject(library)
             .environmentObject(macControl)
-            .task { macControl.start() }
+            .task { macControl.start(); macControl.setForeground(scenePhase == .active) }
+            .onChange(of: scenePhase) { macControl.setForeground($0 == .active) }
         }
     }
 }
