@@ -14,6 +14,8 @@ import sys
 import time
 import uuid
 from usb_probe import AFC, inspect
+from transfer_progress import snapshot
+from transfer_control import CancellationRequested, check_cancel
 
 
 def set_copy_creation_time(path, nanoseconds):
@@ -39,6 +41,47 @@ def set_copy_creation_time(path, nanoseconds):
         return 'SET_AND_VERIFIED' if actual is not None and abs(actual - nanoseconds / 1e9) < .001 else 'NOT_VERIFIED'
     finally:
         os.close(descriptor)
+
+
+def validate_asset_record(asset, member, ordinal):
+    def text_fields(value, names):
+        if any(not isinstance(value.get(name), str) for name in names):
+            raise ValueError('Invalid asset text field')
+    def utc(value):
+        date = dt.datetime.fromisoformat(value.replace('Z', '+00:00'))
+        if date.tzinfo is None or date.utcoffset() != dt.timedelta(0):
+            raise ValueError('Date must specify UTC')
+    paths = []
+    identifier = member['localIdentifier']; group = asset['resourceGroupId']
+    text_fields(member, ['localIdentifier']); text_fields(asset, ['resourceGroupId', 'sourceAssetLocalIdentifier'])
+    for value in [member.get('creationDate'), asset.get('originalPhotoLibraryCreationDate')]:
+        if value is not None: utc(value)
+    if any(type(asset.get(key)) is not int or not 0 <= asset[key] <= (2**64 - 1 if key == 'mediaSubtypes' else 2**63 - 1)
+           for key in ['pixelWidth', 'pixelHeight', 'mediaType', 'mediaSubtypes']):
+        raise ValueError('Missing or invalid asset media metadata')
+    if type(member['ordinal']) is not int or type(asset['ordinal']) is not int or not isinstance(asset['resources'], list):
+        raise ValueError('Invalid ordinal/resources type')
+    uuid.UUID(group)
+    if (not identifier
+            or member['ordinal'] != ordinal or asset['ordinal'] != ordinal
+            or asset['sourceAssetLocalIdentifier'] != identifier or not asset['resources']):
+        raise ValueError('Invalid order, duplicate or missing resource group')
+
+    for index, resource in enumerate(asset['resources'], 1):
+        text_fields(resource, ['originalFilename', 'uniformTypeIdentifier', 'storedRelativePath', 'sha256'])
+        if not resource['uniformTypeIdentifier']: raise ValueError('Missing resource type identifier')
+        # Only the safe extension is derived from the original filename, never its path.
+        ext = PurePosixPath(resource['originalFilename']).suffix[1:]
+        ext = ext if re.fullmatch(r'[A-Za-z0-9]{1,10}', ext) else 'bin'
+        path = resource['storedRelativePath']
+        expected = f'Resources/{ordinal:06d}/{index:04d}.{ext}'
+        if (type(resource['resourceIndex']) is not int or resource['resourceIndex'] != index or path != expected
+                or type(resource['byteCount']) is not int or not 0 < resource['byteCount'] <= 2**63 - 1
+                or type(resource['resourceType']) is not int or not 0 < resource['resourceType'] <= 2**63 - 1
+                or not re.fullmatch(r'[a-f0-9]{64}', resource['sha256'])):
+            raise ValueError('Invalid resource path, size, type or SHA-256')
+        paths.append(path)
+    return paths
 
 
 def validate_manifest(m):
@@ -67,35 +110,11 @@ def validate_manifest(m):
     utc(source['capturedAt'])
     paths = set(); identifiers = set(); groups = set()
     for ordinal, (member, asset) in enumerate(zip(members, assets), 1):
+        asset_paths = validate_asset_record(asset, member, ordinal)
         identifier = member['localIdentifier']; group = asset['resourceGroupId']
-        text_fields(member, ['localIdentifier']); text_fields(asset, ['resourceGroupId', 'sourceAssetLocalIdentifier'])
-        for value in [member.get('creationDate'), asset.get('originalPhotoLibraryCreationDate')]:
-            if value is not None: utc(value)
-        if any(type(asset.get(key)) is not int or not 0 <= asset[key] <= (2**64 - 1 if key == 'mediaSubtypes' else 2**63 - 1)
-               for key in ['pixelWidth', 'pixelHeight', 'mediaType', 'mediaSubtypes']):
-            raise ValueError('Missing or invalid asset media metadata')
-        if type(member['ordinal']) is not int or type(asset['ordinal']) is not int or not isinstance(asset['resources'], list):
-            raise ValueError('Invalid ordinal/resources type')
-        uuid.UUID(group)
-        if (not identifier or identifier in identifiers or group in groups
-                or member['ordinal'] != ordinal or asset['ordinal'] != ordinal
-                or asset['sourceAssetLocalIdentifier'] != identifier or not asset['resources']):
-            raise ValueError('Invalid order, duplicate or missing resource group')
-        identifiers.add(identifier); groups.add(group)
-        for index, resource in enumerate(asset['resources'], 1):
-            text_fields(resource, ['originalFilename', 'uniformTypeIdentifier', 'storedRelativePath', 'sha256'])
-            if not resource['uniformTypeIdentifier']: raise ValueError('Missing resource type identifier')
-            # Only the safe extension is derived from the original filename, never its path.
-            ext = PurePosixPath(resource['originalFilename']).suffix[1:]
-            ext = ext if re.fullmatch(r'[A-Za-z0-9]{1,10}', ext) else 'bin'
-            path = resource['storedRelativePath']
-            expected = f'Resources/{ordinal:06d}/{index:04d}.{ext}'
-            if (type(resource['resourceIndex']) is not int or resource['resourceIndex'] != index or path != expected or path in paths
-                    or type(resource['byteCount']) is not int or not 0 < resource['byteCount'] <= 2**63 - 1
-                    or type(resource['resourceType']) is not int or not 0 < resource['resourceType'] <= 2**63 - 1
-                    or not re.fullmatch(r'[a-f0-9]{64}', resource['sha256'])):
-                raise ValueError('Invalid resource path, size, type or SHA-256')
-            paths.add(path)
+        if identifier in identifiers or group in groups or any(path in paths for path in asset_paths):
+            raise ValueError('Duplicate asset, group or resource path')
+        identifiers.add(identifier); groups.add(group); paths.update(asset_paths)
 
 
 def session_path(value):
@@ -117,17 +136,49 @@ def write_json(path, value, exclusive=False):
         os.replace(temporary, path)
 
 
-def download_album(client, remote, local):
+def copy_resource(client, remote, local, resource, logical):
+    destination = local / resource['storedRelativePath']; destination.parent.mkdir(parents=True, exist_ok=True)
+    part = destination.with_name(destination.name + '.part')
+    with part.open('xb') as f:
+        client.read(remote + '/' + resource['storedRelativePath'], f.write, resource['byteCount'])
+        f.flush(); os.fsync(f.fileno())
+    actual = inspect(part)
+    if actual['sha256'] != resource['sha256'] or actual['byteCount'] != resource['byteCount']:
+        raise ValueError('Resource size / SHA-256 mismatch; partial retained')
+    before = part.stat()
+    # Exclusive local commit. The .part hard link stays as a diagnostic trace, not a second copy.
+    os.link(part, destination)
+    os.utime(destination, ns=(before.st_atime_ns, int(logical.timestamp() * 1_000_000_000)), follow_symlinks=False)
+    creation_status = set_copy_creation_time(destination, int(logical.timestamp() * 1_000_000_000))
+    after = destination.stat(); verified = inspect(destination)
+    if verified['sha256'] != resource['sha256'] or abs(after.st_mtime - logical.timestamp()) > .001:
+        raise ValueError('Post-attribute byte/time verification failed')
+    change = {'path': resource['storedRelativePath'],
+        'oldMtimeNs': before.st_mtime_ns, 'newMtimeNs': after.st_mtime_ns,
+        'oldBirthtime': getattr(before, 'st_birthtime', None),
+        'newBirthtime': getattr(after, 'st_birthtime', None),
+        'creationTimeStatus': creation_status,
+        'logicalSortTimeUtc': logical.isoformat(), 'contentSHA256Unchanged': True}
+    return change, actual
+
+
+def download_album(client, remote, local, cancel_file=None):
     remote = session_path(remote); local = Path(local)
+    check_cancel(cancel_file)
     if local.exists() or local.is_symlink(): raise FileExistsError(local)
     raw = io.BytesIO(); client.read(remote + '/album-order.json', raw.write, 64 * 1024 * 1024)
     m = json.loads(raw.getvalue()); validate_manifest(m)
     if m['sessionID'].lower() != remote.split('/')[1].lower(): raise ValueError('Session identity mismatch')
     local.mkdir(mode=0o700, parents=True, exist_ok=False)
-    progress = {'status': 'DOWNLOADING', 'resourcesVerified': 0, 'bytesVerified': 0,
-                'sourceManifestSHA256': hashlib.sha256(raw.getvalue()).hexdigest(),
-                'restoration': 'NOT_RUN', 'filesystemAttributeLog': 'filesystem-attributes.jsonl'}
-    journal = local / 'transfer-progress.json'; start = time.monotonic()
+    resources = [resource for asset in m['assets'] for resource in asset['resources']]
+    total_bytes = sum(resource['byteCount'] for resource in resources)
+    start = time.monotonic()
+    progress = snapshot(status='DOWNLOADING', started_monotonic=start, now_monotonic=start,
+                        resources_verified=0, total_resources=len(resources),
+                        bytes_verified=0, total_bytes=total_bytes)
+    progress.update({'sourceManifestSHA256': hashlib.sha256(raw.getvalue()).hexdigest(),
+                     'restoration': 'NOT_RUN', 'filesystemAttributeLog': 'filesystem-attributes.jsonl'})
+    journal = local / 'transfer-progress.json'
     write_json(journal, progress)
     base = dt.datetime.fromisoformat(m['sourceOrder']['capturedAt'].replace('Z', '+00:00'))
     changes = []
@@ -136,31 +187,25 @@ def download_album(client, remote, local):
         for asset in m['assets']:
             logical = base + dt.timedelta(seconds=(asset['ordinal'] - 1) * 5)
             for resource in asset['resources']:
-                destination = local / resource['storedRelativePath']; destination.parent.mkdir(parents=True, exist_ok=True)
-                part = destination.with_name(destination.name + '.part')
-                with part.open('xb') as f:
-                    client.read(remote + '/' + resource['storedRelativePath'], f.write, resource['byteCount'])
-                    f.flush(); os.fsync(f.fileno())
-                actual = inspect(part)
-                if actual['sha256'] != resource['sha256'] or actual['byteCount'] != resource['byteCount']:
-                    raise ValueError('Resource size / SHA-256 mismatch; partial retained')
-                before = part.stat()
-                # Exclusive local commit. The .part hard link stays as a diagnostic trace, not a second copy.
-                os.link(part, destination)
-                os.utime(destination, ns=(before.st_atime_ns, int(logical.timestamp() * 1_000_000_000)), follow_symlinks=False)
-                creation_status = set_copy_creation_time(destination, int(logical.timestamp() * 1_000_000_000))
-                after = destination.stat(); verified = inspect(destination)
-                if verified['sha256'] != resource['sha256'] or abs(after.st_mtime - logical.timestamp()) > .001:
-                    raise ValueError('Post-attribute byte/time verification failed')
-                change = {'path': resource['storedRelativePath'],
-                    'oldMtimeNs': before.st_mtime_ns, 'newMtimeNs': after.st_mtime_ns,
-                    'oldBirthtime': getattr(before, 'st_birthtime', None),
-                    'newBirthtime': getattr(after, 'st_birthtime', None),
-                    'creationTimeStatus': creation_status,
-                    'logicalSortTimeUtc': logical.isoformat(), 'contentSHA256Unchanged': True}
+                check_cancel(cancel_file)
+                progress.update(snapshot(status='DOWNLOADING', started_monotonic=start, now_monotonic=time.monotonic(),
+                                         resources_verified=progress['resourcesVerified'],
+                                         total_resources=len(resources), bytes_verified=progress['bytesVerified'],
+                                         total_bytes=total_bytes, current_resource=resource['storedRelativePath']))
+                progress['sourceManifestSHA256'] = hashlib.sha256(raw.getvalue()).hexdigest()
+                progress['restoration'] = 'NOT_RUN'
+                progress['filesystemAttributeLog'] = 'filesystem-attributes.jsonl'
+                write_json(journal, progress)
+                change, actual = copy_resource(client, remote, local, resource, logical)
                 attribute_log.write(json.dumps(change) + '\n'); attribute_log.flush(); os.fsync(attribute_log.fileno())
                 changes.append(change)
-                progress['resourcesVerified'] += 1; progress['bytesVerified'] += actual['byteCount']
+                progress.update(snapshot(status='DOWNLOADING', started_monotonic=start, now_monotonic=time.monotonic(),
+                                         resources_verified=progress['resourcesVerified'] + 1,
+                                         total_resources=len(resources), bytes_verified=progress['bytesVerified'] + actual['byteCount'],
+                                         total_bytes=total_bytes, current_resource=resource['storedRelativePath']))
+                progress['sourceManifestSHA256'] = hashlib.sha256(raw.getvalue()).hexdigest()
+                progress['restoration'] = 'NOT_RUN'
+                progress['filesystemAttributeLog'] = 'filesystem-attributes.jsonl'
                 write_json(journal, progress)
         # Ensure the phone manifest did not change while copying resources.
         final = io.BytesIO(); client.read(remote + '/album-order.json', final.write, 64 * 1024 * 1024)
@@ -173,6 +218,10 @@ def download_album(client, remote, local):
         result = dict(progress, status='COMMITTED', filesystemAttributeChanges=changes)
         write_json(local / 'transfer-manifest.json', result, exclusive=True)
         return result
+    except CancellationRequested as error:
+        progress['status'] = 'STOPPED'; progress['error'] = str(error)
+        write_json(journal, progress)
+        raise
     except Exception as error:
         progress['status'] = 'FAILED'; progress['error'] = str(error)
         write_json(journal, progress)
@@ -181,21 +230,182 @@ def download_album(client, remote, local):
         attribute_log.close()
 
 
+def download_live_album(client, request_id, album_identifier, local, cancel_file=None, idle_timeout=1800, previous=None):
+    """Receive published asset records immediately, then bind them to the final manifest.
+
+    Photos bytes never enter the control channel. A record is only published by
+    iOS after all of that asset's resources are closed and hashed. No final
+    backup is declared until the full album has been rechecked on iOS.
+    """
+    if str(uuid.UUID(request_id)).lower() != request_id.lower(): raise ValueError('Invalid request ID')
+    check_cancel(cancel_file)
+    local = Path(local)
+    if local.exists() or local.is_symlink(): raise FileExistsError(local)
+    if previous is not None:
+        previous = Path(previous)
+        from album_restore import regular_path
+        previous_progress = json.loads(regular_path(previous, 'transfer-progress.json').read_bytes())
+        if previous_progress.get('albumIdentifier') != album_identifier:
+            raise ValueError('Previous export belongs to a different album')
+        if previous.resolve() == local.resolve() or previous.resolve() in local.resolve().parents:
+            raise ValueError('Continuation must preserve the previous directory')
+    local.mkdir(mode=0o700, parents=True, exist_ok=False)
+    start = time.monotonic(); last_activity = start; previous_activity = None
+    progress = dict(status='WAITING_FOR_IPHONE', requestID=request_id, assetsVerified=0,
+                    albumIdentifier=album_identifier, reusedVerifiedResources=0, totalAssets=0, resourcesVerified=0, bytesVerified=0, totalResources=0,
+                    totalBytes=0, restoration='NOT_RUN', message='正在连接 iPhone…')
+    journal = local / 'transfer-progress.json'
+    write_json(journal, progress)
+
+    def read_optional(path, maximum=64 * 1024 * 1024):
+        raw = io.BytesIO()
+        try: client.read(path, raw.write, maximum)
+        except RuntimeError as error:
+            # Only a genuinely absent file is pending. Trust, unplug, permission,
+            # malformed JSON and other transport failures surface immediately.
+            if str(error).endswith(': error 8'): return None
+            raise
+        return raw.getvalue()
+
+    def job():
+        nonlocal last_activity, previous_activity
+        check_cancel(cancel_file)
+        raw = read_optional('Control/Jobs/' + request_id + '.json', 1024 * 1024)
+        if raw is None:
+            value = {}
+        else:
+            value = json.loads(raw)
+            if value.get('requestID') != request_id or value.get('albumIdentifier') != album_identifier:
+                raise ValueError('iPhone request identity mismatch; refusing stale session')
+            if value.get('status') in ('FAILED', 'STOPPED', 'INTERRUPTED'):
+                raise RuntimeError(value.get('error') or value.get('message') or 'iPhone export stopped')
+            activity = (value.get('status'), value.get('resourcesCompleted'), value.get('scannedAssets'))
+            if activity != previous_activity:
+                last_activity = time.monotonic(); previous_activity = activity
+            progress['message'] = value.get('message', '正在读取相册…')
+            progress['scannedAssets'] = value.get('scannedAssets', 0)
+            progress['scanTotalAssets'] = value.get('scanTotalAssets', 0)
+        if time.monotonic() - last_activity > idle_timeout:
+            raise TimeoutError('iPhone 长时间没有新进度，请保持手机解锁并打开 PhotoBridge')
+        write_json(journal, progress)
+        return value
+
+    def wait_file(path):
+        while True:
+            job()
+            raw = read_optional(path)
+            if raw is not None: return raw
+            time.sleep(.3)
+
+    try:
+        while True:
+            status = job()
+            session = status.get('sessionID')
+            if session:
+                remote = session_path('Exports/' + session)
+                progress['remote'] = remote
+                break
+            time.sleep(.3)
+        source_raw = wait_file(remote + '/source-order.json')
+        source = json.loads(source_raw)
+        if source.get('albumIdentifier') != album_identifier or source.get('authorization') != 'full':
+            raise ValueError('Source album identity or Photos permission mismatch')
+        members = source['members']
+        if not isinstance(members, list) or not members: raise ValueError('Empty album')
+        identifiers = set()
+        for ordinal, member in enumerate(members, 1):
+            identifier = member['localIdentifier']
+            if type(member['ordinal']) is not int or member['ordinal'] != ordinal or not isinstance(identifier, str) or not identifier or identifier in identifiers:
+                raise ValueError('Invalid source album positions')
+            identifiers.add(identifier)
+        base = dt.datetime.fromisoformat(source['capturedAt'].replace('Z', '+00:00'))
+        if base.tzinfo is None or base.utcoffset() != dt.timedelta(0): raise ValueError('Source date must be UTC')
+        with (local / 'source-order.json').open('xb') as f: f.write(source_raw)
+        progress['totalAssets'] = len(members)
+        groups = set(); record_digests = []
+        record_directory = local / 'asset-records'; record_directory.mkdir()
+        with (local / 'filesystem-attributes.jsonl').open('x') as attribute_log:
+            for ordinal, member in enumerate(members, 1):
+                progress['status'] = 'WAITING_FOR_PHOTO'
+                raw = wait_file(remote + f'/asset-records/{ordinal:06d}.json')
+                asset = json.loads(raw); validate_asset_record(asset, member, ordinal)
+                if asset['resourceGroupId'] in groups: raise ValueError('Duplicate resource group')
+                groups.add(asset['resourceGroupId'])
+                logical = base + dt.timedelta(seconds=(ordinal - 1) * 5)
+                for resource in asset['resources']:
+                    job()
+                    progress.update(status='DOWNLOADING', currentResource=resource['originalFilename'])
+                    write_json(journal, progress)
+                    reader = client
+                    if previous is not None and ((previous / resource['storedRelativePath']).exists() or (previous / resource['storedRelativePath']).is_symlink()):
+                        old = regular_path(previous, resource['storedRelativePath'])
+                        receipt = inspect(old)
+                        if receipt['sha256'] != resource['sha256'] or receipt['byteCount'] != resource['byteCount']:
+                            raise ValueError('Previously saved photo differs; refusing reuse')
+                        class LocalReader:
+                            def read(self, path, sink, maximum=None):
+                                with old.open('rb') as f:
+                                    while True:
+                                        data = f.read(1024 * 1024)
+                                        if not data: break
+                                        sink(data)
+                        reader = LocalReader()
+                        progress['reusedVerifiedResources'] += 1
+                    change, actual = copy_resource(reader, remote, local, resource, logical)
+                    attribute_log.write(json.dumps(change) + '\n'); attribute_log.flush(); os.fsync(attribute_log.fileno())
+                    progress['resourcesVerified'] += 1; progress['bytesVerified'] += actual['byteCount']
+                    progress['bytesPerSecond'] = progress['bytesVerified'] / max(.001, time.monotonic() - start)
+                    last_activity = time.monotonic()
+                with (record_directory / f'{ordinal:06d}.json').open('xb') as f: f.write(raw)
+                record_digests.append(hashlib.sha256(json.dumps(asset, sort_keys=True).encode()).digest())
+                progress['assetsVerified'] = ordinal
+                write_json(journal, progress)
+        progress['status'] = 'FINALIZING'; write_json(journal, progress)
+        final_raw = wait_file(remote + '/album-order.json')
+        final = json.loads(final_raw); validate_manifest(final)
+        if final['sessionID'] != session or final['sourceOrder'] != source:
+            raise ValueError('Final source manifest changed')
+        if len(final['assets']) != len(record_digests) or any(
+                hashlib.sha256(json.dumps(asset, sort_keys=True).encode()).digest() != digest
+                for asset, digest in zip(final['assets'], record_digests)):
+            raise ValueError('Final manifest does not match transferred records')
+        final_check = wait_file(remote + '/album-order.json')
+        if final_check != final_raw: raise ValueError('Final manifest changed during verification')
+        with (local / 'album-order.json').open('xb') as f:
+            f.write(final_raw); f.flush(); os.fsync(f.fileno())
+        progress.update(status='COMMITTED', totalResources=progress['resourcesVerified'],
+                        totalBytes=progress['bytesVerified'], sourceManifestSHA256=hashlib.sha256(final_raw).hexdigest(),
+                        seconds=time.monotonic() - start, message='全部照片已保存并校验')
+        write_json(local / 'transfer-manifest.json', progress, exclusive=True)
+        write_json(journal, progress)
+        return progress
+    except Exception as error:
+        progress.update(status='STOPPED' if isinstance(error, CancellationRequested) else 'FAILED', error=str(error))
+        write_json(journal, progress)
+        raise
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['list', 'download'])
+    parser.add_argument('command', choices=['list', 'download', 'live'])
     parser.add_argument('--bundle', default='com.photobridge.OrderProbe')
-    parser.add_argument('--remote'); parser.add_argument('--local', type=Path)
+    parser.add_argument('--previous', type=Path); parser.add_argument('--request-id'); parser.add_argument('--album-id'); parser.add_argument('--remote'); parser.add_argument('--local', type=Path)
+    parser.add_argument('--cancel-file', type=Path)
     args = parser.parse_args(); client = None
     try:
         client = AFC(); client.vend(args.bundle)
         if args.command == 'list': result = {'status': 'DISCOVERED', 'sessions': client.list('Exports')}
+        elif args.command == 'live':
+            if not args.request_id or not args.album_id or args.local is None: raise ValueError('Missing live export arguments')
+            result = download_live_album(client, args.request_id, args.album_id, args.local, args.cancel_file, previous=args.previous)
         else:
             if not args.remote or args.local is None: raise ValueError('--remote and NEW --local directory required')
-            result = download_album(client, args.remote, args.local)
+            result = download_album(client, args.remote, args.local, args.cancel_file)
             # Private paths and all detailed media attributes stay in the local report, never CI.
             result = {k: result[k] for k in ['status', 'resourcesVerified', 'bytesVerified', 'seconds', 'MiBPerSecondIncludingVerification']}
         print(json.dumps(result, indent=2)); return 0
+    except CancellationRequested as error:
+        print(json.dumps({'status': 'STOPPED', 'error': str(error)})); return 3
     except Exception as error:
         print(json.dumps({'status': 'FAILED', 'error': str(error)})); return 2
     finally:

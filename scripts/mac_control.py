@@ -11,6 +11,7 @@ import io
 import json
 import sys
 import uuid
+import time
 
 from usb_probe import AFC
 
@@ -30,6 +31,9 @@ def ensure_directory(client, path):
 
 
 def send(client, request_id, payload):
+    if str(uuid.UUID(request_id)).lower() != request_id.lower() or payload.get('id') != request_id:
+        raise ValueError('Invalid request identity')
+    payload = dict(payload, expiresAt=time.time() + 300)
     ensure_directory(client, 'Control')
     ensure_directory(client, 'Control/Requests')
     path = f'Control/Requests/{request_id}.json'
