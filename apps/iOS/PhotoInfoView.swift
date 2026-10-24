@@ -177,7 +177,7 @@ struct PhotoInfoView: View {
     }
 
     private func binding<T>(_ keyPath: WritableKeyPath<PhotoInfoDraft, T>) -> Binding<T> {
-        Binding(get: { model.selected?.draft[keyPath: keyPath] ?? (PhotoInfoDraft()).draft[keyPath: keyPath] }, set: { model.updateSelected(keyPath, value: $0) })
+        Binding(get: { model.selected?.draft[keyPath: keyPath] ?? PhotoInfoDraft()[keyPath: keyPath] }, set: { model.updateSelected(keyPath, value: $0) })
     }
 }
 
@@ -315,7 +315,8 @@ struct PhotoInfoItem: Identifiable {
             let cropHeight = CGFloat(image.width) / targetAspect
             crop = CGRect(x: 0, y: (CGFloat(image.height) - cropHeight) / 2, width: CGFloat(image.width), height: cropHeight)
         }
-        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height), from: crop, blendMode: .copy)
+        guard let cropped = image.cropping(to: crop.integral) else { return nil }
+        context.draw(cropped, in: CGRect(x: 0, y: 0, width: width, height: height))
         return context.makeImage()
     }
 }
