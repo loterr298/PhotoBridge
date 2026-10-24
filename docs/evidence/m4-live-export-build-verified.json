@@ -1,0 +1,50 @@
+{
+  "version": "0.3.9",
+  "build": "13",
+  "cloudRunURL": "https://github.com/loterr298/PhotoBridge/actions/runs/40118911374",
+  "cloudRunNumber": 108,
+  "commit": "4e12a047733cfd63635754a636c8e5091bbd572c",
+  "cloudStatus": "SUCCESS",
+  "actualToolchain": {
+    "Xcode": "16.4",
+    "iOSSDK": "18.5",
+    "Swift": "6.1.2",
+    "runnerArchitecture": "arm64",
+    "macExecutableArchitecture": "x86_64",
+    "iosExecutableArchitecture": "arm64"
+  },
+  "automatedChecks": {
+    "python": 72,
+    "XCTest": 7,
+    "stagingRecovery": 23,
+    "photosRecovery": 57,
+    "coreChecks": "PASS",
+    "iOSCompile": "PASS",
+    "IntelMacCompile": "PASS",
+    "sourceFilesCompared": 82,
+    "sourceDifferences": 0,
+    "downloadedZipCRC": "PASS",
+    "artifactSHA256": "cce708a6bea3c81fcdb1b374415eabdf4ecfd1904b0d0e88f73251195b898697",
+    "packageChecksums": {
+      "PhotoBridgeOrderProbe-0.3.9-unsigned.ipa": "e22ecd4115e1ab71dd373bcee3c102695b95663ed94d7c9f19897006cebc529d",
+      "PhotoBridgeMac-Intel.zip": "d1b5689cc6d1a7643e24c824946941b2f2bdf7256c155c31c79843145ce2e5ea"
+    },
+    "packagedScriptsMatchLocal": "PASS"
+  },
+  "localMacInstall": {
+    "path": "/Applications/PhotoBridgeMac.app",
+    "version": "0.3.9",
+    "build": "13",
+    "previousAppPreserved": true,
+    "launchAndVisibleUI": "PASS",
+    "codesign": "ad-hoc verified"
+  },
+  "deviceResults": {
+    "currentUSB": "NO_DEVICE_ERROR_MINUS_3",
+    "newLiveExport": "NOT_RUN",
+    "largeAlbumStress": "NOT_RUN",
+    "previous100PercentCrashDeviceFixAcceptance": "NOT_RUN",
+    "phoneInstall": "USER_SIGNING_REQUIRED"
+  },
+  "scope": "Build and synthetic tests only; no claim of complete product or real-device live export acceptance."
+}
