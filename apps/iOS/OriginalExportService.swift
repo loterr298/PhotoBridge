@@ -65,9 +65,9 @@ private final class StreamingManifestWriter {
             resources: resources.map { StagingResourceSource(resourceType: $0.type.rawValue,
                 originalFilename: $0.originalFilename, uniformTypeIdentifier: $0.uniformTypeIdentifier) })
     }
-    private func capture(_ collection: PHAssetCollection) throws -> (name: String, assets: [StagingAssetSource]) {
-        try checkPermission()
-        guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [collection.localIdentifier], options: nil).firstObject else {
+    private nonisolated static func capture(localIdentifier: String) throws -> (name: String, assets: [StagingAssetSource]) {
+        try PhotoOperationChecks.requireFullAccess()
+        guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [localIdentifier], options: nil).firstObject else {
             throw ExportError.invalidManifest("来源相簿已不可访问")
         }
         let result = PHAsset.fetchAssets(in: current, options: nil)
@@ -121,7 +121,13 @@ private final class StreamingManifestWriter {
         }
         do {
             try checkPermission()
-            let captured = try capture(collection); let sources = captured.assets
+            let collectionIdentifier = collection.localIdentifier
+            message = "正在读取相册…"
+            await Task.yield()
+            let captured = try await Task.detached(priority: .userInitiated) {
+                try Self.capture(localIdentifier: collectionIdentifier)
+            }.value
+            let sources = captured.assets
             guard !sources.isEmpty else { throw ExportError.invalidManifest("相簿为空或不可访问") }
             totalResources = sources.reduce(0) { $0 + $1.resources.count }
             let name = captured.name
@@ -143,7 +149,7 @@ private final class StreamingManifestWriter {
                 }.value
                 previous = old; previousDigest = loaded.digest; snapshot = loaded.plan.sourceOrder
                 // Source may have changed while hashing the old session.
-                let current = try capture(collection)
+                let current = try await Task.detached(priority: .userInitiated) { try Self.capture(localIdentifier: collectionIdentifier) }.value
                 try loaded.plan.validateCurrent(albumIdentifier: collection.localIdentifier, albumName: current.name, assets: current.assets)
             }
             try checkStopAndPermission()
@@ -214,7 +220,7 @@ private final class StreamingManifestWriter {
             if let previous, let previousDigest {
                 guard try StagingResume.load(in: previous).digest == previousDigest else { throw ExportError.invalidManifest("旧会话计划已变化") }
             }
-            let current = try capture(collection)
+            let current = try await Task.detached(priority: .userInitiated) { try Self.capture(localIdentifier: collectionIdentifier) }.value
             try plan.validateCurrent(albumIdentifier: collection.localIdentifier, albumName: current.name, assets: current.assets, requireEditVersion: resumeSession != nil)
             try checkStopAndPermission()
             try journal("FINALIZING_MANIFEST")
