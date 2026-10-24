@@ -723,3 +723,14 @@ iPhone 端新增独立“照片信息”标签，保留 PhotoBridge 原有备份
 - `PhotoBridgeOrderProbe-unsigned.app.zip`：`20a6e285c191ae6196bfbbe9d57935084e91f116912870fbb485473fda69dd5e`
 
 状态边界：云端编译和自动化检查已完成；IPA 仍需用户 Apple ID 个人签名后安装。照片信息页的真实保存、HEIC/Live Photo 的系统显示与大图压力仍需真机验证；保存操作只新增照片副本，不覆盖原照片。
+
+### M4.13 备份到 Mac 用户页面收口（2026-10-24）
+
+根据真机截图重做 `OriginalExportView`：页面只保留相册名称、照片数量、手机可用空间、原图下载选项、开始备份和真实备份进度。移除“继续上次备份”、未完成会话选择、内部诊断文字和面向开发者的技术说明；扫描阶段显示明确的“正在读取照片”进度提示，资源写入阶段显示实际已备份文件数。远程 Actions run **#94**（run `40090556003`，commit `1ead48b`）成功完成 iOS 与 Intel Mac 构建。
+
+本轮产物哈希：
+
+- `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`b0267fda9d89049bddb459384563703e754051675cd5ad20d1783f093e1238c8`
+- `PhotoBridgeMac-Intel.zip`：`c15e2e013d7cb341de230b5d9fa51a405e3c4072143f3c40a6a7acc87826fdf0`
+
+本机 Swift 解析、Python 63 项和 git diff 检查通过。IPA 仍需 Apple ID 个人签名；真机安装后的窄屏视觉验收和万张相册长时间备份仍需实际设备确认。
