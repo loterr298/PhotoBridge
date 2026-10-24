@@ -54,6 +54,7 @@ else
   fi
 fi
 run "CoreChecks" swift run CoreChecks
+run "MemoryChecks" swift run MemoryChecks
 run "StagingChecks" swift run StagingChecks
 run "RecoveryChecks" swift run RecoveryChecks
 run "Python tests" python3 -m unittest discover -s tests -q

@@ -13,7 +13,7 @@ import stat
 import sys
 import time
 import uuid
-from usb_probe import AFC, inspect, read_snapshot
+from usb_probe import AFC, inspect, read_snapshot, reconnectable_read
 from transfer_progress import snapshot
 from transfer_control import CancellationRequested, check_cancel
 
@@ -139,9 +139,17 @@ def write_json(path, value, exclusive=False):
 def copy_resource(client, remote, local, resource, logical):
     destination = local / resource['storedRelativePath']; destination.parent.mkdir(parents=True, exist_ok=True)
     part = destination.with_name(destination.name + '.part')
-    with part.open('xb') as f:
-        client.read(remote + '/' + resource['storedRelativePath'], f.write, resource['byteCount'])
-        f.flush(); os.fsync(f.fileno())
+    for attempt in range(3):
+        try:
+            with part.open('xb') as f:
+                client.read(remote + '/' + resource['storedRelativePath'], f.write, resource['byteCount'])
+                f.flush(); os.fsync(f.fileno())
+            break
+        except RuntimeError as error:
+            if attempt == 2 or not reconnectable_read(error) or not hasattr(client, 'reconnect'): raise
+            client.reconnect()
+            # Preserve the failed attempt; never append duplicated bytes or truncate it.
+            part = destination.with_name(destination.name + '.' + str(uuid.uuid4()) + '.part')
     actual = inspect(part)
     if actual['sha256'] != resource['sha256'] or actual['byteCount'] != resource['byteCount']:
         raise ValueError('Resource size / SHA-256 mismatch; partial retained')

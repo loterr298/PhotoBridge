@@ -51,9 +51,25 @@ def read(client, path):
     return value
 
 
+def continuation_plan(client, journal):
+    request = journal['requestID']; album = journal['albumIdentifier']
+    if str(uuid.UUID(request)).lower() != request.lower(): raise ValueError('Invalid request identity')
+    remote = journal['remote'].split('/')
+    if len(remote) != 2 or remote[0] != 'Exports' or str(uuid.UUID(remote[1])).lower() != remote[1].lower():
+        raise ValueError('Invalid previous export path')
+    job = read(client, 'Control/Jobs/' + request + '.json')
+    if job.get('requestID') != request or job.get('albumIdentifier') != album or job.get('sessionID') != remote[1]:
+        raise ValueError('Previous export does not match the connected iPhone')
+    if job.get('status') in ('STAGING', 'FINALIZING', 'STAGED'):
+        return {'existingRequestID': request}
+    if job.get('status') in ('STOPPED', 'FAILED', 'INTERRUPTED'):
+        return {'resumeSession': remote[1]}
+    raise ValueError('Previous export is not ready to continue')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['send', 'read'])
+    parser.add_argument('command', choices=['send', 'read', 'resume-plan'])
     parser.add_argument('--bundle', default='com.photobridge.OrderProbe')
     parser.add_argument('--request-id')
     parser.add_argument('--payload-file')
@@ -69,6 +85,8 @@ def main():
             with open(args.payload_file, 'rb') as source:
                 payload = json.load(source)
             result = send(client, args.request_id, payload)
+        elif args.command == 'resume-plan':
+            with open(args.payload_file, 'rb') as source: result = continuation_plan(client, json.load(source))
         else:
             if not args.path or args.path.startswith('/') or '..' in args.path.split('/'):
                 raise ValueError('--path must be a relative Documents path')

@@ -95,11 +95,18 @@ def read_snapshot(client, path, maximum):
             client.read(path, data.write, maximum)
             return data.getvalue()
         except RuntimeError as error:
-            if str(error) not in ('AFC open read: error 1', 'AFC read: error 1', 'AFC close read: error 1'):
+            mux = reconnectable_read(error) and hasattr(client, 'reconnect')
+            if not mux and str(error) not in ('AFC open read: error 1', 'AFC read: error 1', 'AFC close read: error 1'):
                 raise
             if attempt == 2:
                 raise RuntimeError(f'{error}; metadata file: {path}; 3 read attempts failed') from error
+            if mux: client.reconnect()
             time.sleep(.05)
+
+
+def reconnectable_read(error):
+    return isinstance(error, RuntimeError) and str(error) in (
+        'AFC open read: error 30', 'AFC read: error 30', 'AFC close read: error 30')
 
 
 class AFC:
@@ -111,6 +118,7 @@ class AFC:
         signatures = {
             'idevice_new_with_options': ([C.POINTER(ptr), C.c_char_p, C.c_int], C.c_int),
             'idevice_free': ([ptr], C.c_int),
+            'idevice_get_udid': ([ptr, C.POINTER(C.c_char_p)], C.c_int),
             'house_arrest_client_start_service': ([ptr, C.POINTER(ptr), C.c_char_p], C.c_int),
             'house_arrest_send_command': ([ptr, C.c_char_p, C.c_char_p], C.c_int),
             'house_arrest_get_result': ([ptr, C.POINTER(ptr)], C.c_int),
@@ -136,12 +144,29 @@ class AFC:
         self.plist.plist_free.argtypes = [ptr]; self.plist.plist_free.restype = None
         # IDEVICE_LOOKUP_USBMUX = 1 << 1; NEVER enable NETWORK / PREFER_NETWORK.
         self.check(self.lib.idevice_new_with_options(C.byref(self.device), udid.encode() if udid else None, 2), 'USB lookup (connect cable, unlock and trust)')
+        identity = C.c_char_p()
+        self.check(self.lib.idevice_get_udid(self.device, C.byref(identity)), 'USB identity')
+        try:
+            if not identity.value: raise RuntimeError('USB identity unavailable')
+            self.udid = identity.value.decode('utf-8')  # Private; never written to reports.
+        finally:
+            libc = C.CDLL(None); libc.free.argtypes = [C.c_void_p]; libc.free.restype = None
+            libc.free(C.cast(identity, C.c_void_p))
+        self.bundle = None
+
 
     @staticmethod
     def check(code, action):
         if code: raise RuntimeError('{}: error {}'.format(action, code))
 
+    def reconnect(self):
+        identity, bundle = self.udid, self.bundle
+        self.close()
+        self.__init__(identity)  # Still USB-only, pinned to the original phone.
+        if bundle: self.vend(bundle)
+
     def vend(self, bundle):
+        self.bundle = bundle
         self.check(self.lib.house_arrest_client_start_service(self.device, C.byref(self.house), b'PhotoBridge-M0'), 'House Arrest / pairing')
         self.check(self.lib.house_arrest_send_command(self.house, b'VendDocuments', bundle.encode()), 'VendDocuments request')
         result = C.c_void_p()
