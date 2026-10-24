@@ -8,6 +8,7 @@ import ctypes as C
 import ctypes.util
 import contextlib
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -80,6 +81,25 @@ def load_library(label, names, fallbacks):
         try: return C.CDLL(path)
         except OSError as error: errors.append(str(error))
     raise RuntimeError(label + ' unavailable. Install a compatible libimobiledevice/libplist: ' + '; '.join(errors))
+
+
+def read_snapshot(client, path, maximum):
+    """Read a small metadata snapshot, tolerating AFC's atomic-replace race.
+
+    iOS can replace a status file between AFC read and EOF. Never append a
+    retried response to partial bytes, and never replay a command or media sink.
+    """
+    for attempt in range(3):
+        data = io.BytesIO()
+        try:
+            client.read(path, data.write, maximum)
+            return data.getvalue()
+        except RuntimeError as error:
+            if str(error) not in ('AFC open read: error 1', 'AFC read: error 1', 'AFC close read: error 1'):
+                raise
+            if attempt == 2:
+                raise RuntimeError(f'{error}; metadata file: {path}; 3 read attempts failed') from error
+            time.sleep(.05)
 
 
 class AFC:

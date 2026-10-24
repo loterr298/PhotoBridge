@@ -13,7 +13,7 @@ import stat
 import sys
 import time
 import uuid
-from usb_probe import AFC, inspect
+from usb_probe import AFC, inspect, read_snapshot
 from transfer_progress import snapshot
 from transfer_control import CancellationRequested, check_cancel
 
@@ -258,14 +258,12 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
     write_json(journal, progress)
 
     def read_optional(path, maximum=64 * 1024 * 1024):
-        raw = io.BytesIO()
-        try: client.read(path, raw.write, maximum)
+        try: return read_snapshot(client, path, maximum)
         except RuntimeError as error:
             # Only a genuinely absent file is pending. Trust, unplug, permission,
             # malformed JSON and other transport failures surface immediately.
             if str(error).endswith(': error 8'): return None
             raise
-        return raw.getvalue()
 
     def job():
         nonlocal last_activity, previous_activity

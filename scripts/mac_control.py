@@ -13,7 +13,7 @@ import sys
 import uuid
 import time
 
-from usb_probe import AFC
+from usb_probe import AFC, read_snapshot
 
 
 def ensure_directory(client, path):
@@ -45,10 +45,9 @@ def send(client, request_id, payload):
 
 
 def read(client, path):
-    raw = io.BytesIO()
-    client.read(path, raw.write, 1024 * 1024)
+    raw = read_snapshot(client, path, 1024 * 1024)
     # Keep stdout JSON-only so the Swift client can parse it directly.
-    value = json.loads(raw.getvalue().decode('utf-8'))
+    value = json.loads(raw.decode('utf-8'))
     return value
 
 
