@@ -42,7 +42,9 @@ bash scripts/verify-delivery.sh
 - 让每一页只保留当前动作、当前进度、下一步操作；隐藏会话编号、工程术语和不必要的技术说明。
 - 保留错误、暂停、继续和真实进度，不改变底层数据保护和传输逻辑。
 
-本地验证：iOS/Intel Swift 语法解析通过，Intel x86_64 打包通过，Python 63 项测试通过，`git diff --check` 通过；云端待本轮提交后更新。
+本地验证：iOS/Intel Swift 语法解析通过，Intel x86_64 打包通过，Python 63 项测试通过，`git diff --check` 通过；GitHub Actions #77 已完成本轮云构建。
+
+全页面优化版云包：iPhone IPA SHA-256 `01d139056904055e6cc4b0a01b115507d8fb2bbee8aae8230f571988a15bf2f7`；Intel Mac ZIP SHA-256 `6bbb55257181d14a6adcc6f5396655438114641fcf712a928940ef012b164672`；artifact digest `sha256:abfc9a55ec4757a00f06c5dce4e4b75aec4698841e7a9812a7c66cd36c0257b4`。
 
 ### M4.14 两条主流程收口（2026-10-24）
 
