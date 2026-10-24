@@ -711,3 +711,15 @@ IPA 仍是 unsigned，需要用户自己的 Apple ID 签名；Mac 包为 Intel x
 iPhone 端新增独立“照片信息”标签，保留 PhotoBridge 原有备份、恢复和相簿顺序页面。新页面使用 PhotosPicker 读取最多 20 张照片，ImageIO 读取/写入相机与曝光元数据，支持 EV=0、日期、分辨率和 3:4 中心裁切；保存通过 PhotoKit 直接创建到 iPhone 照片相册，不覆盖原照片。新增 `NSPhotoLibraryAddUsageDescription`。
 
 本机 `swiftc -parse apps/iOS/*.swift`、git diff 检查、CoreChecks、StagingChecks、RecoveryChecks 和 Python 63 项通过。当前机器无完整 Xcode/XCTest，云端 Xcode 编译、真实 iPhone 保存、HEIC/Live Photo、相机信息系统显示和大图压力测试待验证。
+
+### M4.12 iPhone 照片信息编辑云编译交付（2026-10-24）
+
+修复 XcodeGen 工程同步和 Xcode 16.4 编译错误后，GitHub Actions run **#91**（run `40078706187`，commit `9729c9e`）成功完成 iOS arm64 未签名 IPA、Intel x86_64 Mac 包、Swift/Python/CoreChecks/RecoveryChecks/StagingChecks。云端实际使用 Xcode 16.4、iPhoneOS SDK 18.5；CI 仍报告 GitHub Actions 的 Node.js 20 弃用提示和 runner 容量提示，但不影响构建结果。
+
+交付产物哈希（Actions 归档 `sha256:2afdc8fe49a9733b9f1728bb845ac7e94b3c70a932ef342348983a74c747ba1c`）：
+
+- `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`a6ddc0390a6746e9c525ae28b65b0f039cea234eed721cb9b6478df4ffb91d94`
+- `PhotoBridgeMac-Intel.zip`：`79c85ee149f3eb355188c6af04aeabd68dfb94ba66b8fad770baa68f4dfec8f9`
+- `PhotoBridgeOrderProbe-unsigned.app.zip`：`20a6e285c191ae6196bfbbe9d57935084e91f116912870fbb485473fda69dd5e`
+
+状态边界：云端编译和自动化检查已完成；IPA 仍需用户 Apple ID 个人签名后安装。照片信息页的真实保存、HEIC/Live Photo 的系统显示与大图压力仍需真机验证；保存操作只新增照片副本，不覆盖原照片。
