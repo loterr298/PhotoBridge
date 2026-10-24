@@ -11,6 +11,12 @@ struct BackupAssetPreview: Identifiable {
     let primaryFilename: String
 }
 
+struct RemoteAlbum: Identifiable, Hashable {
+    let id: String
+    let name: String
+    let count: Int
+}
+
 final class CameraDiscovery: NSObject, ObservableObject, ICDeviceBrowserDelegate {
     @Published var devices: [ICDevice] = []
     private let browser = ICDeviceBrowser()
@@ -46,6 +52,9 @@ final class MacTransferModel: ObservableObject {
     @Published var currentResource = ""
     @Published var recentBackups: [String] = []
     @Published var backupPreview: [BackupAssetPreview] = []
+    @Published var albums: [RemoteAlbum] = []
+    @Published var selectedAlbumID = ""
+    @Published var remoteStageText = ""
 
     private let bundleIdentifier = "com.photobridge.OrderProbe"
     private var progressTask: Task<Void, Never>?
@@ -60,6 +69,7 @@ final class MacTransferModel: ObservableObject {
             self?.usbState = result.success ? "已连接" : "未连接"
             self?.userMessage = result.success ? "iPhone 已连接，可以开始保存。" : "还没有连接 iPhone，请检查数据线和信任设置。"
             self?.output = result.text
+            if result.success { self?.refreshAlbums() }
         }
     }
 
@@ -78,6 +88,134 @@ final class MacTransferModel: ObservableObject {
             self?.sessions = values
             self?.selectedSession = values.first ?? ""
             self?.userMessage = values.isEmpty ? "还没有找到手机里的保存。" : "已找到 \(values.count) 份手机保存。"
+        }
+    }
+
+    /// Ask the open iPhone app for its real Photos album list. The Mac owns
+    /// the selection; the phone only returns public PhotoKit data.
+    func refreshAlbums() {
+        guard usbState == "已连接" else {
+            userMessage = "请先连接并信任 iPhone。"
+            return
+        }
+        let id = UUID().uuidString
+        let payload: [String: Any] = ["id": id, "kind": "listAlbums"]
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.sendControl(payload, requestID: id)
+                let response = try await self.waitForControlResponse(id: id)
+                guard let values = response["albums"] as? [[String: Any]] else {
+                    throw NSError(domain: "PhotoBridgeMac", code: 12, userInfo: [NSLocalizedDescriptionKey: "iPhone 没有返回相册列表"])
+                }
+                let loaded = values.compactMap { value -> RemoteAlbum? in
+                    guard let id = value["id"] as? String, let name = value["name"] as? String else { return nil }
+                    return RemoteAlbum(id: id, name: name, count: (value["count"] as? NSNumber)?.intValue ?? 0)
+                }
+                await MainActor.run {
+                    self.albums = loaded
+                    if !loaded.contains(where: { $0.id == self.selectedAlbumID }) { self.selectedAlbumID = loaded.first?.id ?? "" }
+                    self.userMessage = loaded.isEmpty ? "没有可用相册，请在 iPhone 允许访问照片。" : "已加载 (loaded.count) 个相册"
+                }
+            } catch {
+                await MainActor.run { self.userMessage = "读取相册失败：(error.localizedDescription)" }
+            }
+        }
+    }
+
+    /// Mac-first export: choose the destination once, trigger iPhone
+    /// PhotoKit staging, then stream every verified resource into that folder.
+    func startMacExport() {
+        guard !selectedAlbumID.isEmpty else { userMessage = "请先选择一个相册。"; return }
+        guard let parent = chooseDirectory(title: "选择照片保存位置") else { return }
+        let requestID = UUID().uuidString
+        let folder = parent.appendingPathComponent("PhotoBridge-导出", isDirectory: true)
+        if FileManager.default.fileExists(atPath: folder.path) {
+            userMessage = "保存位置已存在 PhotoBridge-导出，请选择一个空文件夹或改名后重试。"
+            return
+        }
+        rememberBackup(folder)
+        busy = true
+        progressFraction = 0
+        progressText = "正在连接 iPhone…"
+        speedText = ""
+        etaText = ""
+        remoteStageText = ""
+        userMessage = "正在从 iPhone 读取相册…"
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.sendControl(["id": requestID, "kind": "startExport", "albumIdentifier": selectedAlbumID, "allowNetwork": false], requestID: requestID)
+                _ = try await self.waitForControlResponse(id: requestID)
+                let session = try await self.waitForStagedSession()
+                await MainActor.run { self.remoteStageText = "iPhone 已准备好，正在逐张保存到 Mac" }
+                await self.downloadSession(session, to: folder)
+            } catch {
+                await MainActor.run {
+                    self.busy = false
+                    self.userMessage = "导出没有完成：(error.localizedDescription)"
+                    self.remoteStageText = ""
+                }
+            }
+        }
+    }
+
+    private func sendControl(_ payload: [String: Any], requestID: String) async throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("PhotoBridge-request-(requestID).json")
+        let data = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+        try data.write(to: file, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let result = try await executeScriptAsync("mac_control.py", arguments: ["send", "--bundle", bundleIdentifier, "--request-id", requestID, "--payload-file", file.path])
+        guard result.success else { throw NSError(domain: "PhotoBridgeMac", code: 13, userInfo: [NSLocalizedDescriptionKey: result.text]) }
+    }
+
+    private func waitForControlResponse(id: String) async throws -> [String: Any] {
+        for _ in 0..<120 {
+            try Task.checkCancellation()
+            let result = try await executeScriptAsync("mac_control.py", arguments: ["read", "--bundle", bundleIdentifier, "--path", "Control/Responses/\(id).json"])
+            if result.success, let data = result.text.data(using: .utf8), let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                if (json["status"] as? String) == "FAILED" { throw NSError(domain: "PhotoBridgeMac", code: 14, userInfo: [NSLocalizedDescriptionKey: (json["error"] as? String) ?? "iPhone 操作失败"]) }
+                return json
+            }
+            try await Task.sleep(nanoseconds: 500_000_000)
+        }
+        throw NSError(domain: "PhotoBridgeMac", code: 15, userInfo: [NSLocalizedDescriptionKey: "iPhone 没有回应，请保持 PhotoBridge 打开并解锁手机"])
+    }
+
+    private func waitForStagedSession() async throws -> String {
+        for _ in 0..<1200 {
+            try Task.checkCancellation()
+            let result = try await executeScriptAsync("mac_control.py", arguments: ["read", "--bundle", bundleIdentifier, "--path", "Control/status.json"])
+            if result.success, let data = result.text.data(using: .utf8), let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                let status = json["status"] as? String ?? ""
+                let done = (json["resourcesCompleted"] as? NSNumber)?.intValue ?? 0
+                let total = (json["totalResources"] as? NSNumber)?.intValue ?? 0
+                let session = json["sessionID"] as? String ?? ""
+                await MainActor.run {
+                    self.remoteStageText = json["message"] as? String ?? "正在准备照片…"
+                    self.progressText = total > 0 ? "手机准备中：\(done)/\(total) 个文件" : "手机正在读取相册…"
+                    self.progressFraction = total > 0 ? min(0.35, Double(done) / Double(total) * 0.35) : 0.02
+                }
+                if status == "STAGED", !session.isEmpty { return session }
+                if status == "FAILED" { throw NSError(domain: "PhotoBridgeMac", code: 16, userInfo: [NSLocalizedDescriptionKey: (json["error"] as? String) ?? "iPhone 读取失败"]) }
+            }
+            try await Task.sleep(nanoseconds: 500_000_000)
+        }
+        throw NSError(domain: "PhotoBridgeMac", code: 17, userInfo: [NSLocalizedDescriptionKey: "等待 iPhone 准备照片超时"])
+    }
+
+    private func downloadSession(_ session: String, to folder: URL) async {
+        await withCheckedContinuation { continuation in
+            self.busy = false
+            runScript("album_export.py", arguments: ["download", "--remote", "Exports/\(session)", "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
+                guard let self else { continuation.resume(); return }
+                self.output = result.text
+                self.busy = false
+                self.remoteStageText = ""
+                self.userMessage = result.success ? "已导出到：\(folder.path)" : "导出没有完成，请重新连接 iPhone 后继续。"
+                if result.success { self.loadPreview(from: folder) }
+                continuation.resume()
+            }
         }
     }
 
@@ -214,6 +352,12 @@ final class MacTransferModel: ObservableObject {
             busy = false
             completion(result)
         }
+    }
+
+    private func executeScriptAsync(_ name: String, arguments: [String]) async throws -> ScriptResult {
+        try await Task.detached(priority: .utility) {
+            try Self.executeScript(name, arguments: arguments)
+        }.value
     }
 
     private func startProgressPolling(file: URL?, directory: URL?) {
@@ -382,18 +526,30 @@ struct PhotoBridgeMacApp: App {
                                 HStack(spacing: 12) {
                                     Text("1").font(.headline).foregroundStyle(.white).frame(width: 30, height: 30).background(Color.macBridgeBlue, in: Circle())
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("备份 iPhone 照片到 Mac").font(.title3.weight(.semibold))
-                                        Text("先在 iPhone 选择相册并开始备份，再在这里保存到文件夹").font(.subheadline).foregroundStyle(.secondary)
+                                        Text("导出到 Mac").font(.title3.weight(.semibold))
+                                        Text("在这里选择相册和保存位置，照片会按原顺序逐张写入 Mac").font(.subheadline).foregroundStyle(.secondary)
                                     }
                                 }
-                                Button("查找手机备份") { transfer.refreshSessions() }.buttonStyle(.borderedProminent).tint(.macBridgeBlue).controlSize(.large)
-                                if transfer.sessions.isEmpty {
-                                    Text("还没有找到手机备份").font(.subheadline).foregroundStyle(.secondary)
-                                } else {
-                                    Picker("选择备份", selection: $transfer.selectedSession) {
-                                        ForEach(transfer.sessions, id: \.self) { value in Text("备份 \(value.prefix(8))").tag(value) }
+                                HStack(spacing: 10) {
+                                    Button("读取 iPhone 相册") { transfer.refreshAlbums() }.buttonStyle(.bordered).controlSize(.large)
+                                    if transfer.albums.isEmpty { Text("连接后读取相册").font(.subheadline).foregroundStyle(.secondary) }
+                                }
+                                if !transfer.albums.isEmpty {
+                                    Picker("相册", selection: $transfer.selectedAlbumID) {
+                                        ForEach(transfer.albums) { album in
+                                            Text("\(album.name) · \(album.count.formatted()) 张").tag(album.id)
+                                        }
                                     }
-                                    Button("选择文件夹并保存") { transfer.downloadSelected() }.buttonStyle(.bordered).controlSize(.large)
+                                }
+                                Button {
+                                    transfer.startMacExport()
+                                } label: {
+                                    Label("选择文件夹并开始导出", systemImage: "arrow.down.to.line.compact")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent).tint(.macBridgeBlue).controlSize(.large)
+                                if !transfer.remoteStageText.isEmpty {
+                                    Text(transfer.remoteStageText).font(.caption).foregroundStyle(.secondary)
                                 }
                             }
                         }
@@ -432,7 +588,7 @@ struct PhotoBridgeMacApp: App {
                 }
             }
             .frame(minWidth: 760, minHeight: 650)
-            .onAppear { transfer.discover(); transfer.refreshSessions() }
+            .onAppear { transfer.discover() }
         }
     }
 }
