@@ -5,6 +5,14 @@ struct RestoreView: View {
     @State private var session = ""
     @State private var title = "PhotoBridge 相册"
         private var finished: Bool { service.totalAssets > 0 && service.completed == service.totalAssets && service.message.hasPrefix("恢复完成") }
+    private var friendlyMessage: String {
+        let value = service.message
+        if value.hasPrefix("正在检查") { return "正在检查照片…" }
+        if value.hasPrefix("正在恢复") { return "正在导入照片…" }
+        if value.hasPrefix("准备恢复") { return "照片已检查，可以开始导入" }
+        if value.hasPrefix("恢复完成") { return "导入完成" }
+        return value
+    }
     var body: some View {
         NavigationStack {
             ZStack {
@@ -60,7 +68,7 @@ struct RestoreView: View {
                                 }
                             }.padding(.horizontal, 4)
                         } else if !service.message.isEmpty {
-                            Text(service.message).font(.subheadline).foregroundStyle(.secondary).textSelection(.enabled)
+                            Text(friendlyMessage).font(.subheadline).foregroundStyle(.secondary).textSelection(.enabled)
                         }
                     }
                     .padding(20)
