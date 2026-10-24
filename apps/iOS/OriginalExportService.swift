@@ -15,6 +15,9 @@ private final class StreamingManifestWriter {
     private let encoder: JSONEncoder
 
     init(sessionID: String, sourceOrder: OrderSnapshot, to url: URL) throws {
+        // FileHandle(forWritingTo:) only opens an existing file. Create the
+        // atomic manifest part before streaming the JSON header into it.
+        FileManager.default.createFile(atPath: url.path, contents: nil)
         handle = try FileHandle(forWritingTo: url)
         encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
