@@ -79,6 +79,32 @@ private final class StreamingManifestWriter {
         result.enumerateObjects { asset, _, _ in sources.append(Self.source(asset, resources: PHAssetResource.assetResources(for: asset))) }
         return (current.localizedTitle ?? "未命名相簿", sources)
     }
+    /// Re-check the source without building a second full album catalog. This keeps
+    /// the finalization peak bounded for very large albums.
+    private nonisolated static func validateCurrent(localIdentifier: String, albumName: String,
+                                                    expected: [StagingAssetSource]) throws {
+        try PhotoOperationChecks.requireFullAccess()
+        guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [localIdentifier], options: nil).firstObject else {
+            throw ExportError.invalidManifest("来源相簿已不可访问")
+        }
+        guard (current.localizedTitle ?? "未命名相簿") == albumName else {
+            throw ExportError.invalidManifest("相簿名称已变化，停止以免混合新旧版本")
+        }
+        let result = PHAsset.fetchAssets(in: current, options: nil)
+        guard result.count == expected.count else {
+            throw ExportError.invalidManifest("相簿照片数量已变化，停止以免混合新旧版本")
+        }
+        var mismatch: String?
+        result.enumerateObjects { asset, index, stop in
+            guard mismatch == nil else { stop.pointee = true; return }
+            let currentSource = Self.source(asset, resources: PHAssetResource.assetResources(for: asset))
+            if currentSource != expected[index] {
+                mismatch = "相簿顺序、编辑状态或资源目录已变化，停止以免混合新旧版本"
+                stop.pointee = true
+            }
+        }
+        if let mismatch { throw ExportError.invalidManifest(mismatch) }
+    }
     private func checkedResources(_ expected: StagingAssetSource) throws -> [PHAssetResource] {
         try checkPermission()
         guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [expected.identifier], options: nil).firstObject else {
@@ -156,8 +182,9 @@ private final class StreamingManifestWriter {
                 }.value
                 previous = old; previousDigest = loaded.digest; snapshot = loaded.plan.sourceOrder
                 // Source may have changed while hashing the old session.
-                let current = try await Task.detached(priority: .userInitiated) { try Self.capture(localIdentifier: collectionIdentifier) }.value
-                try loaded.plan.validateCurrent(albumIdentifier: collection.localIdentifier, albumName: current.name, assets: current.assets)
+                try await Task.detached(priority: .userInitiated) {
+                    try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources)
+                }.value
             }
             try checkStopAndPermission()
             let session = UUID().uuidString; let dir = exports.appendingPathComponent(session)
@@ -227,8 +254,9 @@ private final class StreamingManifestWriter {
             if let previous, let previousDigest {
                 guard try StagingResume.load(in: previous).digest == previousDigest else { throw ExportError.invalidManifest("旧会话计划已变化") }
             }
-            let current = try await Task.detached(priority: .userInitiated) { try Self.capture(localIdentifier: collectionIdentifier) }.value
-            try plan.validateCurrent(albumIdentifier: collection.localIdentifier, albumName: current.name, assets: current.assets, requireEditVersion: resumeSession != nil)
+            try await Task.detached(priority: .userInitiated) {
+                try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources)
+            }.value
             try checkStopAndPermission()
             try journal("FINALIZING_MANIFEST")
             message = "正在整理保存记录，请不要关闭 App"
