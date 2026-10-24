@@ -37,7 +37,9 @@ bash scripts/verify-delivery.sh
 
 按最新页面参考图调整“备份到 Mac”页面：移除多余的技术说明和重复动作，保留相册名、照片数量、可选的 iCloud 原图下载、开始备份、备份进度和继续上次备份。点击后新增独立的扫描状态：显示转圈进度和“正在读取 X 张照片…”，扫描完成后再显示逐项备份进度。
 
-本地验证：iOS Swift 语法解析通过，Python 63 项测试通过，`git diff --check` 通过；云端构建待本轮提交后更新。
+本地验证：iOS Swift 语法解析通过，Python 63 项测试通过，`git diff --check` 通过；GitHub Actions #85 已完成云构建。
+
+扫描进度版云包：iPhone IPA SHA-256 `0f1ff1ac5ef8cedc8bcb299ff800aa459ffe90dde4da7f085c5d86c5c3a743b3`；Intel Mac ZIP SHA-256 `2e5fb2da076c1d9dfb6e8980c2fb2dd950371bc1f5a5f119f1e425b02f3b4dbd`；artifact digest `sha256:5f7f651d07b997bff98b6fc56b76704df3e2453b3302094cd344a3b437280c64`。
 
 ### M4.17 大相册点击无响应修复（2026-10-24）
 
@@ -703,3 +705,9 @@ IPA 仍是 unsigned，需要用户自己的 Apple ID 签名；Mac 包为 Intel x
 导出末尾的内存峰值已修复：`OriginalExportService` 不再把整个相簿的 `ExportAsset` 数组留在内存后一次性编码，而是在每个资源组完成时增量写入 `album-order.json.part`，最后只做原子收尾。保存页明确显示照片暂存在 iPhone 的 PhotoBridge 文件区，Mac 通过“查找手机保存”选择目标文件夹。
 
 本机验证：iOS/macOS Swift 语法解析通过；Intel x86_64 Mac 构建通过；Python 63 项通过。iOS 完整 Xcode 编译和大相册真机复测待下一次云包，不能提前标记设备通过。
+
+### M4.11 iPhone 照片信息编辑（2026-10-24）
+
+iPhone 端新增独立“照片信息”标签，保留 PhotoBridge 原有备份、恢复和相簿顺序页面。新页面使用 PhotosPicker 读取最多 20 张照片，ImageIO 读取/写入相机与曝光元数据，支持 EV=0、日期、分辨率和 3:4 中心裁切；保存通过 PhotoKit 直接创建到 iPhone 照片相册，不覆盖原照片。新增 `NSPhotoLibraryAddUsageDescription`。
+
+本机 `swiftc -parse apps/iOS/*.swift`、git diff 检查、CoreChecks、StagingChecks、RecoveryChecks 和 Python 63 项通过。当前机器无完整 Xcode/XCTest，云端 Xcode 编译、真实 iPhone 保存、HEIC/Live Photo、相机信息系统显示和大图压力测试待验证。
