@@ -35,7 +35,17 @@ public enum ProbeFiles {
     public static func inspect(_ url: URL) throws -> ProbeReceipt {
         let file = try FileHandle(forReadingFrom: url); defer { try? file.close() }
         var hash = SHA256(); var count = 0
-        while let data = try file.read(upToCount: 1024 * 1024), !data.isEmpty { hash.update(data: data); count += data.count }
+        while true {
+            // Darwin FileHandle can retain autoreleased NSData until the outer
+            // task pool drains. Keep each chunk and its hash update in one pool.
+            let size = try autoreleasepool { () throws -> Int in
+                guard let data = try file.read(upToCount: 1024 * 1024), !data.isEmpty else { return 0 }
+                hash.update(data: data)
+                return data.count
+            }
+            if size == 0 { break }
+            count += size
+        }
         return ProbeReceipt(filename: url.lastPathComponent,
                             sha256: hash.finalize().map { String(format: "%02x", $0) }.joined(),
                             byteCount: count, origin: "readback")
