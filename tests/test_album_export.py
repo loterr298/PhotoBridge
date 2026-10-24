@@ -45,6 +45,19 @@ class AlbumExportChecks(unittest.TestCase):
         r['originalFilename'] = '.AAE'; r['storedRelativePath'] = 'Resources/000001/0001.bin'
         self.module.validate_manifest(m)
 
+    def test_mixed_png_raw_and_live_pair_resources_keep_one_asset_group(self):
+        m, _ = self.fixture()
+        resources = m['assets'][0]['resources']
+        resources.append({'resourceIndex': 2, 'resourceType': 2, 'originalFilename': 'pair.DNG',
+            'uniformTypeIdentifier': 'com.adobe.raw-image', 'storedRelativePath': 'Resources/000001/0002.DNG',
+            'sha256': 'b' * 64, 'byteCount': 4})
+        resources.append({'resourceIndex': 3, 'resourceType': 3, 'originalFilename': 'pair.MOV',
+            'uniformTypeIdentifier': 'com.apple.quicktime-movie', 'storedRelativePath': 'Resources/000001/0003.MOV',
+            'sha256': 'c' * 64, 'byteCount': 5})
+        m['assets'][1]['resources'][0]['originalFilename'] = 'preview.PNG'
+        m['assets'][1]['resources'][0]['storedRelativePath'] = 'Resources/000002/0001.PNG'
+        self.module.validate_manifest(m)
+
     def test_required_metadata_missing_or_wrong_type_cannot_commit(self):
         m, _ = self.fixture()
         for area, field in [('sourceOrder', 'albumIdentifier'), ('sourceOrder', 'albumName'),
@@ -103,6 +116,15 @@ class AlbumExportChecks(unittest.TestCase):
             self.assertFalse((target / 'transfer-manifest.json').exists())
             self.assertEqual(json.loads((target / 'transfer-progress.json').read_text())['status'], 'FAILED')
             self.assertTrue(list(target.rglob('*.part')))
+
+    def test_cancel_marker_stops_before_creating_a_local_backup(self):
+        m, files = self.fixture()
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d); marker = root / 'cancel'; marker.write_text('stop')
+            target = root / 'new'
+            with self.assertRaisesRegex(RuntimeError, '安全停止'):
+                self.module.download_album(self.client(m, files), 'Exports/' + m['sessionID'], target, marker)
+            self.assertFalse(target.exists())
 
     @unittest.skipUnless(sys.platform == 'darwin', 'Darwin creation-time API')
     def test_creation_time_never_follows_a_symbolic_link(self):
