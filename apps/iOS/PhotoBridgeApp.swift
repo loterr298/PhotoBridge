@@ -85,7 +85,7 @@ struct AlbumsView: View {
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("备份照片到 Mac").font(.system(size: 36, weight: .bold, design: .rounded)).foregroundStyle(Color.bridgeInk)
-                                BridgeStatus(title: library.authorization == .authorized ? "照片已准备 · 等待数据线" : "请先允许访问照片", connected: false)
+                                BridgeStatus(title: library.authorization == .authorized ? "照片权限已准备" : "请先允许访问照片", connected: library.authorization == .authorized)
                             }
                             Spacer()
                             Menu {
@@ -100,11 +100,10 @@ struct AlbumsView: View {
                                 HStack(spacing: 14) {
                                     BridgeIconCircle(systemImage: "laptopcomputer", tint: .bridgeBlue, size: 62)
                                     VStack(alignment: .leading, spacing: 5) {
-                                        Text("连接 Mac 后开始备份").font(.title3.weight(.semibold))
-                                        Text("用数据线连接 Mac，照片不会上传云端").font(.subheadline).foregroundStyle(.secondary)
+                                        Text("准备好后开始备份").font(.title3.weight(.semibold))
+                                        Text("连接状态和保存位置会在 Mac 上显示").font(.subheadline).foregroundStyle(.secondary)
                                     }
                                     Spacer()
-                                    Circle().fill(.gray.opacity(0.55)).frame(width: 11, height: 11)
                                 }
                                 NavigationLink { AlbumTransferPicker() } label: {
                                     Label("选择相册开始备份", systemImage: "photo.on.rectangle.angled")
