@@ -37,7 +37,9 @@ bash scripts/verify-delivery.sh
 
 修复“点击开始备份后万张照片长时间没有反应”：原实现会在主线程同步扫描相册成员并读取每张照片的资源目录，导致 SwiftUI 无法及时刷新。现在相册扫描、成员数量统计和恢复前的重复扫描都在后台任务执行；点击后立即显示“正在读取相册…”，完成扫描后再进入逐项备份。
 
-本地验证：iOS Swift 语法解析通过，Python 63 项测试通过，`git diff --check` 通过；真机大相册响应时间需用新包复测。
+本地验证：iOS Swift 语法解析通过，Python 63 项测试通过，`git diff --check` 通过；GitHub Actions #81 已完成云构建。
+
+大相册修复包：iPhone IPA SHA-256 `28dc167ba025c27332bd08da413c4af47852dad151f260301fec56dbdfa1852e`；Intel Mac ZIP SHA-256 `ebb6e49e9843de279c9f4884f52da89b620718794532a951a3f7e3ffcc36f079`；artifact digest `sha256:e8300d2ee5a7c18d0ba62ba4239ad5852d3c0e1d571a3aa2ff5e7f2336cf163d`。真机大相册点击反馈仍需用新包复测。
 
 ### M4.16 Mac 本地覆盖更新（2026-10-24）
 
