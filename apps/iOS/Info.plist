@@ -5,6 +5,7 @@
 <key>CFBundleShortVersionString</key><string>0.3.8</string>
 <key>CFBundleVersion</key><string>12</string>
 <key>NSPhotoLibraryUsageDescription</key><string>读取授权相簿顺序及完整资源，用于 USB 备份；仅在你点击恢复后向新相簿添加已校验副本，不修改或删除原照片。</string>
+<key>NSPhotoLibraryAddUsageDescription</key><string>将编辑后的照片直接保存到 iPhone 照片相册。</string>
 <key>UIFileSharingEnabled</key><true/>
 <key>LSSupportsOpeningDocumentsInPlace</key><true/>
 <key>UILaunchScreen</key><dict/>
