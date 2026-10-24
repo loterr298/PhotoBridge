@@ -1,5 +1,6 @@
 import SwiftUI
 import Photos
+import UIKit
 
 /// A calm, single-purpose task screen for saving one iPhone album to the Mac.
 struct OriginalExportView: View {
@@ -14,6 +15,14 @@ struct OriginalExportView: View {
 
     private var albumName: String { collection.localizedTitle ?? "我的相册" }
     private var isFinished: Bool { !exporter.busy && exporter.message.hasPrefix("保存完成") }
+    private var needsFullPhotoAccess: Bool { exporter.message.contains("需要全部照片权限") }
+    private var failureMessage: String {
+        let value = exporter.message
+        if let detail = value.split(separator: "。", maxSplits: 1).first {
+            return String(detail).replacingOccurrences(of: "没有完成：", with: "")
+        }
+        return "请稍后重试"
+    }
 
     var body: some View {
         ZStack {
@@ -162,9 +171,40 @@ struct OriginalExportView: View {
             } else if isFinished {
                 statusCard(icon: "checkmark.circle.fill", title: "照片已准备好", detail: "回到 Mac，选择保存文件夹即可完成备份", showsSpinner: false)
             } else if hasStarted {
-                statusCard(icon: "exclamationmark.circle", title: "备份没有完成", detail: "已保留当前进度，可以稍后再试", showsSpinner: false)
+                failureCard
             }
         }
+    }
+
+    private var failureCard: some View {
+        VStack(alignment: .leading, spacing: 13) {
+            HStack(spacing: 12) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.orange)
+                Text("备份没有完成")
+                    .font(.headline)
+                    .foregroundStyle(Color.bridgeInk)
+            }
+            Text(failureMessage)
+                .font(.subheadline)
+                .foregroundStyle(Color.bridgeMuted)
+                .fixedSize(horizontal: false, vertical: true)
+            if needsFullPhotoAccess {
+                Button("打开照片权限设置") {
+                    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                    UIApplication.shared.open(url)
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.bridgeBlue)
+            }
+            Text("已完成的文件和原照片都会保留，可以修复后重新开始。")
+                .font(.caption)
+                .foregroundStyle(Color.bridgeMuted)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
     private func statusCard(icon: String, title: String, detail: String, showsSpinner: Bool) -> some View {
