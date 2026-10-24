@@ -45,6 +45,7 @@ private final class StreamingManifestWriter {
 
 @MainActor final class OriginalExportService: ObservableObject {
     @Published var busy = false
+    @Published var scanning = false
     @Published var message = "尚未导出"
     @Published var resourcesCompleted = 0
     @Published var totalResources = 0
@@ -101,9 +102,10 @@ private final class StreamingManifestWriter {
     }
     func start(collection: PHAssetCollection, allowNetwork: Bool, resumeSession: String? = nil, stopAfterResources: Int? = nil) async {
         guard !busy else { return }
-        busy = true; stopRequested = false; resourcesCompleted = 0; totalResources = 0; bytesCompleted = 0
+        busy = true; scanning = true; stopRequested = false; resourcesCompleted = 0; totalResources = 0; bytesCompleted = 0
         reusedResources = 0; photoKitResourcesRead = 0; sessionName = nil
-        defer { busy = false }
+        message = "正在读取相册…"
+        defer { scanning = false; busy = false }
         var directory: URL?; var previous: URL?; var previousDigest: String?
         let build = Bundle.main.object(forInfoDictionaryKey: "PhotoBridgeBuildCommit") as? String ?? "local-unversioned"
         func journal(_ state: String, error: String? = nil) throws {
@@ -128,6 +130,8 @@ private final class StreamingManifestWriter {
                 try Self.capture(localIdentifier: collectionIdentifier)
             }.value
             let sources = captured.assets
+            scanning = false
+            message = "已读取 \(sources.count) 张照片，准备开始备份"
             guard !sources.isEmpty else { throw ExportError.invalidManifest("相簿为空或不可访问") }
             totalResources = sources.reduce(0) { $0 + $1.resources.count }
             let name = captured.name
