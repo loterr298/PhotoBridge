@@ -24,8 +24,18 @@ class LiveExportChecks(unittest.TestCase):
                     old.write_bytes(data if mode == 'reuse' else b'changed-old')
                 old_bytes = {path: (previous / path).read_bytes() for path in files}
             class Client:
+                status_reads = 0
                 def read(self, path, sink, maximum=None):
                     if path == 'Control/Jobs/' + request + '.json':
+                        self.status_reads += 1
+                        if mode == 'transient-status' and self.status_reads in (1, 5):
+                            # Real AFC failure observed while iOS atomically replaced
+                            # the status file. A partial reply must be discarded.
+                            sink(b'{\"requestID\":')
+                            raise RuntimeError('AFC read: error 1')
+                        if mode == 'persistent-status':
+                            if self.status_reads > 4: raise AssertionError('Unbounded retry')
+                            raise RuntimeError('AFC read: error 1')
                         status = {'requestID': request, 'albumIdentifier': 'album-test',
                                   'sessionID': m['sessionID'], 'status': 'STAGING'}
                         if mode == 'stale': status['requestID'] = 'another-request'
@@ -55,7 +65,7 @@ class LiveExportChecks(unittest.TestCase):
                     if maximum is not None and len(value) > maximum: raise ValueError('exceeds bound')
                     sink(value)
             self_test = self
-            if mode not in ('normal', 'reuse'):
+            if mode not in ('normal', 'reuse', 'transient-status'):
                 with self.assertRaises((ValueError, RuntimeError)):
                     album_export.download_live_album(Client(), request, 'album-test', target, previous=previous)
                 self.assertFalse((target / 'transfer-manifest.json').exists())
@@ -85,6 +95,15 @@ class LiveExportChecks(unittest.TestCase):
                 album_export.download_live_album(Client(), request, 'album-test', target, cancel)
             self.assertEqual(json.loads((target / 'transfer-progress.json').read_text())['status'], 'STOPPED')
             self.assertFalse((target / 'transfer-manifest.json').exists())
+
+    def test_status_replacement_read_error_retries_without_losing_or_duplicating_bytes(self):
+        try:
+            self.run_export('transient-status')
+        except RuntimeError as error:
+            self.fail('Connected iPhone status read must survive transient AFC error: ' + str(error))
+
+    def test_persistent_status_error_stops_without_claiming_completion(self):
+        self.run_export('persistent-status')
 
     def test_continuation_reuses_verified_bytes_without_usb_media_reads(self): self.run_export('reuse')
     def test_corrupt_previous_copy_is_never_reused(self): self.run_export('corrupt-old')
