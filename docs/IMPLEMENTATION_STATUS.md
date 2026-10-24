@@ -790,3 +790,16 @@ GitHub Actions run **#100**（run `40104408210`，commit `bb689b9`）成功完�
 - **已实现**：新增 `scripts/mac_control.py`，请求/响应使用 `.part` + AFC rename，拒绝半写入 JSON；底层仍使用既有 USB-only House Arrest/AFC，不启用网络设备查找。
 - **已验证**：`swift build -c debug --product PhotoBridgeMac`；Python 测试 63 项全部通过。当前本机没有完整 Xcode，iOS 编译需由 GitHub Actions 验证；真实设备上的大相簿 Mac-first 全流程仍待本轮新包安装后复测。
 - **用户操作**：保持 iPhone 解锁并打开 PhotoBridge（仅作为 USB 数据端），在 Mac 点“读取 iPhone 相册”→选择相册→“选择文件夹并开始导出”。文件会出现在所选目录的 `PhotoBridge-导出` 文件夹中。
+
+GitHub Actions **#105**（commit `ee0f11a`）已成功完成 iOS arm64 未签名 IPA、Intel x86_64 Mac App、核心检查与 Python 测试。云端产物压缩包 SHA-256：`ae50ad145e8e847f7bd2b876486b10102a4649b0a4905e4e446338030f2daf37`；IPA：`da34685ea05643160f1b991c0dfb185ebb4f7f5cace72244fc363efe3fae250d`；Intel Mac ZIP：`1d83351ebba1d29ed9d14f8e5704ae224b226b96f2e877372b1e0f92afcfe7dd`。这是编译和自动化检查证据，Mac-first 真机大相簿全流程仍需安装此包后执行。
+
+### M4.20 Mac 发起、逐张实时落盘（0.3.9 / build 13，2026-10-25）
+
+此前 #105 只是 Mac 发起后等待整批暂存完成，不能称为逐张实时导出。本轮改为：iPhone 完成一张资产的全部原始资源及 hash 后，原子发布该张记录；Mac 立即按 ordinal 接收并校验、提交新文件，同时 iPhone 继续准备后续照片。完整清单仍在最后独立复核，未通过时没有 COMMITTED 成功记录。Live Photo 的静态与 MOV 保持同组，所有内部媒体 bytes 不改写，Mac 新副本文件时间仍按资产 5 秒间隔设置。
+
+- Mac：选相册 → 选文件夹并导出；即时显示扫描张数、已落盘张数、实测字节速度、当前文件、保存目录及 Finder 入口。总字节未知时不伪造剩余时间；最终清单核对期间显示独立等待状态，不提前宣称完成。重复点击被禁止。
+- iPhone 首页改为被动配合页：允许照片访问后只需保持打开，取消在手机上开始备份的主按钮。扫描和读取状态来自真实计数；完成结果以 Mac 为准。
+- 控制请求绑定 UUID 和相册 ID，五分钟内有效；每次请求单独 Jobs 文件，接受记录先持久化，重启不重放；修复旧状态错配、失败被误写 READY、状态 JSON 删除空窗、Mac 字符串漏插值。
+- 暂停同时通知手机在资源边界停止，Mac 等待中也可暂停；继续在新目录复用 hash/长度均匹配的已落盘文件，旧目录只读，未完成文件重新读取。原有完整备份的字节偏移续传工具保持可用。本轮不承诺新实时导出复用半个资源的偏移。
+- 验证：新增 9 项自动检查，包括“第二张记录尚未可读前，第一张已经落盘且完整清单尚不存在”、损坏资源、损坏旧副本、旧请求、路径越界、最终清单变化、等待中暂停、复用时不重复 USB 读取完整资源，以及与既有恢复预检兼容；Python 全套 72 项通过，CoreChecks / 23 项 StagingChecks / 57 项 RecoveryChecks、iOS 语法解析、Mac 编译已执行。日志在本地 build/live-*.log；首轮 RED 是新增 API 缺失，不伪称行为断言 RED。
+- 限制：仍使用 iPhone App 临时文件中转，暂存保留用于安全继续；不能称为零手机磁盘占用。需要手机解锁并保持前台。新实时流程、万张实际内存峰值及用户此前 100% 闪退的真机复现/修复验收仍 NOT_RUN，不能由合成测试或云编译替代。
