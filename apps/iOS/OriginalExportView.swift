@@ -8,6 +8,15 @@ struct OriginalExportView: View {
     @State private var memberCount: Int?
     @State private var freeSpace: String?
     @State private var resumeSession = ""
+    private var friendlyMessage: String {
+        let value = exporter.message
+        if value == "尚未导出" { return "还没有开始备份" }
+        if value.hasPrefix("正在准备") { return "正在读取照片…" }
+        if value.hasPrefix("正在保存") { return "正在备份照片…" }
+        if value.hasPrefix("正在整理") { return "正在整理备份…" }
+        if value.hasPrefix("保存完成") { return "iPhone 已准备好，请回到 Mac 保存照片" }
+        return value
+    }
 
     var body: some View {
         NavigationStack {
@@ -29,7 +38,7 @@ struct OriginalExportView: View {
                 }
 
                 Section("备份进度") {
-                    Text(exporter.message)
+                    Text(friendlyMessage)
                         .textSelection(.enabled)
                     if exporter.totalResources > 0 {
                         ProgressView(value: Double(exporter.resourcesCompleted), total: Double(exporter.totalResources))
