@@ -5,6 +5,7 @@ import PhotoBridgeCore
 @main
 struct PhotoBridgeApp: App {
     @StateObject private var library = LibraryProbe()
+    @StateObject private var macControl = MacControlService()
     var body: some Scene {
         WindowGroup {
             TabView {
@@ -14,6 +15,7 @@ struct PhotoBridgeApp: App {
             }
             .tint(.bridgeBlue)
             .environmentObject(library)
+            .task { macControl.start() }
         }
     }
 }
