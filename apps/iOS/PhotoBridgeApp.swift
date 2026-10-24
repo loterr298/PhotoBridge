@@ -88,7 +88,6 @@ struct AlbumsView: View {
                             }
                             Spacer()
                             Menu {
-                                Button("刷新相册") { library.reload() }
                                 Button("重新读取相册") { library.reload() }
                             } label: {
                                 Image(systemName: "ellipsis").font(.title3.weight(.bold)).foregroundStyle(Color.bridgeMuted).frame(width: 46, height: 46).background(.white.opacity(0.68), in: Circle())
