@@ -49,6 +49,9 @@ private final class StreamingManifestWriter {
 @MainActor final class OriginalExportService: ObservableObject {
     @Published var busy = false
     @Published var scanning = false
+    @Published var state = "IDLE"
+    @Published var scannedAssets = 0
+    @Published var scanTotalAssets = 0
     @Published var message = "尚未导出"
     @Published var resourcesCompleted = 0
     @Published var totalResources = 0
@@ -69,14 +72,18 @@ private final class StreamingManifestWriter {
             resources: resources.map { StagingResourceSource(resourceType: $0.type.rawValue,
                 originalFilename: $0.originalFilename, uniformTypeIdentifier: $0.uniformTypeIdentifier) })
     }
-    private nonisolated static func capture(localIdentifier: String) throws -> (name: String, assets: [StagingAssetSource]) {
+    private nonisolated static func capture(localIdentifier: String, progress: @escaping @Sendable (Int, Int) -> Void) throws -> (name: String, assets: [StagingAssetSource]) {
         try PhotoOperationChecks.requireFullAccess()
         guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [localIdentifier], options: nil).firstObject else {
             throw ExportError.invalidManifest("来源相簿已不可访问")
         }
         let result = PHAsset.fetchAssets(in: current, options: nil)
         var sources: [StagingAssetSource] = []
-        result.enumerateObjects { asset, _, _ in sources.append(Self.source(asset, resources: PHAssetResource.assetResources(for: asset))) }
+        progress(0, result.count)
+        result.enumerateObjects { asset, index, _ in
+            sources.append(Self.source(asset, resources: PHAssetResource.assetResources(for: asset)))
+            if (index + 1) % 100 == 0 || index + 1 == result.count { progress(index + 1, result.count) }
+        }
         return (current.localizedTitle ?? "未命名相簿", sources)
     }
     /// Re-check the source without building a second full album catalog. This keeps
@@ -131,7 +138,7 @@ private final class StreamingManifestWriter {
     }
     func start(collection: PHAssetCollection, allowNetwork: Bool, resumeSession: String? = nil, stopAfterResources: Int? = nil) async {
         guard !busy else { return }
-        busy = true; scanning = true; stopRequested = false; resourcesCompleted = 0; totalResources = 0; bytesCompleted = 0
+        busy = true; scanning = true; state = "SCANNING"; scannedAssets = 0; scanTotalAssets = 0; stopRequested = false; resourcesCompleted = 0; totalResources = 0; bytesCompleted = 0
         reusedResources = 0; photoKitResourcesRead = 0; sessionName = nil
         message = "正在读取相册…"
         defer { scanning = false; busy = false }
@@ -156,10 +163,12 @@ private final class StreamingManifestWriter {
             message = "正在读取相册…"
             await Task.yield()
             let captured = try await Task.detached(priority: .userInitiated) {
-                try Self.capture(localIdentifier: collectionIdentifier)
+                try Self.capture(localIdentifier: collectionIdentifier) { done, total in
+                    Task { @MainActor [weak self] in self?.scannedAssets = done; self?.scanTotalAssets = total }
+                }
             }.value
             let sources = captured.assets
-            scanning = false
+            scanning = false; state = "STAGING"
             message = "已读取 \(sources.count) 张照片，准备开始备份"
             guard !sources.isEmpty else { throw ExportError.invalidManifest("相簿为空或不可访问") }
             totalResources = sources.reduce(0) { $0 + $1.resources.count }
@@ -192,7 +201,9 @@ private final class StreamingManifestWriter {
             directory = dir; sessionName = session
             let plan = StagingPlan(sessionID: session, sourceOrder: snapshot, assets: sources)
             let digest = try StagingResume.prepare(plan: plan, in: dir)
-            try snapshot.json().write(to: dir.appendingPathComponent("source-order.json"), options: .withoutOverwriting)
+            let sourcePart = dir.appendingPathComponent("source-order.json.part")
+            try snapshot.json().write(to: sourcePart, options: .withoutOverwriting)
+            try StagingFiles.commit(part: sourcePart, destination: dir.appendingPathComponent("source-order.json"))
             let records = dir.appendingPathComponent("asset-records")
             try FileManager.default.createDirectory(at: records, withIntermediateDirectories: false)
             try journal("EXPORTING")
@@ -245,10 +256,14 @@ private final class StreamingManifestWriter {
                     pixelWidth: source.pixelWidth, pixelHeight: source.pixelHeight, mediaType: source.mediaType,
                     mediaSubtypes: source.mediaSubtypes, resources: exported)
                 let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
-                try encoder.encode(group).write(to: records.appendingPathComponent(String(format: "%06d.json", index + 1)), options: .withoutOverwriting)
+                let recordURL = records.appendingPathComponent(String(format: "%06d.json", index + 1))
+                let recordPart = recordURL.appendingPathExtension("part")
+                try encoder.encode(group).write(to: recordPart, options: .withoutOverwriting)
+                try StagingFiles.commit(part: recordPart, destination: recordURL)
                 try manifestWriter.append(group)
             }
             try checkStopAndPermission()
+            state = "FINALIZING"; message = "正在核对相册和保存记录…"
             let checked = try await Task.detached(priority: .utility) { try StagingResume.reusable(in: dir, plan: plan, digest: digest) }.value
             guard checked.count == resourcesCompleted else { throw ExportError.invalidManifest("完成资源与检查点数量不一致") }
             if let previous, let previousDigest {
@@ -263,8 +278,10 @@ private final class StreamingManifestWriter {
             try manifestWriter.finish()
             try StagingFiles.commit(part: manifestPart, destination: dir.appendingPathComponent("album-order.json"))
             try journal("STAGED")
+            state = "STAGED"
             message = "保存完成：\(sources.count) 张照片，\(resourcesCompleted) 个文件已检查。等待 Mac 保存。"
         } catch {
+            state = stopRequested ? "STOPPED" : "FAILED"
             let e = error as NSError; let detail = "\(e.domain) / \(e.code)：\(e.localizedDescription)"
             try? journal(stopRequested ? "STOPPED" : "FAILED", error: detail)
             message = "没有完成：\(detail)。已完成和部分暂存均保留；可以查找上次进度继续。旧版本的备份不能继续，云端原图可能需要打开下载选项。"
