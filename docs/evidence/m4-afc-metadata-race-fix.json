@@ -1,0 +1,46 @@
+{
+  "scope": "Read-only connected device investigation; no private album identifiers or media included",
+  "baseline": {
+    "immutableRecordReads": 350,
+    "immutableFailures": 0,
+    "updatingStatusReads": 350,
+    "updatingStatusFailures": 2,
+    "additionalUpdatingStatusReads": 250,
+    "additionalUpdatingStatusFailures": 2,
+    "failure": "AFC read: error 1",
+    "partialReplyObserved": true
+  },
+  "fix": "Bounded retry of small metadata snapshots only; fresh buffer per attempt; no command or media replay",
+  "regression": {
+    "oldCode": "FAIL assertion on partial status + transient AFC error",
+    "fixedCode": "PASS",
+    "pythonSuite": 74,
+    "permanentFailure": "PASS no committed backup"
+  },
+  "readOnlyDeviceCheck": {
+    "kind": "connected-device read-only metadata stress",
+    "snapshotReads": 1000,
+    "afcReadAttempts": 1000,
+    "transientReadErrorsRecovered": 0,
+    "failedSnapshots": 0,
+    "failures": [],
+    "photoLibraryWrites": 0,
+    "photoExportCompletion": "NOT_RUN"
+  },
+  "completeAlbumExport": "PENDING",
+  "cloudBuild": "PENDING",
+  "phoneUpdateRequired": false,
+  "activeExportReadOnlyCheck": {
+    "kind": "connected-device metadata stress during active export",
+    "snapshotReads": 1000,
+    "afcReadAttempts": 1002,
+    "transientReadErrorsRecovered": 2,
+    "failedSnapshots": 0,
+    "failures": [],
+    "observedPhoneStates": [
+      "STAGING"
+    ],
+    "photoLibraryWrites": 0,
+    "photoExportCompletion": "PENDING"
+  }
+}
