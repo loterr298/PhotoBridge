@@ -815,3 +815,17 @@ GitHub Actions **#105**（commit `ee0f11a`）已成功完成 iOS arm64 未签名
 - 产物：`build/PhotoBridge-0.3.9-LiveExport/`；云端原始日志：`build/cloud-108/build/logs/`；[结构化验收记录](evidence/m4-live-export-build-verified.json)。
 - 已直接将 `/Applications/PhotoBridgeMac.app` 更新为该云包的 0.3.9/build13，校验签名及可执行文件一致，并启动读取实际主界面。旧应用保留在 `build/installed-backups/PhotoBridgeMac-before-0.3.9-20261025-030552.app`，未碰用户备份和照片。截图 `build/PhotoBridge-0.3.9-LiveExport/mac-installed.png`。
 - 当前 USB-only 检测没有设备（-3），新实时导出真机验收未执行。iPhone IPA 未签名，需用户个人签名覆盖更新；不得把新流程、大相簿压力或此前闪退的真机修复验收标为通过。
+
+
+### M4.21 修复有线导出中的状态快照读取竞态（Mac 0.3.10 / build 14，2026-10-25）
+
+真实现场两次导出分别在 47 / 93 张后失败，Mac 日志均为 `AFC read: error 1`；同一时刻 USB-only 发现和 House Arrest 读取仍可用，界面也仍显示已连接。手机 STOPPED 是 Mac 捕获错误后发出 stopExport 的结果，不是物理拔线证据。
+
+进一步只读复现：同一手机、同一 AFC 客户端，固定资源记录读取 350 次无错；持续由 iOS 原子替换的 Jobs 状态文件读取 350 次出现 2 次 error 1（其中一次已收到完整 JSON，下一次 EOF 读取失败）。此前另 250 次状态读取也有 2 次 error 1。表明状态快照替换期间 AFC 句柄读取可失败，原实现把一次状态读取错误直接升级为整个传输失败。
+
+修复只在 Mac：小型元数据读取共享 `read_snapshot`，针对 AFC open/read/close 的 error 1 最多读取 3 次、间隔 50 ms，每次使用全新内存缓冲，丢弃失败尝试的部分字节。其他错误、损坏 JSON、媒体读取与 hash 失败不掩盖；不重发控制命令、不改写已保存媒体、不把永久错误当作成功。用于实时导出的状态/单项清单及 Mac 控制响应；照片数据复制与原有严格校验保持原样。兼容现有 iPhone 0.3.9，无需用户重新签名手机包。
+
+验证：新回归测试在旧实现因真实模拟的部分状态 + error 1 断言失败（build/status-retry-red.log），修复后通过；另验证持续错误有界退出且无 COMMITTED。Python 全套 74 项通过；完整本机交付门禁、核心检查、iOS 解析、Intel x86_64 打包通过（build/status-retry-delivery.log）；本机 XCTest 缺失继续标为 BLOCKED，云端另行执行。修复后只读真机 1000 次元数据读取全部成功，但该轮没有出现原始 error 1，因此不称为 1000 次实际重试恢复。大相册完整导出和云端最终结果待后续实际记录。
+
+
+运行中真机核对：Mac 已覆盖为 0.3.10/build14，用户打开手机前台后，已从上一份未完成目录启动继续导出。运行中另做只读元数据压力检查：1000 次完整快照读取共调用 AFC 1002 次，实际捕获并恢复 2 次 error 1，0 次快照失败，绑定 requestID 与 JSON 均正确；手机保持 STAGING。该结果是实际重试证据，与此前空闲时没有触发错误的 1000 次检查区分记录。新导出已超过此前 93 张故障点（完整 7402 张结果后续单独记录）。
