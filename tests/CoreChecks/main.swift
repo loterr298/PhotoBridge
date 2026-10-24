@@ -10,6 +10,15 @@ func rejects(_ name: String, _ work: () throws -> Void) throws {
     try require(rejected, name)
 }
 do {
+    let progressData = Data("{\"status\":\"DOWNLOADING\",\"resourcesVerified\":2,\"totalResources\":4,\"bytesVerified\":20,\"totalBytes\":40,\"currentResource\":\"Resources/000003/0001.HEIC\"}".utf8)
+    let progress = try TransferSessionSummary.decode(progressData, identifier: "session-1")
+    try require(progress.identifier == "session-1" && progress.completed == 2 && progress.total == 4 && progress.bytes == 20 && progress.totalBytes == 40 && progress.fraction == 0.5, "transfer summary decodes real progress")
+    let exportProgress = try TransferSessionSummary.decode(Data("{\"status\":\"EXPORTING\",\"resourcesCompleted\":3,\"bytesCompleted\":99}".utf8), identifier: "session-2")
+    try require(exportProgress.completed == 3 && exportProgress.bytes == 99 && exportProgress.total == 0, "iPhone staging progress remains honest when totals are unknown")
+    print("PASS: transfer summaries decode both Mac and iPhone journals")
+} catch { fputs("FAIL transfer summary: \(error)\n", stderr); exit(1) }
+
+do {
     let ids = (1...20).map { "ID-\($0)" }
     let snapshot = OrderSnapshot(albumName: "测试", albumIdentifier: "A", authorization: "full", fetchMode: "nil-options",
                                  identifiers: ids.reversed(), systemVersion: "synthetic", build: "local")
@@ -196,3 +205,8 @@ do {
     }
     print("15 authorized adjustment timestamp checks passed; device results require separate evidence")
 } catch { fputs("FAIL timestamp policy: \(error)\n", stderr); exit(1) }
+
+do {
+    try runBatchChecks()
+    print("3 batch queue checks passed")
+} catch { fputs("FAIL batch queue: \(error)\n", stderr); exit(1) }
