@@ -11,6 +11,8 @@ import time
 import uuid
 from album_export import validate_manifest, write_json
 from usb_probe import AFC, inspect
+from transfer_progress import snapshot
+from transfer_control import CancellationRequested, check_cancel
 
 
 def regular_path(root, relative):
@@ -46,8 +48,9 @@ def validated_backup(local):
     return raw, manifest, resources, digest, total
 
 
-def upload_backup(client, local):
+def upload_backup(client, local, cancel_file=None):
     local = Path(local)
+    check_cancel(cancel_file)
     raw, manifest, resources, digest, total = validated_backup(local)
     manifest_path = regular_path(local, 'album-order.json')
     session = str(uuid.uuid4()).upper(); remote = 'RestoreInbox/' + session
@@ -55,9 +58,13 @@ def upload_backup(client, local):
     if journals.is_symlink(): raise ValueError('Upload journal must not be a symbolic link')
     journals.mkdir(mode=0o700, exist_ok=True)
     journal = journals / (session + '.json')
-    progress = {'state': 'UPLOADING', 'remote': remote, 'resourcesVerified': 0,
-                'bytesVerified': 0, 'photosImport': 'NOT_RUN', 'sourceManifestSHA256': digest}
-    write_json(journal, progress); start = time.monotonic()
+    start = time.monotonic()
+    progress = snapshot(status='UPLOADING', started_monotonic=start, now_monotonic=start,
+                        resources_verified=0, total_resources=len(resources),
+                        bytes_verified=0, total_bytes=total)
+    progress.update({'state': 'UPLOADING', 'remote': remote, 'photosImport': 'NOT_RUN',
+                     'sourceManifestSHA256': digest})
+    write_json(journal, progress)
 
     def copy_and_verify(relative, source, expected_size, expected_hash):
         destination = remote + '/' + relative; part = destination + '.part'
@@ -77,9 +84,22 @@ def upload_backup(client, local):
         for asset in manifest['assets']:
             client.mkdir(remote + '/Resources/' + f'{asset["ordinal"]:06d}', exclusive=True)
             for resource in asset['resources']:
+                check_cancel(cancel_file)
+                progress.update(snapshot(status='UPLOADING', started_monotonic=start, now_monotonic=time.monotonic(),
+                                         resources_verified=progress['resourcesVerified'],
+                                         total_resources=len(resources), bytes_verified=progress['bytesVerified'],
+                                         total_bytes=total, current_resource=resource['storedRelativePath']))
+                progress['state'] = 'UPLOADING'; progress['photosImport'] = 'NOT_RUN'; progress['remote'] = remote
+                progress['sourceManifestSHA256'] = digest
+                write_json(journal, progress)
                 with regular_path(local, resource['storedRelativePath']).open('rb') as source:
                     copy_and_verify(resource['storedRelativePath'], source, resource['byteCount'], resource['sha256'])
-                progress['resourcesVerified'] += 1; progress['bytesVerified'] += resource['byteCount']
+                progress.update(snapshot(status='UPLOADING', started_monotonic=start, now_monotonic=time.monotonic(),
+                                         resources_verified=progress['resourcesVerified'] + 1,
+                                         total_resources=len(resources), bytes_verified=progress['bytesVerified'] + resource['byteCount'],
+                                         total_bytes=total, current_resource=resource['storedRelativePath']))
+                progress['state'] = 'UPLOADING'; progress['photosImport'] = 'NOT_RUN'; progress['remote'] = remote
+                progress['sourceManifestSHA256'] = digest
                 write_json(journal, progress)
         if manifest_path.read_bytes() != raw: raise ValueError('Source manifest changed during upload')
         copy_and_verify('album-order.json', io.BytesIO(raw), len(raw), digest)
@@ -92,6 +112,9 @@ def upload_backup(client, local):
         progress['MiBPerSecondIncludingVerification'] = total / 1048576 / progress['seconds']
         write_json(journal, progress)
         return progress
+    except CancellationRequested as error:
+        progress.update(state='STOPPED', error=str(error)); write_json(journal, progress)
+        raise
     except Exception as error:
         progress.update(state='FAILED', error=str(error)); write_json(journal, progress)
         raise
@@ -101,10 +124,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--local', type=Path, required=True)
     parser.add_argument('--bundle', default='com.photobridge.OrderProbe')
+    parser.add_argument('--cancel-file', type=Path)
     args = parser.parse_args(); client = None
     try:
-        client = AFC(); client.vend(args.bundle); result = upload_backup(client, args.local)
+        client = AFC(); client.vend(args.bundle); result = upload_backup(client, args.local, args.cancel_file)
         print(json.dumps(result, indent=2)); return 0
+    except CancellationRequested as error:
+        print(json.dumps({'state': 'STOPPED', 'error': str(error)})); return 3
     except Exception as error:
         print(json.dumps({'state': 'FAILED', 'error': str(error)})); return 2
     finally:

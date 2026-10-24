@@ -10,10 +10,12 @@ import uuid
 from album_restore import regular_path, validated_backup
 from album_export import write_json
 from usb_probe import AFC
+from transfer_control import CancellationRequested, check_cancel
 
 
-def upload(client, local, previous_journal=None):
+def upload(client, local, previous_journal=None, cancel_file=None):
     local = Path(local)
+    check_cancel(cancel_file)
     raw, manifest, resources, digest, total = validated_backup(local)
     if previous_journal is not None:
         path = Path(previous_journal)
@@ -111,6 +113,7 @@ def upload(client, local, previous_journal=None):
                 prepared.append((relative, size, sha, data, complete, partial, offset))
             if previous_journal is not None: write_json(journal, state, exclusive=True)
             for relative, size, sha, data, complete, partial, offset in prepared:
+                check_cancel(cancel_file)
                 unpublished()
                 if complete:
                     if data is None: state['reusedVerifiedResources'] += 1
@@ -138,6 +141,10 @@ def upload(client, local, previous_journal=None):
                 write_json(journal, state)
             state['state'] = 'USB_VERIFIED'; write_json(journal, state)
             return dict(state, journal=str(journal))
+    except CancellationRequested as error:
+        if journal.exists():
+            state.update(state='STOPPED', error=str(error)); write_json(journal, state)
+        raise
     except Exception as error:
         # A refused resume must not overwrite the previous journal or create a false ready request.
         if journal.exists():
@@ -148,8 +155,11 @@ def upload(client, local, previous_journal=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--local', type=Path, required=True); parser.add_argument('--resume-journal', type=Path)
+    parser.add_argument('--cancel-file', type=Path)
     args = parser.parse_args(); client = AFC()
     try:
         client.vend('com.photobridge.OrderProbe')
-        print(json.dumps(upload(client, args.local, args.resume_journal), indent=2))
+        print(json.dumps(upload(client, args.local, args.resume_journal, args.cancel_file), indent=2))
+    except CancellationRequested as error:
+        print(json.dumps({'state': 'STOPPED', 'error': str(error)})); sys.exit(3)
     finally: client.close()

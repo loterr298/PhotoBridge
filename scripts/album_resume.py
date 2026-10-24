@@ -9,9 +9,10 @@ import sys
 from album_export import download_album, session_path, validate_manifest, write_json
 from album_restore import regular_path
 from usb_probe import AFC, CHUNK, inspect
+from transfer_control import CancellationRequested
 
 
-def resume_download(client, remote, previous, destination):
+def resume_download(client, remote, previous, destination, cancel_file=None):
     remote = session_path(remote); previous = Path(previous); destination = Path(destination)
     resolved_previous = previous.resolve(strict=True); resolved_destination = destination.resolve()
     if resolved_destination == resolved_previous or resolved_previous in resolved_destination.parents:
@@ -71,7 +72,7 @@ def resume_download(client, remote, previous, destination):
                 client.read(path, receive, maximum)
 
     # Existing downloader retains exclusive output, full hashes, both FS times and final manifest checks.
-    result = download_album(ResumingClient(), remote, destination)
+    result = download_album(ResumingClient(), remote, destination, cancel_file)
     write_json(destination / 'resume-report.json', dict(status='VERIFIED', **stats), exclusive=True)
     return dict(result, **stats)
 
@@ -80,12 +81,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--remote', required=True); parser.add_argument('--from-directory', type=Path, required=True)
     parser.add_argument('--local', type=Path, required=True); parser.add_argument('--bundle', default='com.photobridge.OrderProbe')
+    parser.add_argument('--cancel-file', type=Path)
     args = parser.parse_args(); client = None
     try:
         client = AFC(); client.vend(args.bundle)
-        result = resume_download(client, args.remote, args.from_directory, args.local)
+        result = resume_download(client, args.remote, args.from_directory, args.local, args.cancel_file)
         keys = ['status', 'resourcesVerified', 'bytesVerified', 'reusedVerifiedResources', 'resumedPartialBytes', 'usbResourceBytesRead', 'previousFilesWritten']
         print(json.dumps({k: result[k] for k in keys}, indent=2)); return 0
+    except CancellationRequested as error:
+        print(json.dumps({'status': 'STOPPED', 'error': str(error)})); return 3
     except Exception as error:
         print(json.dumps({'status': 'FAILED', 'error': str(error)})); return 2
     finally:
