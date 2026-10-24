@@ -734,3 +734,59 @@ iPhone 端新增独立“照片信息”标签，保留 PhotoBridge 原有备份
 - `PhotoBridgeMac-Intel.zip`：`c15e2e013d7cb341de230b5d9fa51a405e3c4072143f3c40a6a7acc87826fdf0`
 
 本机 Swift 解析、Python 63 项和 git diff 检查通过。IPA 仍需 Apple ID 个人签名；真机安装后的窄屏视觉验收和万张相册长时间备份仍需实际设备确认。
+
+### M4.14 备份页重新设计为单任务用户界面（2026-10-24）
+
+移除上一版仍接近系统表单的排版，改为独立的极简单任务流程：相册封面与数量、一个大圆角“开始备份到 Mac”按钮、收起的高级选项，以及独立状态卡。扫描阶段立即显示“正在准备照片”和旋转进度；资源导出阶段显示真实百分比、已保存文件数和暂停入口；完成状态只说明下一步回到 Mac 选择保存文件夹。技术字段、续传会话和内部诊断不出现在普通用户页面。
+
+GitHub Actions run **#96**（run `40101028874`，commit `4c03de7`）成功完成 iOS arm64 与 Intel x86_64 Mac 构建。云端日志确认 `OriginalExportView.swift` 已进入 SwiftCompile；仅有 Swift 并发提示和照片信息页的弃用 API 警告，没有编译错误。
+
+本轮最终产物哈希：
+
+- `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`12d8f338b106b43be70c7d8d36f70801532329487093ecda6c3734d481bf7bda`
+- `PhotoBridgeMac-Intel.zip`：`1b3fffe16fef421fbd1c90b2b08e866574967a6c062c5e69f7c21af1f6ba253c`
+
+本机 Swift 解析、Python 63 项和 diff 检查通过。IPA 仍需 Apple ID 个人签名；真机视觉和万张长时间备份仍需安装后确认。
+
+### M4.15 备份失败提示修复（2026-10-24）
+
+修复普通用户无法判断失败原因的问题。原页面把 PhotoKit 权限不足、空间不足、资源变化和其他失败都显示成“备份没有完成”；现在会显示实际可操作原因。全部照片权限不足时提供“打开照片权限设置”按钮，并说明已完成文件和原照片都会保留。
+
+GitHub Actions run **#97**（run `40101991025`，commit `ab23811`）成功完成 iOS 与 Intel Mac 构建。自动化测试 63 项通过，Swift 解析通过。
+
+本轮产物哈希：
+
+- `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`610372d31b598ebd9846c93517b0d6db952c6eb1a9103201171169263ef5582c`
+- `PhotoBridgeMac-Intel.zip`：`a98859ede4e2ed2288273a46e7747e672f72153948f4b35b9e9f820713443867`
+
+### M4.16 移除 iPhone 虚假的“等待数据线”状态（2026-10-24）
+
+iPhone 端此前把“照片已准备 · 等待数据线”写死在首页，实际没有读取 Mac USB 会话，因此即使数据线已连接也会显示等待。现在改为真实可确认的“照片权限已准备”，移除假的断线指示；连接状态和保存进度由 Mac 端真实传输工作台显示。GitHub Actions run **#98**（run `40102693780`，commit `077388e`）成功。
+
+- `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`0f3cf56c9c524003b7323dada4814403fa17c97d71ebe1cfdd3d83976b57dfd4`
+- `PhotoBridgeMac-Intel.zip`：`989a1ee52e2f6d4a54638014d4888fd31f5e356d7905cd0b25dd18169c773210`
+
+### M4.17 修复备份启动时临时清单文件不存在（2026-10-24）
+
+真机截图中的 `NSCocoaErrorDomain / 4: album-order.json.part doesn't exist` 已定位：流式清单写入器使用 `FileHandle(forWritingTo:)` 打开尚未创建的临时文件，导致备份在第一步就失败。现在在打开句柄前原子创建 `album-order.json.part`，保留原有流式写入与最终原子提交策略。
+
+GitHub Actions run **#99**（run `40103375439`，commit `a4a8489`）成功完成 iOS 与 Intel Mac 构建，63 项测试和 Swift 解析通过。
+
+- `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`2d021cc30a570d8f65c7188ff0605cd93e79d51ab23e75a386b4fb5e01c12a75`
+- `PhotoBridgeMac-Intel.zip`：`43681e0f95da5a14eace7ed28f045708f5252497cf747bb5facdd7c5f6395aa0`
+
+### M4.18 修复大相册 100% 收尾卡住/闪退（2026-10-24）
+
+针对大相册在 100% 后卡住并闪退的问题，收尾校验改为逐项对照当前 Photos 相簿，不再在内存中重新创建第二份完整资源目录。这样保留顺序、编辑状态和资源目录校验，同时降低最终阶段内存峰值；已保存资源和原照片仍保持不变。
+
+GitHub Actions run **#100**（run `40104408210`，commit `bb689b9`）成功完成 iOS 与 Intel Mac 构建。
+
+- `PhotoBridgeOrderProbe-0.3.8-unsigned.ipa`：`231b9ce59fe76625ee2b311a040dbf2171b9dbaf22dba4deb0c0bb092775db73`
+- `PhotoBridgeMac-Intel.zip`：`a692f18c6b2671966025c76b364c92beb15d51963fce8501ec7d3d50eec62770`
+# Mac-first 导出流程（2026-10-25）
+
+- **已实现**：Mac 端新增“读取 iPhone 相册”和“选择文件夹并开始导出”。Mac 通过 USB/AFC 写入一次性控制请求，iPhone 前台服务被动返回 PhotoKit 相册清单并启动原图读取；用户不需要再先在 iPhone 点“开始备份”。
+- **已实现**：Mac 端在选定文件夹下按 `album-order.json` 的 ordinal 顺序逐个资源写入 `.part`，完成大小与 SHA-256 校验后原子提交，并显示手机准备进度、Mac 写入进度、速度、剩余时间和当前文件。原图字节和内部元数据不改写。
+- **已实现**：新增 `scripts/mac_control.py`，请求/响应使用 `.part` + AFC rename，拒绝半写入 JSON；底层仍使用既有 USB-only House Arrest/AFC，不启用网络设备查找。
+- **已验证**：`swift build -c debug --product PhotoBridgeMac`；Python 测试 63 项全部通过。当前本机没有完整 Xcode，iOS 编译需由 GitHub Actions 验证；真实设备上的大相簿 Mac-first 全流程仍待本轮新包安装后复测。
+- **用户操作**：保持 iPhone 解锁并打开 PhotoBridge（仅作为 USB 数据端），在 Mac 点“读取 iPhone 相册”→选择相册→“选择文件夹并开始导出”。文件会出现在所选目录的 `PhotoBridge-导出` 文件夹中。
