@@ -26,7 +26,7 @@
 
 0.3.6 新增[Photos 事务恢复协议](docs/PHOTOS_TRANSACTION_RECOVERY_RUNBOOK.md)：按持久化 placeholder 标识核对既有副本，全部重新回读后再创建剩余项；状态不明确及旧版失败会话拒绝重放。新二进制已在本机3-Live样本完成首项提交后停止、用户确认重启、同一会话继续；首个ID与相簿不变、仅创建剩余2项、6资源独立USB字节一致、17旧文件不变，系统照片3张顺序及播放经用户确认。见[限定样本证据](docs/evidence/m3-photos-transaction-device-recovery-verified.json)。提交中强杀/系统终止及权限/空间/iCloud故障仍未验证。
 
-## 当前用户流程（Mac 0.3.12 / build16；iPhone 0.3.11 / build15）
+## 当前用户流程（Mac 0.3.13 / build17；iPhone 0.3.13 / build17）
 
 1. 数据线连接 iPhone 和 Mac，解锁手机并打开新版 PhotoBridge，允许访问全部照片。
 2. 在 Mac 点击“读取 iPhone 相册”，选定相册，再点“选择文件夹并开始导出”。所选位置内会创建一个新的相册文件夹，全部照片直接保存在里面，没有逐张子文件夹。
@@ -37,3 +37,5 @@
 顺序清单是排序依据；文件系统时间按照片位置间隔 5 秒。原始照片只读复制，不删除或覆盖原件，不主动改写媒体内部 EXIF/GPS/MakerNotes。手机需要保持 App 前台，仍占用暂存空间；完整清单最终校验通过才显示完成。新实时流程及万张压力测试尚待新版真机验收，不能用云编译替代。
 
 Mac 平铺保存格式：每项一份带序号的可见主文件；原图、Live Photo 配对视频、编辑附件和恢复清单保留为同一根目录的隐藏文件。完整导回请保留整个相册文件夹。格式与校验边界见 [平铺相册说明](docs/FLAT_MAC_ALBUM.md)。
+
+Large-batch validation and limits: [reproducible test scope](docs/LARGE_BATCH_VALIDATION.md). Synthetic checks do not replace real-device acceptance.
