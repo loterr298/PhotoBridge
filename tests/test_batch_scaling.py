@@ -1,0 +1,91 @@
+import copy
+import hashlib
+import json
+from pathlib import Path
+import tempfile
+import unittest
+from unittest import mock
+import test_album_export
+import test_upload_resume
+import album_export
+import album_restore
+import upload_resume
+from transfer_control import CancellationRequested
+
+
+class BatchScalingChecks(unittest.TestCase):
+    def test_legacy_download_hashes_the_immutable_manifest_once(self):
+        fixture = test_album_export.AlbumExportChecks(); m, files = fixture.fixture()
+        raw = json.dumps(m).encode(); real = hashlib.sha256; calls = []
+        def sha(data=b''):
+            if data == raw: calls.append(len(data))
+            return real(data)
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(album_export.hashlib, 'sha256', side_effect=sha):
+            album_export.download_album(fixture.client(m, files), 'Exports/' + m['sessionID'], Path(d) / 'new')
+        self.assertEqual(len(calls), 1, 'Do not hash the complete manifest for every resource')
+
+    def test_local_validation_can_stop_between_resource_hashes(self):
+        helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
+        with tempfile.TemporaryDirectory() as d:
+            source, _, _, _, _, _, _ = helper.setup_files(Path(d)); cancel = Path(d) / 'stop'
+            real = album_restore.inspect; reads = []
+            def inspect(path):
+                reads.append(path); result = real(path); cancel.write_text('stop'); return result
+            with mock.patch.object(album_restore, 'inspect', side_effect=inspect), self.assertRaises(CancellationRequested):
+                album_restore.validated_backup(source, cancel_file=cancel)
+            self.assertEqual(len(reads), 1)
+
+    def test_remote_resume_prescan_can_stop_before_reading_the_next_resource(self):
+        helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
+        with tempfile.TemporaryDirectory() as d:
+            source, phone, _, files, client, _, _, journal = helper.interrupted(Path(d))
+            cancel = Path(d) / 'stop'; old_journal = journal.read_bytes(); reads = []
+            real = client.read
+            def read(path, sink, maximum=None):
+                if '/Resources/' in path: reads.append(path)
+                real(path, sink, maximum)
+                if '/Resources/' in path: cancel.write_text('stop')
+            client.read = read
+            with self.assertRaises(CancellationRequested): upload_resume.upload(client, source, journal, cancel)
+            self.assertEqual(len(reads), 1, 'Pause must apply during reuse verification, before the next resource')
+            self.assertEqual(journal.read_bytes(), old_journal)
+            self.assertFalse(list(phone.rglob('restore-request.json')))
+
+    def test_conflicting_source_and_asset_creation_dates_are_rejected(self):
+        m, _ = test_album_export.AlbumExportChecks().fixture()
+        m['sourceOrder']['members'][0]['creationDate'] = '2001-01-01T00:00:00Z'
+        m['assets'][0]['originalPhotoLibraryCreationDate'] = '2002-01-01T00:00:00Z'
+        with self.assertRaises(ValueError): album_export.validate_manifest(m)
+        m['assets'][0]['originalPhotoLibraryCreationDate'] = '2001-01-01T00:00:00+00:00'
+        album_export.validate_manifest(m)
+
+    def test_flat_marker_version_must_be_an_integer_not_a_json_boolean(self):
+        from backup_layout import is_flat
+        for value in (True, 1.0):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as d:
+                root = Path(d); (root / '.photobridge-layout.json').write_text(json.dumps({'kind': 'PhotoBridgeFlatAlbum', 'version': value}))
+                with self.assertRaises(ValueError): is_flat(root)
+
+    def test_fast_ready_files_coalesce_status_polls_but_recheck_before_commit(self):
+        m, files = test_album_export.AlbumExportChecks().fixture(); request = '9d4933c5-c0ef-4b67-9698-2c47077cd84d'
+        class Client:
+            polls = 0
+            fail_at_commit = False
+            def read(self, path, sink, maximum=None):
+                if path.startswith('Control/Jobs/'):
+                    self.polls += 1
+                    value = {'requestID': request, 'albumIdentifier': 'album-test', 'sessionID': m['sessionID'], 'status': 'FAILED' if self.fail_at_commit and self.polls == 2 else 'STAGED'}
+                elif path.endswith('/source-order.json'): value = m['sourceOrder']
+                elif '/asset-records/' in path: value = m['assets'][int(Path(path).stem) - 1]
+                elif path.endswith('/album-order.json'): value = m
+                else: sink(files[path.split(m['sessionID'] + '/')[1]]); return
+                sink(json.dumps(value).encode())
+        with tempfile.TemporaryDirectory() as d:
+            client = Client(); result = album_export.download_live_album(client, request, 'album-test', Path(d) / 'new', status_interval=60)
+            self.assertEqual(result['status'], 'COMMITTED'); self.assertEqual(client.polls, 2)
+
+        with tempfile.TemporaryDirectory() as d:
+            client = Client(); client.fail_at_commit = True; target = Path(d) / 'failed'
+            with self.assertRaises(RuntimeError): album_export.download_live_album(client, request, 'album-test', target, status_interval=60)
+            self.assertFalse((target / 'album-order.json').exists())
+            self.assertFalse((target / 'transfer-manifest.json').exists())

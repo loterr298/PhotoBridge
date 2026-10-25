@@ -80,10 +80,10 @@ class LiveExportChecks(unittest.TestCase):
             self_test = self
             if mode not in ('normal', 'reuse', 'transient-status', 'mux-status', 'mux-media', 'background'):
                 with self.assertRaises((ValueError, RuntimeError)):
-                    album_export.download_live_album(Client(), request, 'album-test', target, previous=previous)
+                    album_export.download_live_album(Client(), request, 'album-test', target, previous=previous, status_interval=0)
                 self.assertFalse((target / 'transfer-manifest.json').exists())
             else:
-                result = album_export.download_live_album(Client(), request, 'album-test', target, previous=previous)
+                result = album_export.download_live_album(Client(), request, 'album-test', target, previous=previous, status_interval=0)
                 self.assertEqual(result['status'], 'COMMITTED')
                 if mode == 'mux-media':
                     self.assertTrue(any(p.read_bytes() == next(iter(files.values()))[:3] for p in target.rglob('*.part')), 'Failed media attempt must be preserved')
