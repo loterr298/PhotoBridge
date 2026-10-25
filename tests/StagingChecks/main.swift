@@ -59,6 +59,17 @@ do {
     let partialBefore = try Data(contentsOf: partial)
     let reuse = try StagingResume.reusable(in: old, plan: plan, digest: digest)
     try require(reuse.count == 1 && reuse[path] == r, "only checkpointed complete resource reused; partial excluded")
+    do {
+        _ = try StagingResume.reusable(in: old, plan: plan, digest: digest, checkCancellation: { throw CancellationError() })
+        throw ExportError.invalidManifest("Cancelled staging check returned reusable resources")
+    } catch is CancellationError { try require(true, "staging verification honors cancellation without publishing reuse") }
+    let (paused, _, _) = try fresh()
+    do {
+        try StagingResume.copy(r, from: old, to: paused, checkCancellation: { throw CancellationError() })
+        throw ExportError.invalidManifest("Cancelled copy committed a resource")
+    } catch is CancellationError {
+        try require(!fm.fileExists(atPath: paused.appendingPathComponent(path).path), "cancelled reuse copy publishes no destination")
+    }
     let (new, newPlan, newDigest) = try fresh()
     try StagingResume.copy(r, from: old, to: new)
     try StagingResume.record(r, ordinal: 1, plan: newPlan, digest: newDigest, in: new)
