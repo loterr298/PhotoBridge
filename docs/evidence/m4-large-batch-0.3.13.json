@@ -1,9 +1,9 @@
 {
   "version": "0.3.13",
   "build": 17,
-  "pythonTests": 90,
+  "pythonTests": 92,
   "localDeliveryGate": "PASS",
-  "scale50000FileTransfer": "RUNNING",
+  "scale50000FileTransfer": "PASS first synthetic run",
   "scale50000RecoveryReplay": {
     "status": "PASS",
     "assets": 50000,
@@ -17,5 +17,31 @@
     "Full prefix revalidation per Photos transaction remains quadratic in total work",
     "64 MiB manifest bound; not all 50000-asset resource combinations guaranteed"
   ],
-  "cloudBuild": "PENDING"
+  "cloudBuild": "SUCCESS #112 source a0530dd3b4f0538306172bdc1482d7573097320d",
+  "scale50000FileTransferBeforeMemoryFollowup": {
+    "synthetic": true,
+    "assets": 50000,
+    "resources": 82500,
+    "bytes": 84480000,
+    "manifestBytes": 33520799,
+    "export": "PASS real local flat files; all resource hashes verified",
+    "upload": "PASS synthetic AFC readback; all hashes and canonical manifest bytes equal",
+    "order": "PASS all source identifiers/ordinals and visible filename sequence",
+    "childDirectories": 0,
+    "injectedExportServiceInterruptions": 3,
+    "injectedUploadInterruption": "PASS partial offset 17; previous journal unchanged; request unpublished until verified",
+    "downloadSeconds": 491.505352058,
+    "uploadIncludingResumeSeconds": 364.15260526500003,
+    "statusPolls": 1641,
+    "peakRSSBytes": 1391517696,
+    "photosImport": "NOT_RUN",
+    "realUSBThroughput": "NOT_MEASURED"
+  },
+  "memoryFollowup": {
+    "manifestParsesPerUploadBefore": 3,
+    "manifestParsesPerUploadAfter": 1,
+    "resourceRehashBeforePublication": "UNCHANGED full verification",
+    "matched50000Retest": "PASS; final 0.3.14 evidence recorded separately"
+  },
+  "finalMemoryEvidence": "m4-large-batch-memory-0.3.14.json"
 }

@@ -1,0 +1,71 @@
+{
+  "version": "0.3.14",
+  "build": 18,
+  "pythonTests": 92,
+  "localDeliveryGate": "PASS",
+  "before": {
+    "synthetic": true,
+    "assets": 50000,
+    "resources": 82500,
+    "bytes": 84480000,
+    "manifestBytes": 33520799,
+    "export": "PASS real local flat files; all resource hashes verified",
+    "upload": "PASS synthetic AFC readback; all hashes and canonical manifest bytes equal",
+    "order": "PASS all source identifiers/ordinals and visible filename sequence",
+    "childDirectories": 0,
+    "injectedExportServiceInterruptions": 3,
+    "injectedUploadInterruption": "PASS partial offset 17; previous journal unchanged; request unpublished until verified",
+    "downloadSeconds": 491.505352058,
+    "uploadIncludingResumeSeconds": 364.15260526500003,
+    "statusPolls": 1641,
+    "peakRSSBytes": 1391517696,
+    "photosImport": "NOT_RUN",
+    "realUSBThroughput": "NOT_MEASURED"
+  },
+  "after": {
+    "synthetic": true,
+    "assets": 50000,
+    "resources": 82500,
+    "bytes": 84480000,
+    "manifestBytes": 33520799,
+    "export": "PASS real local flat files; all resource hashes verified",
+    "upload": "PASS synthetic AFC readback; all hashes and canonical manifest bytes equal",
+    "order": "PASS all source identifiers/ordinals and visible filename sequence",
+    "childDirectories": 0,
+    "injectedExportServiceInterruptions": 3,
+    "injectedUploadInterruption": "PASS partial offset 17; previous journal unchanged; request unpublished until verified",
+    "downloadSeconds": 357.70928839,
+    "uploadIncludingResumeSeconds": 292.214282387,
+    "statusPolls": 1399,
+    "peakRSSBytes": 1022763008,
+    "photosImport": "NOT_RUN",
+    "realUSBThroughput": "NOT_MEASURED"
+  },
+  "manifestParsesBefore": 3,
+  "manifestParsesAfter": 1,
+  "fullResourceRehashBeforePublication": "PRESERVED",
+  "realUSBThroughput": "NOT_MEASURED",
+  "photos50000RoundTrip": "NOT_RUN",
+  "cloudBuild": "NOT_STARTED: final workflow upload blocked by ChatGPT desktop browser failure",
+  "peakRSSReductionPercent": 26.500179556466094,
+  "nativeMac": {
+    "version": "0.3.14",
+    "build": 18,
+    "origin": "LOCAL_COMPILED_AND_TESTED; final cloud build blocked by browser connection",
+    "packageSHA256": "1932a095eec4df6b611b1dfd49f63c36744007ba41bf2fdeed7fdd01bbefd3bf",
+    "previousApp": "build/installed-backups/PhotoBridgeMac-before-0.3.14-20261025-234512.app",
+    "packagedScriptsMatch": "PASS"
+  },
+  "nativeSmoke": "PASS actual About 0.3.14 (18), existing 2707-photo saved album grid opened",
+  "iPhonePackage": "NOT_BUILT for 0.3.14; do not substitute prior 0.3.13",
+  "remainingLimits": [
+    "Photos restore still validates the full prefix per transaction, so 50000 real-device throughput is not accepted",
+    "64 MiB manifest limit remains",
+    "Phone staging/readback requires actual available storage; no bounded rolling staging guarantee"
+  ],
+  "host": {
+    "macOS": "15.7.9",
+    "architecture": "x86_64"
+  },
+  "privateUserPhotosTransferredByStressTest": false
+}
