@@ -70,7 +70,7 @@ struct SavedAlbumView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(model.savedAlbumName).font(.title2.bold())
-                    Text("已保存 \(model.backupPreview.count.formatted()) 张，按相册顺序排列")
+                    Text(model.loadingPreview ? "正在读取已保存的照片…" : "已保存 \(model.backupPreview.count.formatted()) 张，按相册顺序排列")
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -78,9 +78,13 @@ struct SavedAlbumView: View {
                 Button("打开文件夹") { model.openSavedFolder() }
                 Button("完成") { dismiss() }.keyboardShortcut(.cancelAction)
             }
-            if model.backupPreview.isEmpty {
+            if model.loadingPreview {
                 Spacer()
-                Text("照片保存到 Mac 后，会显示在这里。").foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                ProgressView("正在读取照片…").frame(maxWidth: .infinity)
+                Spacer()
+            } else if model.backupPreview.isEmpty {
+                Spacer()
+                Text(model.previewError.isEmpty ? "照片保存到 Mac 后，会显示在这里。" : model.previewError).foregroundStyle(.secondary).frame(maxWidth: .infinity)
                 Spacer()
             } else {
                 ScrollView {
