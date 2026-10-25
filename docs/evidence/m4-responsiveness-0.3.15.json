@@ -45,7 +45,25 @@
     "seed": "synthetic fixtures do not measure durable per-Photos transaction writes",
     "devicePhotoKit": "NOT_RUN"
   },
-  "cloudBuild": "NOT_STARTED",
+  "cloudBuild": {
+    "status": "SUCCESS",
+    "runNumber": 114,
+    "url": "https://github.com/loterr298/PhotoBridge/actions/runs/40212520143",
+    "sourceCommit": "74fce3f83702a21efa0ca0772036319dbda5b15d",
+    "sourceFilesCompared": 95,
+    "sourceDifferences": [],
+    "artifactSHA256": "5dbe07162e1126adecfe930c8140cb34f0bc18d589d995ab396ca3046d3ccc45",
+    "iPhoneIPASHA256": "7962822be8049e6468898b1d9c11d3b261e4c561b5d960e315fb07b20f88e785",
+    "IntelMacZIPSHA256": "a55ee73ab2e3ad002780b9de5d94f50c61fb0da4e952fa2cfb5db27ca7583e36",
+    "CRCAndAllInnerChecksums": "PASS",
+    "iPhoneVersionBuildSource": "PASS 0.3.15 build19 and embedded source commit",
+    "SDK": "Xcode 16.4 / iOS SDK 18.5",
+    "pythonTests": 96,
+    "swiftTests": 7,
+    "gate": "PASS",
+    "logs": "build/cloud-114/build/logs",
+    "sparsePrefixFiveChecksSeconds": 0.0012410879135131836
+  },
   "realDevicePauseTiming": "NOT_RUN",
   "real50000PhotoKitRoundTrip": "NOT_RUN",
   "realUSBThroughput": "NOT_MEASURED",
@@ -57,12 +75,15 @@
   "appleThreadingReference": "https://developer.apple.com/documentation/photokit/fetching-objects-and-requesting-changes",
   "userMediaModifiedOrDeleted": false,
   "nativeSmoke": {
-    "origin": "LOCAL_COMPILED_AND_TESTED, pending cloud replacement",
+    "origin": "CLOUD_114 installed, launched, About 0.3.15 (19) observed; executable and scripts matched",
     "version": "0.3.15",
     "build": 19,
     "about": "OBSERVED",
     "savedAlbumPreview": "OBSERVED 2707 real saved photos in ordinal grid; opened and closed",
     "phoneConnection": "No connected iPhone detected",
-    "screenshots": "build/PhotoBridge-0.3.15-Responsive/mac-about-local.png (no user photos)"
-  }
+    "screenshots": "build/PhotoBridge-0.3.15-Responsive/mac-about-cloud.png",
+    "backup": "build/installed-backups/PhotoBridgeMac-before-cloud-0.3.15-build19.app",
+    "packagedPythonScriptsMatched": 11
+  },
+  "iPhoneInstall": "NOT_RUN; unsigned IPA verified, user personal signing required"
 }
