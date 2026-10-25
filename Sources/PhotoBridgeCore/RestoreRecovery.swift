@@ -121,7 +121,8 @@ public final class RestoreRecoveryStore {
     }
     private func unchangedPlan() throws {
         try StagingResume.requireDirectory(directory)
-        guard try Self.regularData(directory.appendingPathComponent("plan.json")) == planData else { throw ExportError.invalidManifest("Recovery plan changed") }
+        let unchanged = try autoreleasepool { try Self.regularData(directory.appendingPathComponent("plan.json")) == planData }
+        guard unchanged else { throw ExportError.invalidManifest("Recovery plan changed") }
     }
     public func validateBinding(manifestSHA256: String, requestSHA256: String, allowTimestampRewrite: Bool) throws {
         try unchangedPlan()
