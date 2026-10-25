@@ -2,13 +2,13 @@ import AppKit
 import Foundation
 import ImageCaptureCore
 import SwiftUI
+import QuickLookThumbnailing
 
 struct BackupAssetPreview: Identifiable {
     let id: Int
     let ordinal: Int
-    let resourceCount: Int
-    let byteCount: Int64
     let primaryFilename: String
+    let mediaURL: URL
 }
 
 struct RemoteAlbum: Identifiable, Hashable {
@@ -59,6 +59,8 @@ final class MacTransferModel: ObservableObject {
     @Published var progressIndeterminate = true
     @Published var savedFolder: URL?
     @Published var allowCloudDownload = false
+    @Published var showAlbum = false
+    @Published var savedAlbumName = "已保存的相册"
     private var pendingExportTask: Task<Void, Never>?
     private var activeExportRequestID: String?
 
@@ -68,6 +70,7 @@ final class MacTransferModel: ObservableObject {
 
     init() {
         recentBackups = UserDefaults.standard.stringArray(forKey: "PhotoBridge.recentBackups") ?? []
+        if let path = recentBackups.first, FileManager.default.fileExists(atPath: path) { savedFolder = URL(fileURLWithPath: path) }
     }
 
     func discover() {
@@ -163,10 +166,10 @@ final class MacTransferModel: ObservableObject {
                 try Task.checkCancellation()
                 busy = false
                 var arguments = ["live", "--request-id", requestID, "--album-id", album.id,
-                                 "--local", folder.path, "--bundle", bundleIdentifier]
+                                 "--local", folder.path, "--bundle", bundleIdentifier, "--flat"]
                 if let previous { arguments += ["--previous", previous.path] }
                 runScript("album_export.py", arguments: arguments,
-                          progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
+                          progressFile: folder.appendingPathComponent(".photobridge-transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
                     guard let self else { return }
                     self.output = result.text
                     self.activeExportRequestID = nil; self.pendingExportTask = nil
@@ -190,7 +193,7 @@ final class MacTransferModel: ObservableObject {
     func continueMacExport() {
         guard !busy && !loadingAlbums else { return }
         guard let previous = chooseDirectory(title: "选择未完成的导出文件夹"),
-              let data = try? Data(contentsOf: previous.appendingPathComponent("transfer-progress.json")),
+              let data = try? Data(contentsOf: metadataFile(in: previous, name: "transfer-progress.json")),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let albumID = json["albumIdentifier"] as? String,
               let remote = json["remote"] as? String, remote.hasPrefix("Exports/"),
@@ -204,7 +207,7 @@ final class MacTransferModel: ObservableObject {
         pendingExportTask = Task {
             do {
                 let result = try await executeScriptAsync("mac_control.py", arguments: ["resume-plan", "--bundle", bundleIdentifier,
-                    "--payload-file", previous.appendingPathComponent("transfer-progress.json").path])
+                    "--payload-file", metadataFile(in: previous, name: "transfer-progress.json").path])
                 try Task.checkCancellation()
                 guard result.success, let data = result.text.data(using: .utf8),
                       let plan = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
@@ -284,7 +287,7 @@ final class MacTransferModel: ObservableObject {
     func uploadBackup() {
         guard let directory = chooseDirectory(title: "选择要发送到 iPhone 的照片") else { return }
         userMessage = "正在发送照片到 iPhone…"
-        runScript("album_restore.py", arguments: ["--local", directory.path, "--bundle", bundleIdentifier], progressDirectory: directory.appendingPathComponent("restore-uploads", isDirectory: true), controlFile: makeControlFile()) { [weak self] result in
+        runScript("upload_resume.py", arguments: ["--local", directory.path], progressDirectory: uploadJournalDirectory(in: directory), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
             self?.userMessage = result.success ? "照片已发送到 iPhone，请在 iPhone 点“恢复到新相册”。" : "发送没有完成，请重新连接 iPhone 后重试。"
         }
@@ -292,15 +295,20 @@ final class MacTransferModel: ObservableObject {
 
     func resumeUpload() {
         guard let directory = chooseDirectory(title: "选择上次未完成的照片") else { return }
-        let journalDirectory = directory.appendingPathComponent("restore-uploads", isDirectory: true)
+        let journalDirectory = uploadJournalDirectory(in: directory)
         guard let journals = try? FileManager.default.contentsOfDirectory(at: journalDirectory, includingPropertiesForKeys: [.contentModificationDateKey]),
-              let journal = journals.filter({ $0.pathExtension == "json" }).max(by: {
+              let journal = journals.filter({ $0.pathExtension == "json" && (journalDirectory != directory || $0.lastPathComponent.hasPrefix(".photobridge-upload-")) }).max(by: {
                   let lhs = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
                   let rhs = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
                   return lhs < rhs
               }) else {
             output = "找不到可以继续的备份，请先选择一份已保存的照片。"
             userMessage = output
+            return
+        }
+        guard let journalData = try? Data(contentsOf: journal),
+              let state = try? JSONSerialization.jsonObject(with: journalData) as? [String: Any], state["owner"] != nil else {
+            userMessage = "这份旧版发送记录不能继续，请重新选择文件夹发送。已收到的文件会保留。"
             return
         }
         userMessage = "正在继续发送照片到 iPhone…"
@@ -329,18 +337,63 @@ final class MacTransferModel: ObservableObject {
         UserDefaults.standard.set(recentBackups, forKey: "PhotoBridge.recentBackups")
     }
 
+    private func metadataFile(in folder: URL, name: String) -> URL {
+        let flat = FileManager.default.fileExists(atPath: folder.appendingPathComponent(".photobridge-layout.json").path)
+        return folder.appendingPathComponent(flat ? ".photobridge-" + name : name)
+    }
+
+    private func uploadJournalDirectory(in folder: URL) -> URL {
+        FileManager.default.fileExists(atPath: folder.appendingPathComponent(".photobridge-layout.json").path)
+            ? folder : folder.appendingPathComponent("restore-uploads", isDirectory: true)
+    }
+
+    func viewSavedAlbum() {
+        guard let folder = savedFolder ?? chooseDirectory(title: "选择已保存的相册") else { return }
+        savedFolder = folder; loadPreview(from: folder); showAlbum = true
+    }
+
+    func chooseSavedAlbum() {
+        guard let folder = chooseDirectory(title: "选择已保存的相册文件夹") else { return }
+        rememberBackup(folder); savedFolder = folder; loadPreview(from: folder); showAlbum = true
+    }
+
     private func loadPreview(from folder: URL) {
-        guard let data = try? Data(contentsOf: folder.appendingPathComponent("album-order.json")),
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let assets = object["assets"] as? [[String: Any]] else {
-            backupPreview = []
+        savedFolder = folder
+        let sourceURL = metadataFile(in: folder, name: "source-order.json")
+        if let data = try? Data(contentsOf: sourceURL), let source = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            savedAlbumName = source["albumName"] as? String ?? "已保存的相册"
+        }
+        if FileManager.default.fileExists(atPath: folder.appendingPathComponent(".photobridge-layout.json").path) {
+            let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey], options: .skipsHiddenFiles)) ?? []
+            backupPreview = files.filter { url in
+                let info = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+                return info?.isRegularFile == true && info?.isSymbolicLink != true && Int(url.lastPathComponent.split(separator: "_", maxSplits: 1).first ?? "") != nil
+            }.sorted { $0.lastPathComponent < $1.lastPathComponent }.enumerated().map { index, url in
+                BackupAssetPreview(id: index, ordinal: Int(url.lastPathComponent.split(separator: "_", maxSplits: 1)[0]) ?? index + 1,
+                    primaryFilename: url.lastPathComponent, mediaURL: url)
+            }
             return
         }
-        backupPreview = assets.enumerated().map { index, asset in
+        let assets: [[String: Any]]
+        if let data = try? Data(contentsOf: metadataFile(in: folder, name: "album-order.json")),
+           let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let complete = object["assets"] as? [[String: Any]] { assets = complete }
+        else {
+            let records = (try? FileManager.default.contentsOfDirectory(at: folder.appendingPathComponent("asset-records"), includingPropertiesForKeys: nil)) ?? []
+            assets = records.filter { $0.pathExtension == "json" }.sorted { $0.lastPathComponent < $1.lastPathComponent }.compactMap {
+                guard let data = try? Data(contentsOf: $0) else { return nil }
+                return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            }
+        }
+        backupPreview = assets.enumerated().compactMap { index, asset in
             let resources = asset["resources"] as? [[String: Any]] ?? []
-            let bytes = resources.compactMap { ($0["byteCount"] as? NSNumber)?.int64Value }.reduce(0, +)
-            let name = (resources.first?["originalFilename"] as? String) ?? "原始资源"
-            return BackupAssetPreview(id: index, ordinal: index + 1, resourceCount: resources.count, byteCount: bytes, primaryFilename: name)
+            let preferred = (asset["mediaType"] as? Int) == 2 ? [6,2] : [5,1,4]
+            let resource = preferred.lazy.compactMap { type in resources.first { ($0["resourceType"] as? Int) == type } }.first ?? resources.first
+            guard let relative = resource?["storedRelativePath"] as? String else { return nil }
+            let file = folder.appendingPathComponent(relative).resolvingSymlinksInPath()
+            guard file.path.hasPrefix(folder.resolvingSymlinksInPath().path + "/"), FileManager.default.fileExists(atPath: file.path) else { return nil }
+            return BackupAssetPreview(id: index, ordinal: (asset["ordinal"] as? NSNumber)?.intValue ?? index + 1,
+                primaryFilename: resource?["originalFilename"] as? String ?? "照片", mediaURL: file)
         }
     }
 
@@ -418,7 +471,7 @@ final class MacTransferModel: ObservableObject {
 
     private func latestProgressFile(in directory: URL) -> URL? {
         guard let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.contentModificationDateKey]),
-              let candidate = files.filter({ $0.pathExtension == "json" }).max(by: {
+              let candidate = files.filter({ $0.pathExtension == "json" && (!FileManager.default.fileExists(atPath: directory.appendingPathComponent(".photobridge-layout.json").path) || $0.lastPathComponent.hasPrefix(".photobridge-upload-")) }).max(by: {
                   let lhs = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
                   let rhs = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
                   return lhs < rhs
@@ -455,7 +508,7 @@ final class MacTransferModel: ObservableObject {
         progressIndeterminate = false
         let bytes = (json["bytesVerified"] as? NSNumber)?.doubleValue ?? 0
         let total = (json["totalBytes"] as? NSNumber)?.doubleValue ?? 0
-        progressFraction = total > 0 ? min(1, max(0, bytes / total)) : 0
+        progressFraction = total > 0 ? min((json["state"] as? String) == "UPLOADING" ? 0.99 : 1, max(0, bytes / total)) : 0
         let resources = (json["resourcesVerified"] as? NSNumber)?.intValue ?? 0
         let totalResources = (json["totalResources"] as? NSNumber)?.intValue ?? 0
         progressText = totalResources > 0 ? "\(resources)/\(totalResources) 项 · \(formatBytes(Int64(bytes))) / \(formatBytes(Int64(total)))" : "已保存 \(formatBytes(Int64(bytes)))"
@@ -655,7 +708,14 @@ struct PhotoBridgeMacApp: App {
                             }
                         }
 
-                        if transfer.savedFolder != nil { Button("在 Finder 中查看照片") { transfer.openSavedFolder() }.buttonStyle(.bordered) }
+                        Button("打开已保存的相册…") { transfer.chooseSavedAlbum() }.buttonStyle(.bordered)
+                        if transfer.savedFolder != nil {
+                            HStack {
+                                Button("查看已保存照片") { transfer.viewSavedAlbum() }.buttonStyle(.borderedProminent).tint(.macBridgeBlue)
+                                Button("在 Finder 中打开文件夹") { transfer.openSavedFolder() }.buttonStyle(.bordered)
+                            }
+                            Text("所有照片保存在同一文件夹；按名称升序查看，就是相册顺序。").font(.caption).foregroundStyle(.secondary)
+                        }
                         Text(transfer.userMessage).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
                         Text("原照片不会删除、覆盖或改变。").font(.caption).foregroundStyle(.secondary)
                     }
@@ -663,6 +723,7 @@ struct PhotoBridgeMacApp: App {
                 }
             }
             .frame(minWidth: 760, minHeight: 650)
+            .sheet(isPresented: $transfer.showAlbum) { SavedAlbumView(model: transfer) }
             .onAppear { transfer.discover() }
         }
     }
