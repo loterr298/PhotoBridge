@@ -31,7 +31,7 @@ def regular_path(root, relative):
     return current
 
 
-def validated_backup(local):
+def validated_backup(local, cancel_file=None):
     local = Path(local)
     manifest_path = regular_path(local, 'album-order.json')
     if manifest_path.stat().st_size > 64 * 1024 * 1024: raise ValueError('Manifest exceeds bound')
@@ -44,6 +44,7 @@ def validated_backup(local):
         raise ValueError('Backup is not a matching committed transfer')
     # Validate every local resource before writing any phone data.
     for resource in resources:
+        check_cancel(cancel_file)
         receipt = inspect(regular_path(local, resource['storedRelativePath']))
         if receipt['sha256'] != resource['sha256'] or receipt['byteCount'] != resource['byteCount']:
             raise ValueError('Local backup byte/hash mismatch')
@@ -53,7 +54,7 @@ def validated_backup(local):
 def upload_backup(client, local, cancel_file=None):
     local = Path(local)
     check_cancel(cancel_file)
-    raw, manifest, resources, digest, total = validated_backup(local)
+    raw, manifest, resources, digest, total = validated_backup(local, cancel_file=cancel_file)
     manifest_path = regular_path(local, 'album-order.json')
     session = str(uuid.uuid4()).upper(); remote = 'RestoreInbox/' + session
     journals = upload_journals(local)

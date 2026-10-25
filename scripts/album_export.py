@@ -57,6 +57,10 @@ def validate_asset_record(asset, member, ordinal):
     text_fields(member, ['localIdentifier']); text_fields(asset, ['resourceGroupId', 'sourceAssetLocalIdentifier'])
     for value in [member.get('creationDate'), asset.get('originalPhotoLibraryCreationDate')]:
         if value is not None: utc(value)
+    source_date = member.get('creationDate'); asset_date = asset.get('originalPhotoLibraryCreationDate')
+    if (source_date is None) != (asset_date is None) or (source_date is not None and
+            dt.datetime.fromisoformat(source_date.replace('Z', '+00:00')) != dt.datetime.fromisoformat(asset_date.replace('Z', '+00:00'))):
+        raise ValueError('Source and asset creation date differ')
     if any(type(asset.get(key)) is not int or not 0 <= asset[key] <= (2**64 - 1 if key == 'mediaSubtypes' else 2**63 - 1)
            for key in ['pixelWidth', 'pixelHeight', 'mediaType', 'mediaSubtypes']):
         raise ValueError('Missing or invalid asset media metadata')
@@ -181,11 +185,12 @@ def download_album(client, remote, local, cancel_file=None):
     local.mkdir(mode=0o700, parents=True, exist_ok=False)
     resources = [resource for asset in m['assets'] for resource in asset['resources']]
     total_bytes = sum(resource['byteCount'] for resource in resources)
+    manifest_digest = hashlib.sha256(raw.getvalue()).hexdigest()
     start = time.monotonic()
     progress = snapshot(status='DOWNLOADING', started_monotonic=start, now_monotonic=start,
                         resources_verified=0, total_resources=len(resources),
                         bytes_verified=0, total_bytes=total_bytes)
-    progress.update({'sourceManifestSHA256': hashlib.sha256(raw.getvalue()).hexdigest(),
+    progress.update({'sourceManifestSHA256': manifest_digest,
                      'restoration': 'NOT_RUN', 'filesystemAttributeLog': 'filesystem-attributes.jsonl'})
     journal = local / 'transfer-progress.json'
     write_json(journal, progress)
@@ -201,7 +206,7 @@ def download_album(client, remote, local, cancel_file=None):
                                          resources_verified=progress['resourcesVerified'],
                                          total_resources=len(resources), bytes_verified=progress['bytesVerified'],
                                          total_bytes=total_bytes, current_resource=resource['storedRelativePath']))
-                progress['sourceManifestSHA256'] = hashlib.sha256(raw.getvalue()).hexdigest()
+                progress['sourceManifestSHA256'] = manifest_digest
                 progress['restoration'] = 'NOT_RUN'
                 progress['filesystemAttributeLog'] = 'filesystem-attributes.jsonl'
                 write_json(journal, progress)
@@ -212,7 +217,7 @@ def download_album(client, remote, local, cancel_file=None):
                                          resources_verified=progress['resourcesVerified'] + 1,
                                          total_resources=len(resources), bytes_verified=progress['bytesVerified'] + actual['byteCount'],
                                          total_bytes=total_bytes, current_resource=resource['storedRelativePath']))
-                progress['sourceManifestSHA256'] = hashlib.sha256(raw.getvalue()).hexdigest()
+                progress['sourceManifestSHA256'] = manifest_digest
                 progress['restoration'] = 'NOT_RUN'
                 progress['filesystemAttributeLog'] = 'filesystem-attributes.jsonl'
                 write_json(journal, progress)
@@ -239,7 +244,7 @@ def download_album(client, remote, local, cancel_file=None):
         attribute_log.close()
 
 
-def download_live_album(client, request_id, album_identifier, local, cancel_file=None, idle_timeout=1800, previous=None, flat=False):
+def download_live_album(client, request_id, album_identifier, local, cancel_file=None, idle_timeout=1800, previous=None, flat=False, status_interval=.25):
     """Receive published asset records immediately, then bind them to the final manifest.
 
     Photos bytes never enter the control channel. A record is only published by
@@ -275,9 +280,13 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
             if str(error).endswith(': error 8'): return None
             raise
 
-    def job():
-        nonlocal last_activity, previous_activity
+    last_poll = float("-inf"); last_job = None
+    def job(force=False):
+        nonlocal last_activity, previous_activity, last_poll, last_job
         check_cancel(cancel_file)
+        now = time.monotonic()
+        if not force and last_job is not None and now - last_poll < status_interval:
+            return last_job
         raw = read_optional('Control/Jobs/' + request_id + '.json', 1024 * 1024)
         if raw is None:
             value = {}
@@ -298,6 +307,7 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
         if time.monotonic() - last_activity > idle_timeout:
             raise TimeoutError('iPhone 长时间没有新进度，请保持手机解锁并打开 PhotoBridge')
         write_json(journal, progress)
+        last_poll = now; last_job = value
         return value
 
     def wait_file(path):
@@ -382,6 +392,7 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
             raise ValueError('Final manifest does not match transferred records')
         final_check = wait_file(remote + '/album-order.json')
         if final_check != final_raw: raise ValueError('Final manifest changed during verification')
+        job(force=True)  # A cached status must never conceal a failure at publication.
         with (local_path(local, 'album-order.json')).open('xb') as f:
             f.write(final_raw); f.flush(); os.fsync(f.fileno())
         progress.update(status='COMMITTED', totalResources=progress['resourcesVerified'],

@@ -19,7 +19,7 @@ from backup_layout import upload_journals, upload_journal_name
 def upload(client, local, previous_journal=None, cancel_file=None):
     local = Path(local)
     check_cancel(cancel_file)
-    raw, manifest, resources, digest, total = validated_backup(local)
+    raw, manifest, resources, digest, total = validated_backup(local, cancel_file=cancel_file)
     if previous_journal is not None:
         path = Path(previous_journal)
         if path.is_symlink() or not path.is_file() or path.stat().st_size > 1024 * 1024: raise ValueError('Invalid upload journal')
@@ -97,6 +97,7 @@ def upload(client, local, previous_journal=None, cancel_file=None):
                 ('restore-request.json', len(request_raw), hashlib.sha256(request_raw).hexdigest(), request_raw)]
             prepared = []
             for relative, size, sha, data in entries:
+                check_cancel(cancel_file)
                 parts = relative.split('/'); parent = remote
                 exists = True
                 for component in parts[:-1]:
@@ -139,7 +140,7 @@ def upload(client, local, previous_journal=None, cancel_file=None):
                     check(relative + '.part', None, size, sha)
                     if data is not None:
                         # Revalidate the local backup before publishing metadata, especially the ready request.
-                        if validated_backup(local)[0] != raw: raise ValueError('Source changed before publication')
+                        if validated_backup(local, cancel_file=cancel_file)[0] != raw: raise ValueError('Source changed before publication')
                     unpublished(); client.commit_new(remote + '/' + relative + '.part', remote + '/' + relative)
                 if data is None:
                     state['resourcesVerified'] += 1; state['bytesVerified'] += size

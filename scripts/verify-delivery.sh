@@ -57,6 +57,8 @@ run "CoreChecks" swift run CoreChecks
 run "MemoryChecks" swift run MemoryChecks
 run "StagingChecks" swift run StagingChecks
 run "RecoveryChecks" swift run RecoveryChecks
+run "ScaleChecks" swift run -c release ScaleChecks
+run "Synthetic transfer stress (1000 assets)" python3 tests/scale_transfer.py --assets 1000 --report "$OUT_DIR/scale-transfer.json"
 run "Python tests" python3 -m unittest discover -s tests -q
 run "iOS Swift syntax parse" swiftc -parse apps/iOS/*.swift
 

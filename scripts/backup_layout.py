@@ -14,7 +14,8 @@ def is_flat(root):
     if marker.is_symlink(): raise ValueError('Layout marker must not be a symbolic link')
     if not marker.exists(): return False
     if not marker.is_file() or marker.stat().st_size > 4096: raise ValueError('Invalid layout marker')
-    if json.loads(marker.read_bytes()) != {'kind':'PhotoBridgeFlatAlbum','version':1}:
+    value = json.loads(marker.read_bytes())
+    if not isinstance(value, dict) or type(value.get('version')) is not int or value != {'kind':'PhotoBridgeFlatAlbum','version':1}:
         raise ValueError('Unsupported local album layout')
     return True
 
