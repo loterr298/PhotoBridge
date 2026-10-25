@@ -321,17 +321,19 @@ private struct RestoreInboxRequest: Decodable {
             try OperationPreconditions.requireCapacity(available, budget: budget)
         }
         func replay(_ active: RestoreRecoveryStore) async throws -> RestoreRecoveryState {
-            try await Task.detached(priority: .utility) { try active.state() }.value
+            try await Task.detached(priority: .utility) { try autoreleasepool { try active.state() } }.value
         }
         func unchangedInputs() async throws {
             try checkPermissionAndStop()
             let active = store
             try await Task.detached(priority: .utility) {
+                try autoreleasepool {
                 guard try self.readJSONFile(directory.appendingPathComponent("album-order.json")) == checkedManifest,
                       try self.readJSONFile(directory.appendingPathComponent("restore-request.json")) == checkedRequest else {
                     throw ExportError.invalidManifest("恢复清单或 USB 请求改变")
                 }
                 if let active { try self.validate(active, manifest: manifest, raw: checkedManifest, request: checkedRequest, allowed: userAllowedTimestampRewrite) }
+                }
             }.value
             try checkPermissionAndStop()
         }
