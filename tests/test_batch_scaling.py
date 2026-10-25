@@ -24,6 +24,30 @@ class BatchScalingChecks(unittest.TestCase):
             album_export.download_album(fixture.client(m, files), 'Exports/' + m['sessionID'], Path(d) / 'new')
         self.assertEqual(len(calls), 1, 'Do not hash the complete manifest for every resource')
 
+    def test_owned_upload_parses_the_large_manifest_only_once(self):
+        helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
+        with tempfile.TemporaryDirectory() as d:
+            source, _, _, _, client, _, _ = helper.setup_files(Path(d)); client.interrupted = False
+            raw = (source / 'album-order.json').read_bytes(); real = json.loads; parses = []
+            def loads(value, *args, **kwargs):
+                if value == raw: parses.append(1)
+                return real(value, *args, **kwargs)
+            with mock.patch.object(album_restore.json, 'loads', side_effect=loads): upload_resume.upload(client, source)
+            self.assertEqual(len(parses), 1, 'Publication must rehash resources without rebuilding the complete metadata graph')
+
+    def test_local_resource_change_after_usb_commit_still_blocks_publication(self):
+        helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
+        with tempfile.TemporaryDirectory() as d:
+            source, phone, _, files, client, _, _ = helper.setup_files(Path(d)); client.interrupted = False
+            real = client.commit_new; changed = []
+            def commit(part, final):
+                real(part, final)
+                if '/Resources/' in final and not changed:
+                    (source / next(iter(files))).write_bytes(b'changed-after-usb-readback'); changed.append(True)
+            client.commit_new = commit
+            with self.assertRaisesRegex(ValueError, 'Local backup'): upload_resume.upload(client, source)
+            self.assertTrue(changed); self.assertFalse(list(phone.rglob('restore-request.json')))
+
     def test_local_validation_can_stop_between_resource_hashes(self):
         helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
         with tempfile.TemporaryDirectory() as d:
