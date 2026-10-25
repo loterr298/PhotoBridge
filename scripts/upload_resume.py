@@ -16,8 +16,10 @@ from transfer_progress import snapshot
 from backup_layout import upload_journals, upload_journal_name
 
 
-def upload(client, local, previous_journal=None, cancel_file=None):
+def upload(client, local, previous_journal=None, cancel_file=None, journal_id=None):
     local = Path(local)
+    identity = journal_id if journal_id is not None else str(uuid.uuid4()).upper()
+    if str(uuid.UUID(identity)).upper() != identity: raise ValueError('Invalid upload journal identity')
     check_cancel(cancel_file)
     raw, manifest, resources, digest, total = validated_backup(local, cancel_file=cancel_file)
     if previous_journal is not None:
@@ -38,7 +40,8 @@ def upload(client, local, previous_journal=None, cancel_file=None):
     journals = upload_journals(local)
     if journals.is_symlink(): raise ValueError('Journal symlink rejected')
     journals.mkdir(mode=0o700, exist_ok=True)
-    journal = journals / upload_journal_name(local,str(uuid.uuid4()).upper())
+    journal = journals / upload_journal_name(local, identity)
+    journal_owned = False
     resource_names = {r['storedRelativePath']: r['originalFilename'] for r in resources}
     start = time.monotonic()
     state = dict(totalResources=len(resources), totalBytes=total, state='UPLOADING', remote=remote, owner=owner, resourcesVerified=0, bytesVerified=0,
@@ -78,6 +81,7 @@ def upload(client, local, previous_journal=None, cancel_file=None):
     try:
         if previous_journal is None:
             write_json(journal, state, exclusive=True)
+            journal_owned = True
             client.mkdir('RestoreInbox'); regular('RestoreInbox', True); client.mkdir(remote, exclusive=True)
             regular(remote, True)
             client.write_new(remote + '/upload-owner.json', io.BytesIO(owner_raw))
@@ -117,7 +121,9 @@ def upload(client, local, previous_journal=None, cancel_file=None):
                     with source:
                         if check(relative + '.part', source, size, sha, True) != offset: raise ValueError('Partial changed while checking')
                 prepared.append((relative, size, sha, data, complete, partial, offset))
-            if previous_journal is not None: write_json(journal, state, exclusive=True)
+            if previous_journal is not None:
+                write_json(journal, state, exclusive=True)
+                journal_owned = True
             for relative, size, sha, data, complete, partial, offset in prepared:
                 check_cancel(cancel_file)
                 unpublished()
@@ -152,12 +158,12 @@ def upload(client, local, previous_journal=None, cancel_file=None):
             state.update(state='USB_VERIFIED', status='USB_VERIFIED'); write_json(journal, state)
             return dict(state, journal=str(journal))
     except CancellationRequested as error:
-        if journal.exists():
+        if journal_owned:
             state.update(state='STOPPED', status='STOPPED', error=str(error)); write_json(journal, state)
         raise
     except Exception as error:
         # A refused resume must not overwrite the previous journal or create a false ready request.
-        if journal.exists():
+        if journal_owned:
             state.update(state='FAILED', status='FAILED', error=str(error)); write_json(journal, state)
         raise
 
@@ -166,10 +172,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--local', type=Path, required=True); parser.add_argument('--resume-journal', type=Path)
     parser.add_argument('--cancel-file', type=Path)
+    parser.add_argument('--journal-id', help='Uppercase UUID chosen by the Mac for direct progress reads')
     args = parser.parse_args(); client = AFC()
     try:
         client.vend('com.photobridge.OrderProbe')
-        print(json.dumps(upload(client, args.local, args.resume_journal, args.cancel_file), indent=2))
+        print(json.dumps(upload(client, args.local, args.resume_journal, args.cancel_file, args.journal_id), indent=2))
     except CancellationRequested as error:
         print(json.dumps({'state': 'STOPPED', 'error': str(error)})); sys.exit(3)
     finally: client.close()
