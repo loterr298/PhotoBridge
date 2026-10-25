@@ -37,3 +37,8 @@ python3 tests/scale_transfer.py --assets 50000 --report build/scale-transfer-500
 恢复端仍在每次事务执行完整日志及 PhotoKit 成员前缀复核，总工作量随规模增长较快；五万张真实恢复吞吐未验收。采用增量恢复账本或 PhotoKit 变更观察属于下一项独立优化，需要保留外部变更、崩溃歧义和重复创建保护，不能简单降低检查频率。原始资源、暂存和恢复回读也需要实际磁盘空间；64MiB 清单上限仍有效，资源组合特别多的超大清单会明确拒绝，不保证所有 50000 张组合都能导入。
 
 真实验收必须覆盖完整五万张资源数据、Photos 最终成员与位置、逐份原图 hash、Live 播放、编辑效果、容量、后台/返回、拔线及重连。未执行项保持 NOT_RUN，不能用模拟吞吐代替 USB MB/s。
+
+
+## Large-manifest memory follow-up
+
+The first 50000-file run passed all integrity/order/interruption checks but peak RSS was 1391517696 bytes, including in-memory synthetic peers. This prompted removal of two redundant full JSON object graphs during upload publication. The source manifest is still checked byte-for-byte and every media resource is rehashed. This is metadata reuse only, not a cached-media integrity shortcut. An identical full-size rerun measures the result; figures will be recorded after completion.
