@@ -1,0 +1,68 @@
+{
+  "version": "0.3.15",
+  "build": 19,
+  "scope": "UI responsiveness and stable operation boundaries; not a real-device acceptance",
+  "sparseLedgerBenchmark": {
+    "plannedAssets": 50000,
+    "existingAssets": 0,
+    "fullChecks": 5,
+    "beforeSeconds": 32.79388201236725,
+    "afterSeconds": 0.003535032272338867,
+    "red": "build/responsive-sparse-red.log",
+    "green": "build/responsive-final-delivery.log",
+    "note": "Only empty-prefix recovery overhead. Full existing event replay is retained; not a total restore throughput multiplier."
+  },
+  "changes": [
+    "Canonical scan of existing recovery records instead of synthesizing all future filenames",
+    "Mac reads exact operation-owned progress journal; no whole-photo-folder polling",
+    "Gallery scan, progress reads, resume lookup, iOS preflight JSON and Photos member/version checks run off main actor",
+    "Shared pause flag checked per 1 MiB hash block and record boundary; no partial hash receipt returned",
+    "Pause checked immediately before durable Photos intent; Photos transaction and placeholder persistence remain uninterrupted afterward",
+    "Upload journal collision refuses before writes and cannot overwrite unowned existing log"
+  ],
+  "validation": {
+    "pythonTests": 96,
+    "coreGate": "PASS",
+    "memoryChecks": "PASS 512MiB repeated read plus cancellation; log build/responsive-final-delivery.log",
+    "stagingChecks": 25,
+    "recoveryChecks": 64,
+    "iOSSyntax": "PASS",
+    "IntelBuild": "PASS",
+    "codeReview": "No outstanding critical or important issues after pause-boundary and background-progress fixes",
+    "mutation": "Replacing journal_owned check with exists reproduced old-journal overwrite; test failed as expected"
+  },
+  "full50000LedgerReplay": {
+    "status": "PASS",
+    "assets": 50000,
+    "records": 150002,
+    "oneFullReplaySeconds": 70.19936501979828,
+    "checks": [
+      "exact whole sequence",
+      "corrupt middle refused",
+      "fresh reopen stable"
+    ],
+    "log": "build/responsive-ledger-50000.log",
+    "seed": "synthetic fixtures do not measure durable per-Photos transaction writes",
+    "devicePhotoKit": "NOT_RUN"
+  },
+  "cloudBuild": "NOT_STARTED",
+  "realDevicePauseTiming": "NOT_RUN",
+  "real50000PhotoKitRoundTrip": "NOT_RUN",
+  "realUSBThroughput": "NOT_MEASURED",
+  "remainingLimits": [
+    "Existing prefix replay and PhotoKit member checks still repeat per transaction (quadratic total restore work)",
+    "PhotoKit resource writeData and OS file-copy calls finish/fail before their next cancellation boundary",
+    "64MiB source manifest limit; phone staging requires real available space"
+  ],
+  "appleThreadingReference": "https://developer.apple.com/documentation/photokit/fetching-objects-and-requesting-changes",
+  "userMediaModifiedOrDeleted": false,
+  "nativeSmoke": {
+    "origin": "LOCAL_COMPILED_AND_TESTED, pending cloud replacement",
+    "version": "0.3.15",
+    "build": 19,
+    "about": "OBSERVED",
+    "savedAlbumPreview": "OBSERVED 2707 real saved photos in ordinal grid; opened and closed",
+    "phoneConnection": "No connected iPhone detected",
+    "screenshots": "build/PhotoBridge-0.3.15-Responsive/mac-about-local.png (no user photos)"
+  }
+}
