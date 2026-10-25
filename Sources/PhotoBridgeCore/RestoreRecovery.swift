@@ -65,6 +65,7 @@ public final class RestoreRecoveryStore {
     public let plan: RestoreRecoveryPlan
     private let planData: Data
     private let digest: String
+    private let sourceIDs: Set<String>
     private static let fm = FileManager.default
     public static func sha256(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
     private static func regularData(_ url: URL) throws -> Data {
@@ -109,6 +110,7 @@ public final class RestoreRecoveryStore {
         plan = try JSONDecoder().decode(RestoreRecoveryPlan.self, from: planData); try plan.validate()
         guard plan.inboxSessionID == inbox.lastPathComponent else { throw ExportError.invalidManifest("Recovery inbox mismatch") }
         digest = Self.sha256(planData)
+        sourceIDs = Set(plan.sourceAssetIDs)
     }
     public func lock() throws -> RestoreRecoveryLease {
         let fd = open(directory.appendingPathComponent("plan.json").path, O_RDONLY | O_NOFOLLOW)
@@ -133,7 +135,7 @@ public final class RestoreRecoveryStore {
         let url = directory.appendingPathComponent(filename(kind, ordinal))
         let present = try names ?? Set(Self.fm.contentsOfDirectory(atPath: directory.path))
         guard present.contains(url.lastPathComponent) else { return nil }
-        let e = try JSONDecoder().decode(RestoreRecoveryEvent.self, from: Self.regularData(url))
+        let e = try autoreleasepool { try JSONDecoder().decode(RestoreRecoveryEvent.self, from: Self.regularData(url)) }
         let album = kind.hasPrefix("album-")
         guard (album && ordinal == 0) || (!album && ordinal > 0 && ordinal <= plan.sourceAssetIDs.count) else { throw ExportError.invalidManifest("Invalid recovery ordinal") }
         guard e.schemaVersion == "1.0.0", e.attemptID == plan.attemptID, e.planSHA256 == digest, e.kind == kind,
@@ -141,7 +143,7 @@ public final class RestoreRecoveryStore {
         if kind.hasSuffix("intent") {
             guard e.createdID == nil, e.modified == nil else { throw ExportError.invalidManifest("Invalid intent") }
         } else {
-            guard let id = e.createdID, !id.isEmpty, !id.contains("\0"), !plan.sourceAssetIDs.contains(id), id != plan.sourceAlbumID else { throw ExportError.invalidManifest("Invalid new-copy identity") }
+            guard let id = e.createdID, !id.isEmpty, !id.contains("\0"), !sourceIDs.contains(id), id != plan.sourceAlbumID else { throw ExportError.invalidManifest("Invalid new-copy identity") }
             if kind.hasSuffix("verified") {
                 guard let date = e.modified, date.timeIntervalSinceReferenceDate.isFinite else { throw ExportError.invalidManifest("Missing verified asset version") }
             } else if e.modified != nil { throw ExportError.invalidManifest("Unexpected placeholder version") }
@@ -152,7 +154,7 @@ public final class RestoreRecoveryStore {
         try unchangedPlan()
         let album = kind.hasPrefix("album-")
         guard (album && ordinal == 0) || (!album && ordinal > 0 && ordinal <= plan.sourceAssetIDs.count) else { throw ExportError.invalidManifest("Invalid recovery ordinal") }
-        if let identifier { guard !identifier.isEmpty, !identifier.contains("\0"), !plan.sourceAssetIDs.contains(identifier), identifier != plan.sourceAlbumID else { throw ExportError.invalidManifest("Cannot adopt original identity") } }
+        if let identifier { guard !identifier.isEmpty, !identifier.contains("\0"), !sourceIDs.contains(identifier), identifier != plan.sourceAlbumID else { throw ExportError.invalidManifest("Cannot adopt original identity") } }
         let e = RestoreRecoveryEvent(schemaVersion: "1.0.0", attemptID: plan.attemptID, planSHA256: digest, kind: kind,
             ordinal: ordinal, sourceID: album ? nil : plan.sourceAssetIDs[ordinal - 1], createdID: identifier, modified: modified)
         try Self.writeNewMetadata(Self.encode(e), to: directory.appendingPathComponent(filename(kind, ordinal)))
@@ -168,11 +170,11 @@ public final class RestoreRecoveryStore {
         }
         let albumIntent = try event("album-intent", 0, names: names); let album = try event("album-placeholder", 0, names: names)
         guard (albumIntent == nil) == (album == nil) else { throw ExportError.invalidManifest("相簿事务状态不明确，缺少持久化标识；不重建相簿") }
-        var ids: [String] = []; var versions: [String: Date] = [:]; var gap = false
+        var ids: [String] = []; var uniqueIDs = Set<String>(); var versions: [String: Date] = [:]; var gap = false
         for i in 1...plan.sourceAssetIDs.count {
             let intent = try event("asset-intent", i, names: names); let placeholder = try event("asset-placeholder", i, names: names); let verified = try event("asset-verified", i, names: names)
             if intent == nil { guard placeholder == nil, verified == nil else { throw ExportError.invalidManifest("Missing intent") }; gap = true; continue }
-            guard album != nil, !gap, let id = placeholder?.createdID, id != album?.createdID, !ids.contains(id) else {
+            guard album != nil, !gap, let id = placeholder?.createdID, id != album?.createdID, uniqueIDs.insert(id).inserted else {
                 throw ExportError.invalidManifest("资产事务标识缺失、重复或不连续；不自动重试创建")
             }
             if i > 1, versions[ids[i - 2]] == nil { throw ExportError.invalidManifest("Earlier asset verification missing") }
@@ -199,8 +201,9 @@ public final class RestoreRecoveryStore {
         guard ordinal > 0, ordinal <= plan.sourceAssetIDs.count, try event("asset-intent", ordinal) != nil else { throw ExportError.invalidManifest("Asset intent required") }
         guard try event("album-placeholder", 0)?.createdID != identifier else { throw ExportError.invalidManifest("Album/asset identity collision") }
         if ordinal > 1 {
+            let names = Set(try Self.fm.contentsOfDirectory(atPath: directory.path))
             for previous in 1..<ordinal {
-                guard try event("asset-placeholder", previous)?.createdID != identifier else { throw ExportError.invalidManifest("Duplicate created asset identity") }
+                guard try event("asset-placeholder", previous, names: names)?.createdID != identifier else { throw ExportError.invalidManifest("Duplicate created asset identity") }
             }
         }
         try write("asset-placeholder", ordinal, identifier: identifier)

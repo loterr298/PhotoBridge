@@ -87,6 +87,7 @@ public struct AlbumExportManifest: Codable {
         for (index, asset) in assets.enumerated() {
             try check(asset.ordinal == index + 1 && members[index].ordinal == index + 1, "Noncontiguous order")
             try check(asset.sourceAssetLocalIdentifier == members[index].localIdentifier, "Source membership changed")
+            try check(asset.originalPhotoLibraryCreationDate == members[index].creationDate, "Source creation date changed")
             try check(UUID(uuidString: asset.resourceGroupId) != nil && groups.insert(asset.resourceGroupId).inserted, "Duplicate/invalid group")
             try check(!asset.resources.isEmpty, "No accessible resources")
             for (resourceIndex, resource) in asset.resources.enumerated() {

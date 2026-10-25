@@ -33,6 +33,13 @@ public struct RestoreWriteBudget: Encodable, Equatable {
     public let remainingReadbackBytes: Int64
     public let reserveBytes: Int64
     public let requiredBytes: Int64
+    fileprivate init(photo: Int64, readback: Int64, reserve: Int64) throws {
+        let (subtotal, overflow) = photo.addingReportingOverflow(readback)
+        let (total, reserveOverflow) = subtotal.addingReportingOverflow(reserve)
+        guard !overflow, !reserveOverflow else { throw OperationPreconditionFailure.invalidBudget }
+        remainingPhotoCopyBytes = photo; remainingReadbackBytes = readback
+        reserveBytes = reserve; requiredBytes = total
+    }
     /// An estimate, not a reservation: Photos/system overhead and other processes can consume more space.
     public init(resourceBytesByAsset: [[Int64]], recordedAssets: Int, verifiedThisRun: Int,
                 committedResourceBytesInCurrentAsset: Int64 = 0, reserveBytes: Int64 = 128 * 1024 * 1024) throws {
@@ -56,6 +63,38 @@ public struct RestoreWriteBudget: Encodable, Equatable {
         readback -= committedResourceBytesInCurrentAsset
         remainingPhotoCopyBytes = photo; remainingReadbackBytes = readback; self.reserveBytes = reserveBytes
         requiredBytes = try add(add(photo, readback), reserveBytes)
+    }
+}
+
+/// Immutable size index: build once, then O(1) capacity estimates at every resource boundary.
+/// This changes arithmetic cost only; actual available capacity is still queried before writes.
+public struct RestoreBudgetPlan {
+    private let prefix: [Int64]
+    public init(resourceBytesByAsset: [[Int64]]) throws {
+        guard !resourceBytesByAsset.isEmpty else { throw OperationPreconditionFailure.invalidBudget }
+        var sums: [Int64] = [0]; sums.reserveCapacity(resourceBytesByAsset.count + 1)
+        var total: Int64 = 0
+        for resources in resourceBytesByAsset {
+            guard !resources.isEmpty else { throw OperationPreconditionFailure.invalidBudget }
+            for size in resources {
+                let (next, overflow) = total.addingReportingOverflow(size)
+                guard size > 0, !overflow else { throw OperationPreconditionFailure.invalidBudget }
+                total = next
+            }
+            sums.append(total)
+        }
+        prefix = sums
+    }
+    public func budget(recordedAssets: Int, verifiedThisRun: Int, committedResourceBytesInCurrentAsset: Int64 = 0,
+                       reserveBytes: Int64 = 128 * 1024 * 1024) throws -> RestoreWriteBudget {
+        let count = prefix.count - 1
+        guard recordedAssets >= 0, recordedAssets <= count, verifiedThisRun >= 0, verifiedThisRun <= recordedAssets,
+              committedResourceBytesInCurrentAsset >= 0, reserveBytes > 0 else { throw OperationPreconditionFailure.invalidBudget }
+        let current = verifiedThisRun < count ? prefix[verifiedThisRun + 1] - prefix[verifiedThisRun] : 0
+        guard committedResourceBytesInCurrentAsset <= current,
+              committedResourceBytesInCurrentAsset == 0 || verifiedThisRun < recordedAssets else { throw OperationPreconditionFailure.invalidBudget }
+        return try RestoreWriteBudget(photo: prefix[count] - prefix[recordedAssets],
+            readback: prefix[count] - prefix[verifiedThisRun] - committedResourceBytesInCurrentAsset, reserve: reserveBytes)
     }
 }
 

@@ -2,6 +2,15 @@ import Foundation
 import CryptoKit
 
 public enum RestoreSafety {
+    /// PhotoKit database date, not EXIF. Allow only sub-millisecond platform representation noise.
+    public static func verifyCreationDate(expected: Date?, observed: Date?) throws {
+        if expected == nil && observed == nil { return }
+        guard let expected, let observed, expected.timeIntervalSince1970.isFinite, observed.timeIntervalSince1970.isFinite,
+              abs(expected.timeIntervalSince(observed)) <= 0.001 else {
+            throw ExportError.invalidManifest("导入后的照片拍摄日期与来源清单不符")
+        }
+    }
+
     public static func decodeManifest(data: Data, expectedSHA256: String) throws -> AlbumExportManifest {
         let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         guard digest == expectedSHA256 else { throw ExportError.invalidManifest("Restore manifest SHA-256 mismatch") }
