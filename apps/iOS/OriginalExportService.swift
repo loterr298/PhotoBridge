@@ -61,10 +61,11 @@ private final class StreamingManifestWriter {
     @Published var sessionName: String?
     @Published var candidates: [StagingCandidate] = []
     private var stopRequested = false
+    private var cancellation = OperationCancellation()
     private var exports: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("Exports")
     }
-    func requestStop() { stopRequested = true }
+    func requestStop() { stopRequested = true; cancellation.cancel() }
     private static func source(_ asset: PHAsset, resources: [PHAssetResource]) -> StagingAssetSource {
         StagingAssetSource(identifier: asset.localIdentifier, modificationDate: asset.modificationDate,
             creationDate: asset.creationDate, pixelWidth: asset.pixelWidth, pixelHeight: asset.pixelHeight,
@@ -72,7 +73,7 @@ private final class StreamingManifestWriter {
             resources: resources.map { StagingResourceSource(resourceType: $0.type.rawValue,
                 originalFilename: $0.originalFilename, uniformTypeIdentifier: $0.uniformTypeIdentifier) })
     }
-    private nonisolated static func capture(localIdentifier: String, progress: @escaping @Sendable (Int, Int) -> Void) throws -> (name: String, assets: [StagingAssetSource]) {
+    private nonisolated static func capture(localIdentifier: String, cancellation: OperationCancellation, progress: @escaping @Sendable (Int, Int) -> Void) throws -> (name: String, assets: [StagingAssetSource]) {
         try PhotoOperationChecks.requireFullAccess()
         guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [localIdentifier], options: nil).firstObject else {
             throw ExportError.invalidManifest("来源相簿已不可访问")
@@ -80,16 +81,18 @@ private final class StreamingManifestWriter {
         let result = PHAsset.fetchAssets(in: current, options: nil)
         var sources: [StagingAssetSource] = []
         progress(0, result.count)
-        result.enumerateObjects { asset, index, _ in
-            sources.append(Self.source(asset, resources: PHAssetResource.assetResources(for: asset)))
+        result.enumerateObjects { asset, index, stop in
+            do { try cancellation.check() } catch { stop.pointee = true; return }
+            autoreleasepool { sources.append(Self.source(asset, resources: PHAssetResource.assetResources(for: asset))) }
             if (index + 1) % 100 == 0 || index + 1 == result.count { progress(index + 1, result.count) }
         }
+        try cancellation.check()
         return (current.localizedTitle ?? "未命名相簿", sources)
     }
     /// Re-check the source without building a second full album catalog. This keeps
     /// the finalization peak bounded for very large albums.
     private nonisolated static func validateCurrent(localIdentifier: String, albumName: String,
-                                                    expected: [StagingAssetSource]) throws {
+                                                    expected: [StagingAssetSource], cancellation: OperationCancellation) throws {
         try PhotoOperationChecks.requireFullAccess()
         guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [localIdentifier], options: nil).firstObject else {
             throw ExportError.invalidManifest("来源相簿已不可访问")
@@ -103,13 +106,15 @@ private final class StreamingManifestWriter {
         }
         var mismatch: String?
         result.enumerateObjects { asset, index, stop in
+            do { try cancellation.check() } catch { stop.pointee = true; return }
             guard mismatch == nil else { stop.pointee = true; return }
-            let currentSource = Self.source(asset, resources: PHAssetResource.assetResources(for: asset))
+            let currentSource = autoreleasepool { Self.source(asset, resources: PHAssetResource.assetResources(for: asset)) }
             if currentSource != expected[index] {
                 mismatch = "相簿顺序、编辑状态或资源目录已变化，停止以免混合新旧版本"
                 stop.pointee = true
             }
         }
+        try cancellation.check()
         if let mismatch { throw ExportError.invalidManifest(mismatch) }
     }
     private func checkedResources(_ expected: StagingAssetSource) throws -> [PHAssetResource] {
@@ -139,6 +144,7 @@ private final class StreamingManifestWriter {
     func start(collection: PHAssetCollection, allowNetwork: Bool, resumeSession: String? = nil, stopAfterResources: Int? = nil) async {
         guard !busy else { return }
         busy = true; scanning = true; state = "SCANNING"; scannedAssets = 0; scanTotalAssets = 0; stopRequested = false; resourcesCompleted = 0; totalResources = 0; bytesCompleted = 0
+        let cancellation = OperationCancellation(); self.cancellation = cancellation
         reusedResources = 0; photoKitResourcesRead = 0; sessionName = nil
         message = "正在读取相册…"
         defer { scanning = false; busy = false }
@@ -163,7 +169,7 @@ private final class StreamingManifestWriter {
             message = "正在读取相册…"
             await Task.yield()
             let captured = try await Task.detached(priority: .userInitiated) {
-                try Self.capture(localIdentifier: collectionIdentifier) { done, total in
+                try Self.capture(localIdentifier: collectionIdentifier, cancellation: cancellation) { done, total in
                     Task { @MainActor [weak self] in self?.scannedAssets = done; self?.scanTotalAssets = total }
                 }
             }.value
@@ -187,12 +193,12 @@ private final class StreamingManifestWriter {
                 let loaded = try await Task.detached(priority: .utility) { try StagingResume.load(in: old) }.value
                 try loaded.plan.validateCurrent(albumIdentifier: collection.localIdentifier, albumName: name, assets: sources)
                 reusable = try await Task.detached(priority: .utility) {
-                    try StagingResume.reusable(in: old, plan: loaded.plan, digest: loaded.digest)
+                    try StagingResume.reusable(in: old, plan: loaded.plan, digest: loaded.digest, checkCancellation: cancellation.check)
                 }.value
                 previous = old; previousDigest = loaded.digest; snapshot = loaded.plan.sourceOrder
                 // Source may have changed while hashing the old session.
                 try await Task.detached(priority: .userInitiated) {
-                    try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources)
+                    try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources, cancellation: cancellation)
                 }.value
             }
             try checkStopAndPermission()
@@ -200,10 +206,18 @@ private final class StreamingManifestWriter {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
             directory = dir; sessionName = session
             let plan = StagingPlan(sessionID: session, sourceOrder: snapshot, assets: sources)
-            let digest = try StagingResume.prepare(plan: plan, in: dir)
-            let sourcePart = dir.appendingPathComponent("source-order.json.part")
-            try snapshot.json().write(to: sourcePart, options: .withoutOverwriting)
-            try StagingFiles.commit(part: sourcePart, destination: dir.appendingPathComponent("source-order.json"))
+            let frozenSnapshot = snapshot
+            let digest = try await Task.detached(priority: .utility) {
+                try autoreleasepool {
+                    try cancellation.check()
+                    let digest = try StagingResume.prepare(plan: plan, in: dir)
+                    let sourcePart = dir.appendingPathComponent("source-order.json.part")
+                    try frozenSnapshot.json().write(to: sourcePart, options: .withoutOverwriting)
+                    try StagingFiles.commit(part: sourcePart, destination: dir.appendingPathComponent("source-order.json"))
+                    try cancellation.check()
+                    return digest
+                }
+            }.value
             let records = dir.appendingPathComponent("asset-records")
             try FileManager.default.createDirectory(at: records, withIntermediateDirectories: false)
             try journal("EXPORTING")
@@ -218,7 +232,7 @@ private final class StreamingManifestWriter {
                     let completed: ExportResource
                     if let cached = reusable[relative], let previous {
                         message = "正在准备第 \(index + 1) 张照片"
-                        try await Task.detached(priority: .utility) { try StagingResume.copy(cached, from: previous, to: dir) }.value
+                        try await Task.detached(priority: .utility) { try StagingResume.copy(cached, from: previous, to: dir, checkCancellation: cancellation.check) }.value
                         completed = cached
                     } else {
                         let destination = dir.appendingPathComponent(relative); let part = destination.appendingPathExtension("part")
@@ -235,7 +249,7 @@ private final class StreamingManifestWriter {
                             }
                         }
                         _ = try checkedResources(source)
-                        let receipt = try await Task.detached(priority: .utility) { try ProbeFiles.inspect(part) }.value
+                        let receipt = try await Task.detached(priority: .utility) { try ProbeFiles.inspect(part, checkCancellation: cancellation.check) }.value
                         guard receipt.byteCount > 0 else { throw ExportError.invalidManifest("原始资源为空") }
                         try StagingFiles.commit(part: part, destination: destination)
                         completed = ExportResource(resourceIndex: resourceIndex + 1, resourceType: resource.type.rawValue,
@@ -244,7 +258,7 @@ private final class StreamingManifestWriter {
                     }
                     _ = try checkedResources(source)
                     try await Task.detached(priority: .utility) {
-                        try StagingResume.record(completed, ordinal: index + 1, plan: plan, digest: digest, in: dir)
+                        try StagingResume.record(completed, ordinal: index + 1, plan: plan, digest: digest, in: dir, checkCancellation: cancellation.check)
                     }.value
                     exported.append(completed); resourcesCompleted += 1; bytesCompleted += completed.byteCount
                     if reusable[relative] != nil { reusedResources += 1 } else { photoKitResourcesRead += 1 }
@@ -264,13 +278,16 @@ private final class StreamingManifestWriter {
             }
             try checkStopAndPermission()
             state = "FINALIZING"; message = "正在核对相册和保存记录…"
-            let checked = try await Task.detached(priority: .utility) { try StagingResume.reusable(in: dir, plan: plan, digest: digest) }.value
+            let checked = try await Task.detached(priority: .utility) { try StagingResume.reusable(in: dir, plan: plan, digest: digest, checkCancellation: cancellation.check) }.value
             guard checked.count == resourcesCompleted else { throw ExportError.invalidManifest("完成资源与检查点数量不一致") }
             if let previous, let previousDigest {
-                guard try StagingResume.load(in: previous).digest == previousDigest else { throw ExportError.invalidManifest("旧会话计划已变化") }
+                let samePlan = try await Task.detached(priority: .utility) {
+                    try autoreleasepool { try StagingResume.load(in: previous).digest == previousDigest }
+                }.value
+                guard samePlan else { throw ExportError.invalidManifest("旧会话计划已变化") }
             }
             try await Task.detached(priority: .userInitiated) {
-                try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources)
+                try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources, cancellation: cancellation)
             }.value
             try checkStopAndPermission()
             try journal("FINALIZING_MANIFEST")

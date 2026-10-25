@@ -32,6 +32,7 @@ private struct RestoreInboxRequest: Decodable {
     private var requestData: Data?
     private var allowEditTimestampRewrite = false
     private var stopRequested = false
+    private var cancellation = OperationCancellation()
     private var inbox: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("RestoreInbox")
     }
@@ -46,7 +47,7 @@ private struct RestoreInboxRequest: Decodable {
         } catch { message = "找不到 Mac 备份：\(error.localizedDescription)" }
     }
     func invalidate() { preflightReportSummary = ""; sharedPreflightReport = false; privatePreflightReport = nil; ready = false; recovering = false; savedTitle = ""; manifest = nil; selected = nil; manifestData = nil; requestData = nil; allowEditTimestampRewrite = false }
-    func requestStop() { stopRequested = true }
+    func requestStop() { stopRequested = true; cancellation.cancel() }
     private func checkPermissionAndStop() throws {
         guard !stopRequested && !Task.isCancelled else { throw ExportError.invalidManifest("已在事务边界停止；不会自动重复导入") }
         try PhotoOperationChecks.requireFullAccess()
@@ -59,9 +60,35 @@ private struct RestoreInboxRequest: Decodable {
         }
         return try Data(contentsOf: url)
     }
+    nonisolated private func readInbox(_ directory: URL, session: String, cancellation: OperationCancellation) throws
+        -> (raw: Data, request: Data, manifest: AlbumExportManifest, resources: Int, bytes: Int, digest: String) {
+        try cancellation.check()
+        let requestRaw = try readJSONFile(directory.appendingPathComponent("restore-request.json"))
+        let request = try JSONDecoder().decode(RestoreInboxRequest.self, from: requestRaw)
+        let raw = try readJSONFile(directory.appendingPathComponent("album-order.json"))
+        let candidate = try RestoreSafety.decodeManifest(data: raw, expectedSHA256: request.sourceManifestSHA256)
+        var resources = 0; var totalBytes = 0
+        for asset in candidate.assets {
+            try cancellation.check()
+            resources += asset.resources.count
+            for resource in asset.resources {
+                let (sum, overflow) = totalBytes.addingReportingOverflow(resource.byteCount)
+                guard !overflow else { throw ExportError.invalidManifest("资源总大小超出支持范围") }
+                totalBytes = sum
+            }
+        }
+        guard request.schemaVersion == "1.0.0", request.kind == "PhotoBridgeRestoreRequest",
+              request.sessionID == session, request.state == "USB_VERIFIED",
+              request.assetCount == candidate.assets.count, request.resourceCount == resources,
+              request.byteCount == totalBytes else { throw ExportError.invalidManifest("USB 收件标记或资源数量/hash 不一致") }
+        try cancellation.check()
+        return (raw, requestRaw, candidate, resources, totalBytes, request.sourceManifestSHA256)
+    }
     func preflight(session: String, allowTimestampRewrite: Bool, simulateNoSpace: Bool = false) async {
         guard !busy else { return }
         invalidate(); busy = true; stopRequested = false; completed = 0; totalAssets = 0
+        let cancellation = OperationCancellation(); self.cancellation = cancellation
+        message = "正在读取照片清单…"
         allowEditTimestampRewrite = allowTimestampRewrite; authorizedTimestampDifferences = 0
         var preflightReport: [String: Any] = ["kind": "PhotoBridgePreflightReport", "schemaVersion": "1.0.0",
             "sessionID": session, "simulatedZeroCapacity": simulateNoSpace,
@@ -98,39 +125,29 @@ private struct RestoreInboxRequest: Decodable {
             guard try FileManager.default.attributesOfItem(atPath: directory.path)[.type] as? FileAttributeType == .typeDirectory else {
                 throw ExportError.invalidManifest("收件会话必须为真实目录")
             }
-            let requestRaw = try readJSONFile(directory.appendingPathComponent("restore-request.json"))
-            let request = try JSONDecoder().decode(RestoreInboxRequest.self, from: requestRaw)
-            let manifestURL = directory.appendingPathComponent("album-order.json")
-            let raw = try readJSONFile(manifestURL)
-            let candidate = try RestoreSafety.decodeManifest(data: raw, expectedSHA256: request.sourceManifestSHA256)
-            let resources = candidate.assets.flatMap(\.resources)
+            let checked = try await Task.detached(priority: .utility) {
+                try autoreleasepool { try self.readInbox(directory, session: session, cancellation: cancellation) }
+            }.value
+            try checkPermissionAndStop()
+            let raw = checked.raw; let requestRaw = checked.request; let candidate = checked.manifest
+            let totalBytes = checked.bytes
             totalAssets = candidate.assets.count
-            preflightReport["manifestSHA256"] = RestoreRecoveryStore.sha256(raw)
-            preflightReport["assets"] = candidate.assets.count; preflightReport["resources"] = resources.count
+            preflightReport["manifestSHA256"] = checked.digest
+            preflightReport["assets"] = candidate.assets.count; preflightReport["resources"] = checked.resources
             var recordedAssets = 0
-            var totalBytes = 0
-            for resource in resources {
-                let (sum, overflow) = totalBytes.addingReportingOverflow(resource.byteCount)
-                guard !overflow else { throw ExportError.invalidManifest("资源总大小超出支持范围") }
-                totalBytes = sum
-            }
-            guard request.schemaVersion == "1.0.0", request.kind == "PhotoBridgeRestoreRequest",
-                  request.sessionID == session, request.state == "USB_VERIFIED",
-                  request.assetCount == candidate.assets.count, request.resourceCount == resources.count,
-                  request.byteCount == totalBytes else {
-                throw ExportError.invalidManifest("USB 收件标记或资源数量/hash 不一致")
-            }
             guard !FileManager.default.fileExists(atPath: directory.appendingPathComponent("restore-report.json").path) else {
                 throw ExportError.invalidManifest("此会话已完成，不重复导入")
             }
             let hasClaim = FileManager.default.fileExists(atPath: directory.appendingPathComponent("restore-started.json").path)
             if hasClaim {
                 // Legacy attempts have no immutable plan and remain permanently blocked.
-                let store = try RestoreRecoveryStore(in: directory)
-                let lease = try store.lock(); defer { lease.release() }
-                try validate(store, manifest: candidate, raw: raw, request: requestRaw, allowed: allowTimestampRewrite)
-                let state = try store.state()
-                if state.albumID != nil { _ = try observed(state) }
+                let store = try await Task.detached(priority: .utility) { try RestoreRecoveryStore(in: directory) }.value
+                let lease = try await Task.detached(priority: .utility) { try store.lock() }.value; defer { lease.release() }
+                let state = try await Task.detached(priority: .utility) {
+                    try self.validate(store, manifest: candidate, raw: raw, request: requestRaw, allowed: allowTimestampRewrite)
+                    return try store.state(checkCancellation: cancellation.check)
+                }.value
+                if state.albumID != nil { _ = try await observed(state) }
                 recovering = true; savedTitle = store.plan.title; recordedAssets = state.assetIDs.count
             }
             let budget = try RestoreWriteBudget(resourceBytesByAsset: candidate.assets.map { $0.resources.map { Int64($0.byteCount) } },
@@ -155,7 +172,7 @@ private struct RestoreInboxRequest: Decodable {
                 }
                 message = "正在检查第 \(asset.ordinal)/\(candidate.assets.count) 张照片"
                 try await Task.detached(priority: .utility) {
-                    for resource in asset.resources { try RestoreSafety.verifyResource(resource, in: directory) }
+                    for resource in asset.resources { try RestoreSafety.verifyResource(resource, in: directory, checkCancellation: cancellation.check) }
                 }.value
                 preflightReport["resourcesHashVerified"] = (preflightReport["resourcesHashVerified"] as? Int ?? 0) + asset.resources.count
             }
@@ -167,7 +184,7 @@ private struct RestoreInboxRequest: Decodable {
             ready = false
             preflightReport["failureCode"] = (error as? OperationPreconditionFailure)?.code ?? "PREFLIGHT_FAILED"
             preflightReport["error"] = error.localizedDescription
-            message = (simulateNoSpace ? "空间不足测试：" : "检查未通过：") + "\(error.localizedDescription)"
+            message = error is CancellationError || stopRequested ? "已暂停检查，原照片不受影响。" : (simulateNoSpace ? "空间不足测试：" : "检查未通过：") + "\(error.localizedDescription)"
         }
     }
 
@@ -190,11 +207,6 @@ private struct RestoreInboxRequest: Decodable {
             }
         }
     }
-    private func members(_ collection: PHAssetCollection) -> (PHFetchResult<PHAsset>, [String]) {
-        let fetch = PHAsset.fetchAssets(in: collection, options: nil)
-        var ids: [String] = []; fetch.enumerateObjects { asset, _, _ in ids.append(asset.localIdentifier) }
-        return (fetch, ids)
-    }
     nonisolated private func validate(_ store: RestoreRecoveryStore, manifest: AlbumExportManifest, raw: Data, request: Data, allowed: Bool) throws {
         try store.validateBinding(manifestSHA256: RestoreRecoveryStore.sha256(raw),
             requestSHA256: RestoreRecoveryStore.sha256(request), allowTimestampRewrite: allowed)
@@ -203,23 +215,39 @@ private struct RestoreInboxRequest: Decodable {
             throw ExportError.invalidManifest("恢复计划来源不符")
         }
     }
-    private func observed(_ state: RestoreRecoveryState) throws -> (PHAssetCollection, PHFetchResult<PHAsset>) {
+    private func observed(_ state: RestoreRecoveryState) async throws -> (PHAssetCollection, PHFetchResult<PHAsset>, [String]) {
         try checkPermissionAndStop()
+        let cancellation = self.cancellation
+        let result = try await Task.detached(priority: .utility) { try autoreleasepool { try Self.observe(state, cancellation: cancellation) } }.value
+        try checkPermissionAndStop()
+        return result
+    }
+    nonisolated private static func observe(_ state: RestoreRecoveryState, cancellation: OperationCancellation) throws
+        -> (PHAssetCollection, PHFetchResult<PHAsset>, [String]) {
+        try PhotoOperationChecks.requireFullAccess(); try cancellation.check()
         guard let id = state.albumID,
               let collection = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [id], options: nil).firstObject else {
             throw ExportError.invalidManifest("已记录相簿不可见；不重建")
         }
-        let (fetch, ids) = members(collection)
+        let fetch = PHAsset.fetchAssets(in: collection, options: nil)
+        var ids: [String] = []
+        for index in 0..<fetch.count {
+            try cancellation.check()
+            autoreleasepool { ids.append(fetch.object(at: index).localIdentifier) }
+        }
         let visible = PHAsset.fetchAssets(withLocalIdentifiers: state.assetIDs, options: nil)
         var visibleIDs: [String] = []; var changed = false
-        visible.enumerateObjects { asset, _, _ in
+        for index in 0..<visible.count {
+            try cancellation.check()
+            let asset = visible.object(at: index)
             visibleIDs.append(asset.localIdentifier)
             if let version = state.verifiedVersions[asset.localIdentifier], asset.modificationDate != version { changed = true }
         }
         try state.validateObserved(albumID: collection.localIdentifier, title: collection.localizedTitle,
             memberIDs: ids, visibleAssetIDs: visibleIDs)
         guard !changed else { throw ExportError.invalidManifest("已回读副本在两次检查间被修改") }
-        return (collection, fetch)
+        try cancellation.check(); try PhotoOperationChecks.requireFullAccess()
+        return (collection, fetch, ids)
     }
     private func verifyImported(_ asset: PHAsset, source: ExportAsset, directory: URL,
                                 verificationDirectory: URL, allowTimestampRewrite: Bool, checkReadbackSpace: (Int64) throws -> Void) async throws -> (ResourceRoundTripResult, Date) {
@@ -245,7 +273,8 @@ private struct RestoreInboxRequest: Decodable {
                     if let error { continuation.resume(throwing: error) } else { continuation.resume() }
                 }
             }
-            let receipt = try await Task.detached(priority: .utility) { try ProbeFiles.inspect(part) }.value
+            let cancellation = self.cancellation
+            let receipt = try await Task.detached(priority: .utility) { try ProbeFiles.inspect(part, checkCancellation: cancellation.check) }.value
             try StagingFiles.commit(part: part, destination: final)
             let (sum, overflow) = committedReadbackBytes.addingReportingOverflow(Int64(receipt.byteCount))
             guard !overflow else { throw OperationPreconditionFailure.invalidBudget }
@@ -283,6 +312,8 @@ private struct RestoreInboxRequest: Decodable {
         guard !name.isEmpty && name.count <= 128 else { message = "请输入 1–128 个字符的相册名称"; return }
         let continuing = recovering
         busy = true; ready = false; stopRequested = false; completed = 0; totalAssets = manifest.assets.count; authorizedTimestampDifferences = 0
+        let cancellation = OperationCancellation(); self.cancellation = cancellation
+        message = "正在检查照片，原照片会保留…"
         let userAllowedTimestampRewrite = allowEditTimestampRewrite
         defer { busy = false }
         var lease: RestoreRecoveryLease?
@@ -321,18 +352,20 @@ private struct RestoreInboxRequest: Decodable {
             try OperationPreconditions.requireCapacity(available, budget: budget)
         }
         func replay(_ active: RestoreRecoveryStore) async throws -> RestoreRecoveryState {
-            try await Task.detached(priority: .utility) { try autoreleasepool { try active.state() } }.value
+            try await Task.detached(priority: .utility) { try autoreleasepool { try active.state(checkCancellation: cancellation.check) } }.value
         }
         func unchangedInputs() async throws {
             try checkPermissionAndStop()
             let active = store
             try await Task.detached(priority: .utility) {
                 try autoreleasepool {
+                try cancellation.check()
                 guard try self.readJSONFile(directory.appendingPathComponent("album-order.json")) == checkedManifest,
                       try self.readJSONFile(directory.appendingPathComponent("restore-request.json")) == checkedRequest else {
                     throw ExportError.invalidManifest("恢复清单或 USB 请求改变")
                 }
                 if let active { try self.validate(active, manifest: manifest, raw: checkedManifest, request: checkedRequest, allowed: userAllowedTimestampRewrite) }
+                try cancellation.check()
                 }
             }.value
             try checkPermissionAndStop()
@@ -341,25 +374,25 @@ private struct RestoreInboxRequest: Decodable {
             budgetPlan = try RestoreBudgetPlan(resourceBytesByAsset: sizes)
             try await unchangedInputs()
             try await Task.detached(priority: .utility) {
-                for resource in manifest.assets.flatMap(\.resources) { try RestoreSafety.verifyResource(resource, in: directory) }
+                for asset in manifest.assets { for resource in asset.resources { try RestoreSafety.verifyResource(resource, in: directory, checkCancellation: cancellation.check) } }
             }.value
             guard !FileManager.default.fileExists(atPath: directory.appendingPathComponent("restore-report.json").path) else {
                 throw ExportError.invalidManifest("此会话已经完成")
             }
-            let recordedBeforeClaim = continuing ? try await Task.detached(priority: .utility) { try RestoreRecoveryStore(in: directory).state().assetIDs.count }.value : 0
+            let recordedBeforeClaim = continuing ? try await Task.detached(priority: .utility) { try RestoreRecoveryStore(in: directory).state(checkCancellation: cancellation.check).assetIDs.count }.value : 0
             try checkSpace(recorded: recordedBeforeClaim, verified: 0)
             if continuing {
-                store = try RestoreRecoveryStore(in: directory)
+                store = try await Task.detached(priority: .utility) { try RestoreRecoveryStore(in: directory) }.value
             } else {
                 try RestoreSafety.claimOnce(in: directory); claimed = true
                 let plan = RestoreRecoveryPlan(inboxSessionID: directory.lastPathComponent,
                     manifestSHA256: RestoreRecoveryStore.sha256(checkedManifest), requestSHA256: RestoreRecoveryStore.sha256(checkedRequest),
                     sourceAlbumID: manifest.sourceOrder.albumIdentifier, sourceAssetIDs: manifest.assets.map(\.sourceAssetLocalIdentifier),
                     title: name, allowTimestampRewrite: userAllowedTimestampRewrite)
-                store = try RestoreRecoveryStore.create(plan: plan, in: directory)
+                store = try await Task.detached(priority: .utility) { try RestoreRecoveryStore.create(plan: plan, in: directory) }.value
             }
             guard let active = store else { throw ExportError.invalidManifest("缺少恢复记录") }
-            lease = try active.lock(); claimed = true
+            lease = try await Task.detached(priority: .utility) { try active.lock() }.value; claimed = true
             try await unchangedInputs()
             guard active.plan.title == name else { throw ExportError.invalidManifest("继续时不能改变已记录的目标相簿名") }
             var state = try await replay(active); ids = state.assetIDs; albumID = state.albumID
@@ -384,7 +417,7 @@ private struct RestoreInboxRequest: Decodable {
             log["runID"] = runID
             if state.albumID == nil {
                 try checkSpace(recorded: 0, verified: 0)
-                try await Task.detached(priority: .utility) { try active.beginAlbum() }.value; try journal("CREATING_NEW_ALBUM")
+                try await Task.detached(priority: .utility) { try active.beginAlbum(checkCancellation: cancellation.check) }.value; try journal("CREATING_NEW_ALBUM")
                 var persistenceError: Error?
                 try await changes {
                     let request = PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: name)
@@ -395,23 +428,23 @@ private struct RestoreInboxRequest: Decodable {
                 if let persistenceError { throw persistenceError }
                 state = try await replay(active); albumID = state.albumID
             }
-            _ = try observed(state)
+            _ = try await observed(state)
             try RestoreRecoveryStore.writeNewMetadata(data(["recordedAssetIDs": state.assetIDs, "verifiedVersionsCount": state.verifiedVersions.count]),
                 to: run.appendingPathComponent("baseline.json"))
             // ponytail: full prefix validation per transaction favors safety; large-album throughput is not yet measured.
             for source in manifest.assets {
                 try await unchangedInputs()
                 state = try await replay(active)
-                _ = try observed(state)
+                _ = try await observed(state)
                 if source.ordinal > state.assetIDs.count {
                     message = "正在恢复第 \(source.ordinal)/\(manifest.assets.count) 张照片"
                     try await Task.detached(priority: .utility) {
-                        for resource in source.resources { try RestoreSafety.verifyResource(resource, in: directory) }
+                        for resource in source.resources { try RestoreSafety.verifyResource(resource, in: directory, checkCancellation: cancellation.check) }
                     }.value
                     try await unchangedInputs()
-                    let (collection, fetch) = try observed(try await replay(active))
+                    let (collection, fetch, _) = try await observed(try await replay(active))
                     try checkSpace(recorded: state.assetIDs.count, verified: completed)
-                    try await Task.detached(priority: .utility) { try active.beginAsset(ordinal: source.ordinal) }.value
+                    try await Task.detached(priority: .utility) { try active.beginAsset(ordinal: source.ordinal, checkCancellation: cancellation.check) }.value
                     log["pendingOrdinal"] = source.ordinal; try journal("IMPORTING")
                     var persistenceError: Error?; var creationRequested = false
                     try await changes {
@@ -435,7 +468,7 @@ private struct RestoreInboxRequest: Decodable {
                     guard creationRequested else { throw ExportError.invalidManifest("未取得相簿写入请求；保留意图，不重试创建") }
                     state = try await replay(active); ids = state.assetIDs
                     guard ids.count == source.ordinal else { throw ExportError.invalidManifest("创建事务缺少持久化标识") }
-                    _ = try observed(state); newCreated += 1
+                    _ = try await observed(state); newCreated += 1
                     if stopAfterFirstCommit && !continuing && newCreated == 1 {
                         log["diagnosticStopWindow"] = "AFTER_FIRST_PHOTOS_COMMIT_BEFORE_RESOURCE_VERIFICATION"
                         throw ExportError.invalidManifest("诊断已停止：1 个副本已提交且标识已保存，资源尚未回读。重启后重新预检此会话再继续")
@@ -465,16 +498,15 @@ private struct RestoreInboxRequest: Decodable {
             }
             try await unchangedInputs()
             state = try await replay(active); ids = state.assetIDs
-            let (_, finalFetch) = try observed(state)
+            let (_, _, finalIDs) = try await observed(state)
             guard state.verifiedVersions.count == manifest.assets.count else { throw ExportError.invalidManifest("回读记录不完整") }
-            var finalIDs: [String] = []; finalFetch.enumerateObjects { asset, _, _ in finalIDs.append(asset.localIdentifier) }
             var mapping: [String: String] = [:]
             for (source, id) in zip(manifest.assets, ids) { mapping[source.sourceAssetLocalIdentifier] = id }
             try RestoreSafety.verifyOrder(sourceIDs: manifest.assets.map(\.sourceAssetLocalIdentifier), mapping: mapping, observed: finalIDs)
             try await Task.detached(priority: .utility) {
-                for resource in manifest.assets.flatMap(\.resources) { try RestoreSafety.verifyResource(resource, in: directory) }
+                for asset in manifest.assets { for resource in asset.resources { try RestoreSafety.verifyResource(resource, in: directory, checkCancellation: cancellation.check) } }
             }.value
-            try await unchangedInputs(); _ = try observed(try await replay(active))
+            try await unchangedInputs(); _ = try await observed(try await replay(active))
             log["observedCreatedAssetIDs"] = finalIDs; log["sourceToCreatedAssetIDs"] = mapping
             let status = authorizedTimestampDifferences == 0 ? "PHOTO_LIBRARY_BYTES_AND_ORDER_VERIFIED" : "PHOTO_LIBRARY_NON_TIME_DATA_AND_ORDER_VERIFIED_WITH_AUTHORIZED_EDIT_TIMESTAMPS"
             try checkPermissionAndStop()
@@ -484,7 +516,7 @@ private struct RestoreInboxRequest: Decodable {
         } catch {
             log["failureCode"] = (error as? OperationPreconditionFailure)?.code ?? "RESTORE_INCOMPLETE"
             if claimed { try? journal("INCOMPLETE", error: (error as? OperationPreconditionFailure)?.code ?? error.localizedDescription) }
-            message = "恢复未完成：\(error.localizedDescription)。已完成的照片和原照片都已保留，检查通过后可以继续。"
+            message = error is CancellationError || stopRequested ? "已暂停。已完成的照片和原照片都已保留，检查通过后可以继续。" : "恢复未完成：\(error.localizedDescription)。已完成的照片和原照片都已保留，检查通过后可以继续。"
         }
     }
 }
