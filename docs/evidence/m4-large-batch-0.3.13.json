@@ -1,0 +1,21 @@
+{
+  "version": "0.3.13",
+  "build": 17,
+  "pythonTests": 90,
+  "localDeliveryGate": "PASS",
+  "scale50000FileTransfer": "RUNNING",
+  "scale50000RecoveryReplay": {
+    "status": "PASS",
+    "assets": 50000,
+    "records": 150002,
+    "seconds": 83.54145097732544,
+    "photosTransactions": "NOT_RUN"
+  },
+  "realDeviceUSB": "BLOCKED USB-only lookup -3",
+  "realPhotos50000RoundTrip": "NOT_RUN",
+  "remainingLimits": [
+    "Full prefix revalidation per Photos transaction remains quadratic in total work",
+    "64 MiB manifest bound; not all 50000-asset resource combinations guaranteed"
+  ],
+  "cloudBuild": "PENDING"
+}
