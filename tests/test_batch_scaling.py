@@ -14,6 +14,54 @@ from transfer_control import CancellationRequested
 
 
 class BatchScalingChecks(unittest.TestCase):
+    def test_known_upload_journal_is_readable_before_usb_writes_and_tracks_completion(self):
+        helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
+        with tempfile.TemporaryDirectory() as d:
+            source, _, _, _, client, _, _ = helper.setup_files(Path(d)); client.interrupted = False
+            identity = 'DD54D37E-4327-4A3F-BDA7-91DC8EE4FDD4'
+            journal = source / 'restore-uploads' / (identity + '.json')
+            real = client.write_new; observed = []
+            def write(path, stream):
+                if not observed:
+                    observed.append(json.loads(journal.read_bytes())['state'])
+                real(path, stream)
+            client.write_new = write
+            result = upload_resume.upload(client, source, journal_id=identity)
+            self.assertEqual(observed, ['UPLOADING'])
+            self.assertEqual(result['journal'], str(journal))
+            self.assertEqual(json.loads(journal.read_bytes())['state'], 'USB_VERIFIED')
+            self.assertEqual(json.loads(journal.read_bytes())['resourcesVerified'], 2)
+
+    def test_known_upload_journal_refuses_collision_without_replacing_old_bytes(self):
+        helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
+        with tempfile.TemporaryDirectory() as d:
+            source, phone, _, _, client, writes, _ = helper.setup_files(Path(d)); client.interrupted = False
+            identity = 'DD54D37E-4327-4A3F-BDA7-91DC8EE4FDD4'
+            journals = source / 'restore-uploads'; journals.mkdir()
+            journal = journals / (identity + '.json'); journal.write_bytes(b'previous-user-record')
+            with self.assertRaises(FileExistsError): upload_resume.upload(client, source, journal_id=identity)
+            self.assertEqual(journal.read_bytes(), b'previous-user-record')
+            self.assertEqual(writes, []); self.assertEqual(list(phone.iterdir()), [])
+
+    def test_flat_upload_uses_the_exact_hidden_progress_path_without_subdirectories(self):
+        helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
+        with tempfile.TemporaryDirectory() as d:
+            source, _, _, _, client, _, _ = helper.setup_files(Path(d)); client.interrupted = False
+            flat = Path(d) / 'flat'; album_export.organize_local_album(source, flat)
+            identity = 'DD54D37E-4327-4A3F-BDA7-91DC8EE4FDD4'
+            result = upload_resume.upload(client, flat, journal_id=identity)
+            expected = flat / ('.photobridge-upload-' + identity + '.json')
+            self.assertEqual(result['journal'], str(expected))
+            self.assertEqual(json.loads(expected.read_bytes())['resourcesVerified'], 2)
+            self.assertFalse(any(p.is_dir() for p in flat.iterdir()))
+
+    def test_upload_progress_identity_cannot_escape_backup(self):
+        for identity in ['../../outside', 'not-a-uuid', 'DD54D37E43274A3FBDA791DC8EE4FDD4']:
+            with self.subTest(identity=identity), tempfile.TemporaryDirectory() as d:
+                source = Path(d) / 'source'; source.mkdir()
+                with self.assertRaises(ValueError): upload_resume.upload(None, source, journal_id=identity)
+                self.assertEqual(list(source.iterdir()), [])
+
     def test_legacy_download_hashes_the_immutable_manifest_once(self):
         fixture = test_album_export.AlbumExportChecks(); m, files = fixture.fixture()
         raw = json.dumps(m).encode(); real = hashlib.sha256; calls = []
