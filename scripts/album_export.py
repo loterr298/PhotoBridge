@@ -16,6 +16,7 @@ import uuid
 from usb_probe import AFC, inspect, read_snapshot, reconnectable_read
 from transfer_progress import snapshot
 from transfer_control import CancellationRequested, check_cancel
+from backup_layout import local_path, prepare_flat, is_flat, publish_photo
 
 
 def set_copy_creation_time(path, nanoseconds):
@@ -131,13 +132,13 @@ def write_json(path, value, exclusive=False):
         os.link(temporary, path)  # Atomic exclusive commit; never replace another session's output.
     else:
         # This is our progress file in our exclusively created session, never a user resource.
-        temporary = path.with_name('progress-' + str(uuid.uuid4()) + '.tmp')
+        temporary = path.with_name('.photobridge-progress-' + str(uuid.uuid4()) + '.tmp')
         with temporary.open('x') as f: json.dump(value, f, indent=2, ensure_ascii=False); f.flush(); os.fsync(f.fileno())
         os.replace(temporary, path)
 
 
 def copy_resource(client, remote, local, resource, logical):
-    destination = local / resource['storedRelativePath']; destination.parent.mkdir(parents=True, exist_ok=True)
+    destination = local_path(local, resource['storedRelativePath']); destination.parent.mkdir(parents=True, exist_ok=True)
     part = destination.with_name(destination.name + '.part')
     for attempt in range(3):
         try:
@@ -238,7 +239,7 @@ def download_album(client, remote, local, cancel_file=None):
         attribute_log.close()
 
 
-def download_live_album(client, request_id, album_identifier, local, cancel_file=None, idle_timeout=1800, previous=None):
+def download_live_album(client, request_id, album_identifier, local, cancel_file=None, idle_timeout=1800, previous=None, flat=False):
     """Receive published asset records immediately, then bind them to the final manifest.
 
     Photos bytes never enter the control channel. A record is only published by
@@ -258,11 +259,12 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
         if previous.resolve() == local.resolve() or previous.resolve() in local.resolve().parents:
             raise ValueError('Continuation must preserve the previous directory')
     local.mkdir(mode=0o700, parents=True, exist_ok=False)
+    if flat: prepare_flat(local)
     start = time.monotonic(); last_activity = start; previous_activity = None
     progress = dict(status='WAITING_FOR_IPHONE', requestID=request_id, assetsVerified=0,
                     albumIdentifier=album_identifier, reusedVerifiedResources=0, totalAssets=0, resourcesVerified=0, bytesVerified=0, totalResources=0,
                     totalBytes=0, restoration='NOT_RUN', message='正在连接 iPhone…')
-    journal = local / 'transfer-progress.json'
+    journal = local_path(local, 'transfer-progress.json')
     write_json(journal, progress)
 
     def read_optional(path, maximum=64 * 1024 * 1024):
@@ -328,11 +330,11 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
             identifiers.add(identifier)
         base = dt.datetime.fromisoformat(source['capturedAt'].replace('Z', '+00:00'))
         if base.tzinfo is None or base.utcoffset() != dt.timedelta(0): raise ValueError('Source date must be UTC')
-        with (local / 'source-order.json').open('xb') as f: f.write(source_raw)
+        with (local_path(local, 'source-order.json')).open('xb') as f: f.write(source_raw)
         progress['totalAssets'] = len(members)
         groups = set(); record_digests = []
-        record_directory = local / 'asset-records'; record_directory.mkdir()
-        with (local / 'filesystem-attributes.jsonl').open('x') as attribute_log:
+        if not flat: (local / 'asset-records').mkdir()
+        with (local_path(local, 'filesystem-attributes.jsonl')).open('x') as attribute_log:
             for ordinal, member in enumerate(members, 1):
                 progress['status'] = 'WAITING_FOR_PHOTO'
                 raw = wait_file(remote + f'/asset-records/{ordinal:06d}.json')
@@ -345,7 +347,7 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
                     progress.update(status='DOWNLOADING', currentResource=resource['originalFilename'])
                     write_json(journal, progress)
                     reader = client
-                    if previous is not None and ((previous / resource['storedRelativePath']).exists() or (previous / resource['storedRelativePath']).is_symlink()):
+                    if previous is not None and (local_path(previous, resource['storedRelativePath']).exists() or local_path(previous, resource['storedRelativePath']).is_symlink()):
                         old = regular_path(previous, resource['storedRelativePath'])
                         receipt = inspect(old)
                         if receipt['sha256'] != resource['sha256'] or receipt['byteCount'] != resource['byteCount']:
@@ -364,7 +366,8 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
                     progress['resourcesVerified'] += 1; progress['bytesVerified'] += actual['byteCount']
                     progress['bytesPerSecond'] = progress['bytesVerified'] / max(.001, time.monotonic() - start)
                     last_activity = time.monotonic()
-                with (record_directory / f'{ordinal:06d}.json').open('xb') as f: f.write(raw)
+                with local_path(local, f'asset-records/{ordinal:06d}.json').open('xb') as f: f.write(raw)
+                publish_photo(local, asset)
                 record_digests.append(hashlib.sha256(json.dumps(asset, sort_keys=True).encode()).digest())
                 progress['assetsVerified'] = ordinal
                 write_json(journal, progress)
@@ -379,12 +382,12 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
             raise ValueError('Final manifest does not match transferred records')
         final_check = wait_file(remote + '/album-order.json')
         if final_check != final_raw: raise ValueError('Final manifest changed during verification')
-        with (local / 'album-order.json').open('xb') as f:
+        with (local_path(local, 'album-order.json')).open('xb') as f:
             f.write(final_raw); f.flush(); os.fsync(f.fileno())
         progress.update(status='COMMITTED', totalResources=progress['resourcesVerified'],
                         totalBytes=progress['bytesVerified'], sourceManifestSHA256=hashlib.sha256(final_raw).hexdigest(),
                         seconds=time.monotonic() - start, message='全部照片已保存并校验')
-        write_json(local / 'transfer-manifest.json', progress, exclusive=True)
+        write_json(local_path(local, 'transfer-manifest.json'), progress, exclusive=True)
         write_json(journal, progress)
         return progress
     except Exception as error:
@@ -393,19 +396,94 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
         raise
 
 
+
+def organize_local_album(previous, local, cancel_file=None):
+    """Copy a complete or interrupted local export to a NEW flat album, offline."""
+    from album_restore import regular_path, validated_backup
+    previous = Path(previous); local = Path(local)
+    if local.exists() or local.is_symlink(): raise FileExistsError(local)
+    old_root = previous.resolve(strict=True); new_root = local.resolve()
+    if old_root == new_root or old_root in new_root.parents or new_root in old_root.parents:
+        raise ValueError('Organization must preserve the previous directory')
+    check_cancel(cancel_file)
+    try: old_progress = json.loads(regular_path(previous,'transfer-progress.json').read_bytes())
+    except FileNotFoundError: old_progress = {}  # A committed legacy backup may omit its live progress journal.
+    manifest_path = local_path(previous,'album-order.json')
+    full_raw = None
+    if manifest_path.exists() or manifest_path.is_symlink():
+        full_raw, manifest, _, _, _ = validated_backup(previous)
+        source = manifest['sourceOrder']; assets = manifest['assets']
+    else:
+        source = json.loads(regular_path(previous,'source-order.json').read_bytes())
+        count = old_progress.get('assetsVerified')
+        if type(count) is not int or not 0 <= count <= len(source['members']):
+            raise ValueError('Missing verified asset count; refusing to guess order')
+        assets = [json.loads(regular_path(previous,f'asset-records/{i:06d}.json').read_bytes()) for i in range(1,count+1)]
+    if source.get('authorization') != 'full' or not source.get('albumIdentifier'):
+        raise ValueError('Invalid original album identity/permission')
+    base = dt.datetime.fromisoformat(source['capturedAt'].replace('Z','+00:00'))
+    if base.tzinfo is None or base.utcoffset() != dt.timedelta(0): raise ValueError('Source time must be UTC')
+    for ordinal,asset in enumerate(assets,1): validate_asset_record(asset,source['members'][ordinal-1],ordinal)
+    local.mkdir(mode=0o700,parents=True,exist_ok=False);prepare_flat(local)
+    progress = dict(old_progress,status='COPYING_LOCAL',albumIdentifier=source['albumIdentifier'],
+        assetsVerified=0,totalAssets=len(source['members']),resourcesVerified=0,bytesVerified=0,
+        reusedVerifiedResources=0,restoration='NOT_RUN',localOrganization=True)
+    for key in ('error','bytesPerSecond','etaSeconds','seconds','MiBPerSecondIncludingVerification','currentResource','message'):
+        progress.pop(key,None)
+    progress['sourcePreviousState'] = old_progress.get('status')
+    journal = local_path(local,'transfer-progress.json');write_json(journal,progress)
+    with local_path(local,'source-order.json').open('xb') as f:f.write(json.dumps(source).encode())
+    try:
+        with local_path(local,'filesystem-attributes.jsonl').open('x') as changes:
+            for ordinal,asset in enumerate(assets,1):
+                logical = base + dt.timedelta(seconds=(ordinal-1)*5)
+                for resource in asset['resources']:
+                    check_cancel(cancel_file)
+                    old = regular_path(previous,resource['storedRelativePath'])
+                    progress['currentResource'] = resource['originalFilename']
+                    class LocalReader:
+                        def read(self,path,sink,maximum=None):
+                            with old.open('rb') as f:
+                                while True:
+                                    data=f.read(1024*1024)
+                                    if not data:break
+                                    sink(data)
+                    change,actual=copy_resource(LocalReader(),'local-copy',local,resource,logical)
+                    changes.write(json.dumps(change)+'\n');changes.flush();os.fsync(changes.fileno())
+                    progress['resourcesVerified']+=1;progress['bytesVerified']+=actual['byteCount']
+                with local_path(local,f'asset-records/{ordinal:06d}.json').open('xb') as f:f.write(json.dumps(asset).encode())
+                publish_photo(local,asset);progress['assetsVerified']=ordinal;write_json(journal,progress)
+        if full_raw is not None:
+            if regular_path(previous,'album-order.json').read_bytes()!=full_raw:raise ValueError('Previous manifest changed')
+            with local_path(local,'album-order.json').open('xb') as f:f.write(full_raw);f.flush();os.fsync(f.fileno())
+            progress.update(status='COMMITTED',sourceManifestSHA256=hashlib.sha256(full_raw).hexdigest())
+            write_json(local_path(local,'transfer-manifest.json'),progress,exclusive=True)
+        else:
+            progress['status']='STOPPED'  # A partial local copy must never claim a complete backup.
+        progress['message'] = f'已整理 {len(assets)} 张照片' + ('，剩余照片可继续导出' if full_raw is None else '')
+        write_json(journal,progress);return progress
+    except Exception as error:
+        progress.update(status='STOPPED' if isinstance(error,CancellationRequested) else 'FAILED',error=str(error))
+        write_json(journal,progress);raise
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['list', 'download', 'live'])
+    parser.add_argument('command', choices=['list', 'download', 'live', 'organize'])
     parser.add_argument('--bundle', default='com.photobridge.OrderProbe')
     parser.add_argument('--previous', type=Path); parser.add_argument('--request-id'); parser.add_argument('--album-id'); parser.add_argument('--remote'); parser.add_argument('--local', type=Path)
+    parser.add_argument('--flat', action='store_true')
     parser.add_argument('--cancel-file', type=Path)
     args = parser.parse_args(); client = None
     try:
+        if args.command == 'organize':
+            result = organize_local_album(args.previous, args.local, args.cancel_file)
+            print(json.dumps(result, indent=2)); return 0
         client = AFC(); client.vend(args.bundle)
         if args.command == 'list': result = {'status': 'DISCOVERED', 'sessions': client.list('Exports')}
         elif args.command == 'live':
             if not args.request_id or not args.album_id or args.local is None: raise ValueError('Missing live export arguments')
-            result = download_live_album(client, args.request_id, args.album_id, args.local, args.cancel_file, previous=args.previous)
+            result = download_live_album(client, args.request_id, args.album_id, args.local, args.cancel_file, previous=args.previous, flat=args.flat)
         else:
             if not args.remote or args.local is None: raise ValueError('--remote and NEW --local directory required')
             result = download_album(client, args.remote, args.local, args.cancel_file)

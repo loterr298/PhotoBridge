@@ -10,6 +10,7 @@ from album_export import download_album, session_path, validate_manifest, write_
 from album_restore import regular_path
 from usb_probe import AFC, CHUNK, inspect
 from transfer_control import CancellationRequested
+from backup_layout import local_path
 
 
 def resume_download(client, remote, previous, destination, cancel_file=None):
@@ -39,7 +40,7 @@ def resume_download(client, remote, previous, destination, cancel_file=None):
                 sink(data); return
             if path not in self.resources: raise ValueError('Resume path is not in the bound source manifest')
             resource = self.resources[path]; relative = resource['storedRelativePath']
-            complete = previous / relative; part = complete.with_name(complete.name + '.part')
+            complete = local_path(previous, relative); part = complete.with_name(complete.name + '.part')
             offset = 0
             if complete.exists() or complete.is_symlink():
                 complete = regular_path(previous, relative); receipt = inspect(complete)

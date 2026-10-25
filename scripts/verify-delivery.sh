@@ -65,7 +65,7 @@ if [[ "$MODE" != "--core-only" ]]; then
 fi
 
 python3 - "$MODE" "$REPORT" <<'PY' | tee -a "$RUN_LOG"
-import json, pathlib, subprocess, sys, time
+import json, pathlib, plistlib, subprocess, sys, time
 mode, report_path = sys.argv[1:]
 root = pathlib.Path.cwd()
 def capture(*args):
@@ -81,6 +81,8 @@ report = {
     "branch": capture("git", "branch", "--show-current"),
     "packageVersion": capture("awk", '/MARKETING_VERSION/{print $2; exit}', "project.yml"),
     "packageBuild": capture("awk", '/CURRENT_PROJECT_VERSION/{print $2; exit}', "project.yml"),
+    "macPackageVersion": plistlib.loads((root / "apps/macOS/Info.plist").read_bytes())["CFBundleShortVersionString"],
+    "macPackageBuild": plistlib.loads((root / "apps/macOS/Info.plist").read_bytes())["CFBundleVersion"],
     "coreGate": "PASS",
     "deviceAcceptance": "REQUIRES_REAL_DEVICE_EVIDENCE",
     "notes": [

@@ -6,11 +6,14 @@ import io
 import json
 from pathlib import Path
 import sys
+import time
 import uuid
 from album_restore import regular_path, validated_backup
 from album_export import write_json
 from usb_probe import AFC
 from transfer_control import CancellationRequested, check_cancel
+from transfer_progress import snapshot
+from backup_layout import upload_journals, upload_journal_name
 
 
 def upload(client, local, previous_journal=None, cancel_file=None):
@@ -32,11 +35,13 @@ def upload(client, local, previous_journal=None, cancel_file=None):
         owner = dict(kind='PhotoBridgeUploadOwner', schemaVersion='1.0.0', sessionID=session,
             sourceManifestSHA256=digest, nonce=str(uuid.uuid4()))
     owner_raw = json.dumps(owner, sort_keys=True).encode()
-    journals = local / 'restore-uploads'
+    journals = upload_journals(local)
     if journals.is_symlink(): raise ValueError('Journal symlink rejected')
     journals.mkdir(mode=0o700, exist_ok=True)
-    journal = journals / (str(uuid.uuid4()).upper() + '.json')
-    state = dict(state='UPLOADING', remote=remote, owner=owner, resourcesVerified=0, bytesVerified=0,
+    journal = journals / upload_journal_name(local,str(uuid.uuid4()).upper())
+    resource_names = {r['storedRelativePath']: r['originalFilename'] for r in resources}
+    start = time.monotonic()
+    state = dict(totalResources=len(resources), totalBytes=total, state='UPLOADING', remote=remote, owner=owner, resourcesVerified=0, bytesVerified=0,
         reusedVerifiedResources=0, resumedPartialBytes=0, usbResourceBytesWritten=0,
         usbVerificationBytesRead=0, photosImport='NOT_RUN', previousLocalJournalWritten=False)
     directory_names = {}
@@ -138,17 +143,21 @@ def upload(client, local, previous_journal=None, cancel_file=None):
                     unpublished(); client.commit_new(remote + '/' + relative + '.part', remote + '/' + relative)
                 if data is None:
                     state['resourcesVerified'] += 1; state['bytesVerified'] += size
+                state.update(snapshot(status='UPLOADING', started_monotonic=start, now_monotonic=time.monotonic(),
+                    resources_verified=state['resourcesVerified'], total_resources=len(resources),
+                    bytes_verified=state['bytesVerified'], total_bytes=total,
+                    current_resource=resource_names.get(relative, '正在核对发送结果')))
                 write_json(journal, state)
-            state['state'] = 'USB_VERIFIED'; write_json(journal, state)
+            state.update(state='USB_VERIFIED', status='USB_VERIFIED'); write_json(journal, state)
             return dict(state, journal=str(journal))
     except CancellationRequested as error:
         if journal.exists():
-            state.update(state='STOPPED', error=str(error)); write_json(journal, state)
+            state.update(state='STOPPED', status='STOPPED', error=str(error)); write_json(journal, state)
         raise
     except Exception as error:
         # A refused resume must not overwrite the previous journal or create a false ready request.
         if journal.exists():
-            state.update(state='FAILED', error=str(error)); write_json(journal, state)
+            state.update(state='FAILED', status='FAILED', error=str(error)); write_json(journal, state)
         raise
 
 

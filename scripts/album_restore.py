@@ -13,10 +13,12 @@ from album_export import validate_manifest, write_json
 from usb_probe import AFC, inspect
 from transfer_progress import snapshot
 from transfer_control import CancellationRequested, check_cancel
+from backup_layout import local_path, upload_journals, upload_journal_name
 
 
 def regular_path(root, relative):
     current = root
+    relative = str(local_path(root, relative).relative_to(root))
     parts = Path(relative).parts
     if Path(relative).is_absolute() or any(p in ('', '.', '..') for p in parts):
         raise ValueError('Unsafe backup path')
@@ -54,10 +56,10 @@ def upload_backup(client, local, cancel_file=None):
     raw, manifest, resources, digest, total = validated_backup(local)
     manifest_path = regular_path(local, 'album-order.json')
     session = str(uuid.uuid4()).upper(); remote = 'RestoreInbox/' + session
-    journals = local / 'restore-uploads'
+    journals = upload_journals(local)
     if journals.is_symlink(): raise ValueError('Upload journal must not be a symbolic link')
     journals.mkdir(mode=0o700, exist_ok=True)
-    journal = journals / (session + '.json')
+    journal = journals / upload_journal_name(local,session)
     start = time.monotonic()
     progress = snapshot(status='UPLOADING', started_monotonic=start, now_monotonic=start,
                         resources_verified=0, total_resources=len(resources),
