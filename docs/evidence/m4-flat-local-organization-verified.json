@@ -15,10 +15,24 @@
   "phoneUSBTransferThisOperation": "NOT_RUN local files only",
   "originalSourceMediaModified": false,
   "macVersion": "0.3.12",
-  "macBuild": 16,
+  "macBuild": "16",
   "pythonTests": 84,
-  "cloudBuild": "PENDING",
+  "cloudBuild": "SUCCESS",
   "newUSBFlatExportDeviceAcceptance": "NOT_RUN",
-  "nativeGalleryVisualCheck": "PASS real saved photos rendered in ordinal order on local Mac",
-  "reviewedLocalDeliveryGate": "PASS; Python 84; Intel x86_64 package; local XCTest unavailable"
+  "nativeGalleryVisualCheck": "PASS installed cloud x86_64 app displayed 2707 real saved photos in ordinal order; thumbnail rendering observed",
+  "reviewedLocalDeliveryGate": "PASS; Python 84; Intel x86_64 package; local XCTest unavailable",
+  "review": "Read-only follow-up: no blocking findings; owned upload continuation and saved folder selection reviewed; 9 scoped tests independently passed",
+  "sourceParity": {
+    "comparedFiles": 86,
+    "differences": 0,
+    "cloudCommit": "61ac12891559df24e253f0e667a4162129595e82"
+  },
+  "artifactSHA256": "3c21a70d8398b3f143d1459074908e9ef1b7cb3c4f6a53eb9fc051479e6822b6",
+  "macPackageSHA256": "1cc774bca728ba4fb85003a8f13127f4a53a75d288c458f1d07c0ebabee0a758",
+  "packagedScriptsMatch": "PASS",
+  "cloudRun": "https://github.com/loterr298/PhotoBridge/actions/runs/40148793907",
+  "swiftUnitTests": 7,
+  "installedMacVersion": "0.3.12/build16",
+  "actualXcode": "16.4",
+  "actualIOSSDK": "18.5"
 }
