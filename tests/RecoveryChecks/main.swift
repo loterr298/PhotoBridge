@@ -21,10 +21,26 @@ do {
     }
     let s = try fixture()
     try check(s.state().assetIDs.isEmpty, "new durable plan has no Photos objects")
+    for name in ["000003-intent.json", "1-intent.json", "000001-intent.json.extra", "+00001-intent.json"] {
+        let unknown = s.directory.appendingPathComponent(name)
+        try Data("{}".utf8).write(to: unknown)
+        try rejects("noncanonical/out-of-plan record \(name) refused") { _ = try s.state() }
+        try fm.removeItem(at: unknown)
+    }
+    do {
+        _ = try s.state(checkCancellation: { throw CancellationError() })
+        throw ExportError.invalidManifest("Cancelled ledger returned a usable state")
+    } catch is CancellationError { try check(true, "cancelled ledger returns no state") }
     let lease = try s.lock()
     try rejects("second native writer lock refused") { _ = try s.lock() }
     lease.release(); let nextLease = try s.lock(); nextLease.release()
     try check(true, "native lock released for a later invocation")
+    do {
+        try s.beginAlbum(checkCancellation: { throw CancellationError() })
+        throw ExportError.invalidManifest("Paused album check wrote intent")
+    } catch is CancellationError {
+        try check(!fm.fileExists(atPath: s.directory.appendingPathComponent("album-intent.json").path), "pause before album intent does not authorize creation")
+    }
     try s.beginAlbum()
     try rejects("album intent without placeholder is ambiguous, never recreated") { _ = try RestoreRecoveryStore(in: s.directory.deletingLastPathComponent()).state() }
     try s.recordAlbumPlaceholder("new-album")
@@ -32,6 +48,12 @@ do {
     try rejects("missing actual album does not authorize another album") { try s.state().validateObserved(albumID: nil, title: nil, memberIDs: [], visibleAssetIDs: []) }
     try rejects("wrong actual album refused") { try s.state().validateObserved(albumID: "other", title: "new album", memberIDs: [], visibleAssetIDs: []) }
     try s.state().validateObserved(albumID: "new-album", title: "new album", memberIDs: [], visibleAssetIDs: [])
+    do {
+        try s.beginAsset(ordinal: 1, checkCancellation: { throw CancellationError() })
+        throw ExportError.invalidManifest("Paused asset check wrote intent")
+    } catch is CancellationError {
+        try check(!fm.fileExists(atPath: s.directory.appendingPathComponent("000001-intent.json").path), "pause before asset intent does not authorize creation")
+    }
     try s.beginAsset(ordinal: 1)
     try rejects("asset intent without placeholder is ambiguous, never recreated") { _ = try RestoreRecoveryStore(in: s.directory.deletingLastPathComponent()).state() }
     try s.recordAssetPlaceholder(ordinal: 1, identifier: "new-a")
