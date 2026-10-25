@@ -1,6 +1,22 @@
 import Foundation
 import PhotoBridgeCore
 
+func runSparseRecoveryScale() throws {
+    let fm = FileManager.default
+    let inbox = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try fm.createDirectory(at: inbox, withIntermediateDirectories: false)
+    defer { try? fm.removeItem(at: inbox) }
+    let plan = RestoreRecoveryPlan(inboxSessionID: inbox.lastPathComponent, manifestSHA256: String(repeating: "a", count: 64),
+        requestSHA256: String(repeating: "b", count: 64), sourceAlbumID: "source", sourceAssetIDs: (1...50000).map { "source-\($0)" },
+        title: "sparse synthetic", allowTimestampRewrite: false)
+    let store = try RestoreRecoveryStore.create(plan: plan, in: inbox)
+    let start = Date()
+    for _ in 0..<5 { try require(store.state().assetIDs.isEmpty, "Empty recovery prefix changed") }
+    let seconds = Date().timeIntervalSince(start)
+    print("50000 planned assets, empty prefix, 5 full checks: \(seconds) seconds")
+    try require(seconds < 1.5, "Empty-prefix replay must not synthesize/scan 150000 nonexistent records per check")
+}
+
 func runRecoveryScale(_ count: Int) throws -> [String: Any] {
     let fm = FileManager.default
     let inbox = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)

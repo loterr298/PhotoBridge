@@ -81,6 +81,7 @@ var record: [String: Any] = ["synthetic": true, "assets": count, "orderChecks": 
     "peakRSSGrowthBytes": growth, "devicePhotosRoundTrip": "NOT_RUN", "usbThroughput": "NOT_MEASURED"]
 print(String(data: try JSONSerialization.data(withJSONObject: record, options: [.prettyPrinted, .sortedKeys]), encoding: .utf8)!)
 
+try runSparseRecoveryScale()
 if let count = Int(ProcessInfo.processInfo.environment["PHOTOBRIDGE_LEDGER_COUNT"] ?? "1000"), count >= 2, count <= 50000 {
     let ledger = try runRecoveryScale(count)
     print(String(data: try JSONSerialization.data(withJSONObject: ledger, options: [.prettyPrinted, .sortedKeys]), encoding: .utf8)!)
