@@ -843,3 +843,12 @@ GitHub Actions **#105**（commit `ee0f11a`）已成功完成 iOS arm64 未签名
 另独立复现并修复了原有共享 hash 检查的 Darwin 内存累计问题：`FileHandle.read(upToCount:)` 返回的临时 NSData 在外层任务池结束前未释放。对同一 16 MiB 合成文件连续检查 32 次（总读 512 MiB）时，旧实现 peak RSS 增长 **537219072 bytes**，超过 64 MiB 上限并实际 RED 失败；新实现将每个 1 MiB 块的读取和 SHA 更新放在单独 autoreleasepool，增长降到 **1277952 bytes**，hash/长度一致，GREEN 通过。没有削弱原图、资源清单或最终 hash 校验。这个测试证明内存缺陷和修复效果，不等于已获得旧版 iPhone jetsam 日志或证明本次后台暂停由内存导致。
 
 新增可重复的 `swift run MemoryChecks` 并纳入交付门禁；不是静态源码文本检查。日志 `build/memory-red.log`、`build/memory-green.log`。最终本机全套 Python 78 项（含后台状态传播）、核心检查、23 项暂存恢复、57 项 Photos 恢复、MemoryChecks、iOS 语法和 Intel x86_64 打包通过（`build/stability-final-delivery.log`）；本机 XCTest 仍缺完整 Xcode，云端实际执行结果另记。iPhone 原来的 0.3.9 包没有本次内存/前台信号修复，最终交付需两端更新到 0.3.11，原先“只需 Mac 更新”的说明已被新发现修正。
+
+
+最终 GitHub Actions **#110**（[40122099953](https://github.com/loterr298/PhotoBridge/actions/runs/40122099953)，commit `26bae87cb9ffe83b00492f6f862d7c386e762a9e`）SUCCESS。下载前核对远程完整源码快照：83 个构建与测试文件逐字节匹配本地。云端 78 项 Python、7 项 XCTest、核心/暂存/Photos 恢复与 MemoryChecks 通过；云端 512 MiB 合成读取的额外 peak RSS 为 6160384 bytes，同样低于 64 MiB 上限；iOS arm64、Intel x86_64 实际编译成功。下载 artifact SHA-256 为 `1de22a65ab65684aa29374e5c53af68b8c115b9828dd7fc77259ecc145982aa4`，ZIP CRC、内部 SHA256SUMS、两端 0.3.11/build15 和 IPA 内来源 commit 均已核对。
+
+- IPA：`a19a6dd4628fed8eaf1178d22efc2f84b99cb2a92c1692fca4d6188e5b412511`
+- Intel Mac ZIP：`ac14508dc65b7731ab4c80d75ee1dcfe7ffd1895910d344f591a83c7f5b7a909`
+- 产物：`build/PhotoBridge-0.3.11-Stability/`；云端日志：`build/cloud-110/build/logs/`；[结构化验证记录](evidence/m4-stability-0.3.11.json)。
+- 已将本机 `/Applications/PhotoBridgeMac.app` 覆盖更新为该云包并启动。可执行文件和全部传输脚本与云包/测试源码一致，ad-hoc 签名验证通过；旧 Mac App 保留于 `build/installed-backups/PhotoBridgeMac-before-0.3.11-20261025-034734.app`。
+- 设备边界：本轮真实大相册导出仍停留在旧手机 0.3.9 / 中间 Mac 0.3.10 的 2707 张记录，未标为完整通过。最终 iPhone 0.3.11 未安装，需用户个人签名覆盖更新后继续；本轮没有导入任何照片、没有改写或删除原照片，三份部分导出现场均保留。
