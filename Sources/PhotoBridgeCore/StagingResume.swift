@@ -138,15 +138,16 @@ public enum StagingResume {
             throw ExportError.invalidManifest("Checkpoint does not match resource plan")
         }
     }
-    private static func verify(_ resource: ExportResource, in directory: URL) throws {
+    private static func verify(_ resource: ExportResource, in directory: URL, checkCancellation: () throws -> Void) throws {
+        try checkCancellation()
         let file = try regular(resource.storedRelativePath, in: directory)
-        let receipt = try ProbeFiles.inspect(file)
+        let receipt = try ProbeFiles.inspect(file, checkCancellation: checkCancellation)
         guard receipt.byteCount == resource.byteCount, receipt.sha256 == resource.sha256 else {
             throw ExportError.invalidManifest("暂存资源大小或 SHA-256 不一致，停止继续")
         }
     }
-    public static func record(_ resource: ExportResource, ordinal: Int, plan: StagingPlan, digest: String, in directory: URL) throws {
-        try validate(resource, ordinal: ordinal, plan: plan); try verify(resource, in: directory)
+    public static func record(_ resource: ExportResource, ordinal: Int, plan: StagingPlan, digest: String, in directory: URL, checkCancellation: () throws -> Void = {}) throws {
+        try validate(resource, ordinal: ordinal, plan: plan); try verify(resource, in: directory, checkCancellation: checkCancellation)
         let records = directory.appendingPathComponent("resource-records"); try requireDirectory(records)
         let final = records.appendingPathComponent(String(format: "%06d-%04d.json", ordinal, resource.resourceIndex))
         let part = final.appendingPathExtension("part")
@@ -154,30 +155,35 @@ public enum StagingResume {
         try encode(checkpoint).write(to: part, options: .withoutOverwriting)
         try StagingFiles.commit(part: part, destination: final)
     }
-    public static func reusable(in directory: URL, plan: StagingPlan, digest: String) throws -> [String: ExportResource] {
+    public static func reusable(in directory: URL, plan: StagingPlan, digest: String, checkCancellation: () throws -> Void = {}) throws -> [String: ExportResource] {
+        try checkCancellation()
         let actual = try load(in: directory)
         guard actual.plan == plan, actual.digest == digest else { throw ExportError.invalidManifest("Staging plan changed") }
         let records = directory.appendingPathComponent("resource-records"); try requireDirectory(records)
         var result: [String: ExportResource] = [:]
         for name in try FileManager.default.contentsOfDirectory(atPath: records.path) where name.hasSuffix(".json") {
-            let raw = try Data(contentsOf: regular("resource-records/" + name, in: directory, maximum: 1024 * 1024))
-            let c = try JSONDecoder().decode(StagingCheckpoint.self, from: raw)
+            try checkCancellation()
+            let c = try autoreleasepool {
+                let raw = try Data(contentsOf: regular("resource-records/" + name, in: directory, maximum: 1024 * 1024))
+                return try JSONDecoder().decode(StagingCheckpoint.self, from: raw)
+            }
             guard c.schemaVersion == "1.0.0", c.sessionID == plan.sessionID, c.planSHA256 == digest,
                   name == String(format: "%06d-%04d.json", c.ordinal, c.resource.resourceIndex), result[c.resource.storedRelativePath] == nil else {
                 throw ExportError.invalidManifest("Foreign/ambiguous staging checkpoint")
             }
-            try validate(c.resource, ordinal: c.ordinal, plan: plan); try verify(c.resource, in: directory)
+            try validate(c.resource, ordinal: c.ordinal, plan: plan); try verify(c.resource, in: directory, checkCancellation: checkCancellation)
             result[c.resource.storedRelativePath] = c.resource
         }
         return result
     }
-    public static func copy(_ resource: ExportResource, from previous: URL, to directory: URL) throws {
+    public static func copy(_ resource: ExportResource, from previous: URL, to directory: URL, checkCancellation: () throws -> Void = {}) throws {
+        try checkCancellation()
         let old = previous.resolvingSymlinksInPath().standardizedFileURL.path
         let new = directory.resolvingSymlinksInPath().standardizedFileURL.path
         guard old != new, !new.hasPrefix(old + "/"), !old.hasPrefix(new + "/") else {
             throw ExportError.invalidManifest("Recovery must use a separate new session")
         }
-        try requireDirectory(directory); try verify(resource, in: previous)
+        try requireDirectory(directory); try verify(resource, in: previous, checkCancellation: checkCancellation)
         let components = resource.storedRelativePath.split(separator: "/"); var parent = directory
         for component in components.dropLast() {
             parent.appendPathComponent(String(component))
@@ -189,7 +195,7 @@ public enum StagingResume {
             throw ExportError.invalidManifest("Recovery destination already exists")
         }
         try FileManager.default.copyItem(at: previous.appendingPathComponent(resource.storedRelativePath), to: part)
-        let receipt = try ProbeFiles.inspect(part)
+        let receipt = try ProbeFiles.inspect(part, checkCancellation: checkCancellation)
         guard receipt.byteCount == resource.byteCount, receipt.sha256 == resource.sha256 else { throw ExportError.invalidManifest("Copied staging resource changed") }
         try StagingFiles.commit(part: part, destination: final)
     }

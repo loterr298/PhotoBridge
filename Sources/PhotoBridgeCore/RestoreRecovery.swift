@@ -151,28 +151,44 @@ public final class RestoreRecoveryStore {
         }
         return e
     }
-    private func write(_ kind: String, _ ordinal: Int, identifier: String? = nil, modified: Date? = nil) throws {
+    private func write(_ kind: String, _ ordinal: Int, identifier: String? = nil, modified: Date? = nil,
+                       checkCancellation: () throws -> Void = {}) throws {
         try unchangedPlan()
         let album = kind.hasPrefix("album-")
         guard (album && ordinal == 0) || (!album && ordinal > 0 && ordinal <= plan.sourceAssetIDs.count) else { throw ExportError.invalidManifest("Invalid recovery ordinal") }
         if let identifier { guard !identifier.isEmpty, !identifier.contains("\0"), !sourceIDs.contains(identifier), identifier != plan.sourceAlbumID else { throw ExportError.invalidManifest("Cannot adopt original identity") } }
         let e = RestoreRecoveryEvent(schemaVersion: "1.0.0", attemptID: plan.attemptID, planSHA256: digest, kind: kind,
             ordinal: ordinal, sourceID: album ? nil : plan.sourceAssetIDs[ordinal - 1], createdID: identifier, modified: modified)
+        try checkCancellation()
         try Self.writeNewMetadata(Self.encode(e), to: directory.appendingPathComponent(filename(kind, ordinal)))
     }
-    public func state() throws -> RestoreRecoveryState {
+    public func state(checkCancellation: () throws -> Void = {}) throws -> RestoreRecoveryState {
+        try checkCancellation()
         try unchangedPlan()
-        var allowed: Set<String> = ["plan.json", "album-intent.json", "album-placeholder.json"]
-        for i in 1...plan.sourceAssetIDs.count { for kind in ["asset-intent", "asset-placeholder", "asset-verified"] { allowed.insert(filename(kind, i)) } }
         let names = Set(try Self.fm.contentsOfDirectory(atPath: directory.path))
-        for name in names where !allowed.contains(name) {
-            guard name.hasPrefix(".pending-"), UUID(uuidString: String(name.dropFirst(9))) != nil else { throw ExportError.invalidManifest("Unknown recovery record") }
-            _ = try Self.regularData(directory.appendingPathComponent(name))
+        var lastOrdinal = 0
+        for name in names {
+            try checkCancellation()
+            if ["plan.json", "album-intent.json", "album-placeholder.json"].contains(name) { continue }
+            if name.hasPrefix(".pending-"), UUID(uuidString: String(name.dropFirst(9))) != nil {
+                _ = try Self.regularData(directory.appendingPathComponent(name)); continue
+            }
+            let parts = name.split(separator: "-", maxSplits: 1, omittingEmptySubsequences: false)
+            guard parts.count == 2, let ordinal = Int(parts[0]), ordinal > 0, ordinal <= plan.sourceAssetIDs.count,
+                  ["intent.json", "placeholder.json", "verified.json"].contains(String(parts[1])),
+                  name == String(format: "%06d-", ordinal) + parts[1] else {
+                throw ExportError.invalidManifest("Unknown recovery record")
+            }
+            lastOrdinal = max(lastOrdinal, ordinal)
         }
         let albumIntent = try event("album-intent", 0, names: names); let album = try event("album-placeholder", 0, names: names)
         guard (albumIntent == nil) == (album == nil) else { throw ExportError.invalidManifest("相簿事务状态不明确，缺少持久化标识；不重建相簿") }
         var ids: [String] = []; var uniqueIDs = Set<String>(); var versions: [String: Date] = [:]; var gap = false
-        for i in 1...plan.sourceAssetIDs.count {
+        // Full replay of every existing record; absent future transactions do
+        // not need 150000 filenames/lookup probes for a 50000-photo plan.
+        for index in 0..<lastOrdinal {
+            try checkCancellation()
+            let i = index + 1
             let intent = try event("asset-intent", i, names: names); let placeholder = try event("asset-placeholder", i, names: names); let verified = try event("asset-verified", i, names: names)
             if intent == nil { guard placeholder == nil, verified == nil else { throw ExportError.invalidManifest("Missing intent") }; gap = true; continue }
             guard album != nil, !gap, let id = placeholder?.createdID, id != album?.createdID, uniqueIDs.insert(id).inserted else {
@@ -182,21 +198,22 @@ public final class RestoreRecoveryStore {
             ids.append(id)
             if let verified { guard verified.createdID == id else { throw ExportError.invalidManifest("Verified identity mismatch") }; versions[id] = verified.modified }
         }
+        try checkCancellation()
         return RestoreRecoveryState(plan: plan, albumID: album?.createdID, assetIDs: ids, verifiedVersions: versions)
     }
-    public func beginAlbum() throws {
-        let current = try state(); guard current.albumID == nil, current.assetIDs.isEmpty else { throw ExportError.invalidManifest("Album already recorded") }
-        try write("album-intent", 0)
+    public func beginAlbum(checkCancellation: () throws -> Void = {}) throws {
+        let current = try state(checkCancellation: checkCancellation); guard current.albumID == nil, current.assetIDs.isEmpty else { throw ExportError.invalidManifest("Album already recorded") }
+        try write("album-intent", 0, checkCancellation: checkCancellation)
     }
     public func recordAlbumPlaceholder(_ identifier: String) throws {
         guard try event("album-intent", 0) != nil else { throw ExportError.invalidManifest("Album intent required") }
         try write("album-placeholder", 0, identifier: identifier)
     }
-    public func beginAsset(ordinal: Int) throws {
-        let current = try state()
+    public func beginAsset(ordinal: Int, checkCancellation: () throws -> Void = {}) throws {
+        let current = try state(checkCancellation: checkCancellation)
         guard current.albumID != nil, ordinal > 0, ordinal <= plan.sourceAssetIDs.count,
               ordinal == current.assetIDs.count + 1, current.verifiedVersions.count == current.assetIDs.count else { throw ExportError.invalidManifest("Not a new verified-prefix transaction") }
-        try write("asset-intent", ordinal)
+        try write("asset-intent", ordinal, checkCancellation: checkCancellation)
     }
     public func recordAssetPlaceholder(ordinal: Int, identifier: String) throws {
         guard ordinal > 0, ordinal <= plan.sourceAssetIDs.count, try event("asset-intent", ordinal) != nil else { throw ExportError.invalidManifest("Asset intent required") }

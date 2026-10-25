@@ -19,7 +19,8 @@ public enum RestoreSafety {
         try manifest.validate()
         return manifest
     }
-    public static func verifyResource(_ resource: ExportResource, in directory: URL) throws {
+    public static func verifyResource(_ resource: ExportResource, in directory: URL, checkCancellation: () throws -> Void = {}) throws {
+        try checkCancellation()
         let components = resource.storedRelativePath.split(separator: "/", omittingEmptySubsequences: false)
         guard !components.isEmpty, components.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." && !$0.contains("\0") && !$0.contains("\\") }) else {
             throw ExportError.invalidManifest("Unsafe restore path")
@@ -37,7 +38,7 @@ public enum RestoreSafety {
                 throw ExportError.invalidManifest("Restore path is not a regular file/directory")
             }
         }
-        let receipt = try ProbeFiles.inspect(current)
+        let receipt = try ProbeFiles.inspect(current, checkCancellation: checkCancellation)
         guard receipt.byteCount == resource.byteCount && receipt.sha256 == resource.sha256 else {
             throw ExportError.invalidManifest("Restore resource size/SHA-256 mismatch")
         }
