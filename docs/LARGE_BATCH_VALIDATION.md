@@ -1,6 +1,6 @@
 # 大批量顺序、性能与稳定性验证
 
-本轮版本：两端 0.3.13 / build17。优先保留完整性和恢复安全检查，再减少重复计算；不通过跳过 SHA-256 或扩大无界并发来提高速度。
+本轮版本：两端 0.3.14 / build18。优先保留完整性和恢复安全检查，再减少重复计算；不通过跳过 SHA-256 或扩大无界并发来提高速度。
 
 ## 已改动的路径
 
@@ -42,3 +42,12 @@ python3 tests/scale_transfer.py --assets 50000 --report build/scale-transfer-500
 ## Large-manifest memory follow-up
 
 The first 50000-file run passed all integrity/order/interruption checks but peak RSS was 1391517696 bytes, including in-memory synthetic peers. This prompted removal of two redundant full JSON object graphs during upload publication. The source manifest is still checked byte-for-byte and every media resource is rehashed. This is metadata reuse only, not a cached-media integrity shortcut. An identical full-size rerun measures the result; figures will be recorded after completion.
+
+
+## Final measured result and delivery state
+
+Both complete 50000-asset / 82500-resource synthetic file round trips passed the order/integrity and interruption checks. Peak RSS in the identical runner: 1391517696 -> 1022763008 bytes (-26.5002%), including fake peers. Runtime numbers are not a controlled USB speed comparison; export code was unchanged in the memory follow-up and cache/concurrent disk load differed.
+
+Local Mac 0.3.14/build18 is installed and native About/gallery smoke checks passed. Full local gate and Python 92 tests passed. Final 0.3.14 cloud publication and iPhone IPA are incomplete because the desktop browser bridge failed; #112 is the prior 0.3.13 source. Exact records: [final memory evidence](evidence/m4-large-batch-memory-0.3.14.json).
+
+This is not a completed 50000-photo product acceptance: real Photos writes/order/format playback, real USB speed, phone staging capacity and large-album restore throughput remain unverified. Full-prefix-per-transaction restore validation and the 64MiB manifest bound are material remaining limits.
