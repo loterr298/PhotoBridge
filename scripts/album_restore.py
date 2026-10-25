@@ -36,19 +36,40 @@ def validated_backup(local, cancel_file=None):
     manifest_path = regular_path(local, 'album-order.json')
     if manifest_path.stat().st_size > 64 * 1024 * 1024: raise ValueError('Manifest exceeds bound')
     raw = manifest_path.read_bytes(); manifest = json.loads(raw); validate_manifest(manifest)
-    committed = json.loads(regular_path(local, 'transfer-manifest.json').read_bytes())
     resources = [r for a in manifest['assets'] for r in a['resources']]
     digest = hashlib.sha256(raw).hexdigest(); total = sum(r['byteCount'] for r in resources)
+    _verify_commit(local, digest, len(resources), total)
+    _verify_resources(local, resources, cancel_file)
+    return raw, manifest, resources, digest, total
+
+
+def _verify_commit(local, digest, count, total):
+    committed_path = regular_path(local, 'transfer-manifest.json')
+    if committed_path.stat().st_size > 64 * 1024 * 1024: raise ValueError('Transfer manifest exceeds bound')
+    committed = json.loads(committed_path.read_bytes())
     if (committed.get('status') != 'COMMITTED' or committed.get('sourceManifestSHA256') != digest
-            or committed.get('resourcesVerified') != len(resources) or committed.get('bytesVerified') != total):
+            or committed.get('resourcesVerified') != count or committed.get('bytesVerified') != total):
         raise ValueError('Backup is not a matching committed transfer')
-    # Validate every local resource before writing any phone data.
+
+
+def _verify_resources(local, resources, cancel_file):
     for resource in resources:
         check_cancel(cancel_file)
         receipt = inspect(regular_path(local, resource['storedRelativePath']))
         if receipt['sha256'] != resource['sha256'] or receipt['byteCount'] != resource['byteCount']:
             raise ValueError('Local backup byte/hash mismatch')
-    return raw, manifest, resources, digest, total
+
+
+def revalidate_backup(local, raw, resources, digest, total, cancel_file=None):
+    """Recheck the bound bytes and every resource; reuse only already validated metadata.
+
+    Avoid retaining a second huge decoded manifest during final publication. No
+    media receipts are cached: all source files are still rehashed each time.
+    """
+    local = Path(local); path = regular_path(local, 'album-order.json')
+    if path.stat().st_size != len(raw) or path.read_bytes() != raw: raise ValueError('Source manifest changed before publication')
+    _verify_commit(local, digest, len(resources), total)
+    _verify_resources(local, resources, cancel_file)
 
 
 def upload_backup(client, local, cancel_file=None):

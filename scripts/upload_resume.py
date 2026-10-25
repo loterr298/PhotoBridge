@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 import time
 import uuid
-from album_restore import regular_path, validated_backup
+from album_restore import regular_path, validated_backup, revalidate_backup
 from album_export import write_json
 from usb_probe import AFC
 from transfer_control import CancellationRequested, check_cancel
@@ -140,7 +140,7 @@ def upload(client, local, previous_journal=None, cancel_file=None):
                     check(relative + '.part', None, size, sha)
                     if data is not None:
                         # Revalidate the local backup before publishing metadata, especially the ready request.
-                        if validated_backup(local, cancel_file=cancel_file)[0] != raw: raise ValueError('Source changed before publication')
+                        revalidate_backup(local, raw, resources, digest, total, cancel_file=cancel_file)
                     unpublished(); client.commit_new(remote + '/' + relative + '.part', remote + '/' + relative)
                 if data is None:
                     state['resourcesVerified'] += 1; state['bytesVerified'] += size
