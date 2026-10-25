@@ -866,3 +866,8 @@ Mac 照片查看页使用系统 Quick Look 缩略图、LazyVGrid 和有界缓存
 
 
 审查收尾：主界面首次发送现在与继续发送共用有 owner/锁/前缀校验的上传引擎，避免旧发送日志缺少 owner 导致无法续传；旧版无 owner 的记录明确提示重新发送且保留旧文件。增加任意已保存相册入口，旧版部分导出也可预览。新上传日志包含实际核对数量、字节与观察所得进度，尚在发送时界面不会提前显示完成。最终本机门禁再次通过（build/flat-reviewed-delivery.log）：Python 84 项、核心/内存/暂存/恢复检查、iOS 解析、Intel 打包。真实 Quick Look 网格已打开本机 2707 张部分相册并确认首屏照片，截图仅保留本地 build/；不宣称全相册 USB 导出通过。
+
+
+最终 Actions **#111**（[40148793907](https://github.com/loterr298/PhotoBridge/actions/runs/40148793907)，源码 `61ac12891559df24e253f0e667a4162129595e82`）SUCCESS。86 个构建/测试文件与远程源码 ZIP 逐字节相符；云端实际 Xcode 16.4/iOS SDK 18.5，84 项 Python、7 项 XCTest、核心/内存/暂存/恢复门禁及 iOS arm64、Mac x86_64 编译通过。Mac 0.3.12/build16，iPhone 仍为 0.3.11/build15，此次保存布局改动无需重装手机。Artifact SHA-256 `3c21a70d8398b3f143d1459074908e9ef1b7cb3c4f6a53eb9fc051479e6822b6`；Mac ZIP SHA-256 `1cc774bca728ba4fb85003a8f13127f4a53a75d288c458f1d07c0ebabee0a758`；CRC/内包清单/版本/脚本与本机源码一致均已核对。产物 `build/PhotoBridge-0.3.12-FlatAlbum/PhotoBridgeMac-0.3.12-Intel.zip`，云端日志 `build/cloud-111/build/logs/`。
+
+已直接更新 `/Applications/PhotoBridgeMac.app` 为该云包，ad-hoc 签名与云包可执行文件逐字节核验通过；旧应用保留于 `build/installed-backups/PhotoBridgeMac-before-cloud-flat-20261025-100113.app`。实际启动后打开本地新相册，标题/2707 张数量/首屏真实缩略图/序号已观察；真实安装截图 `build/PhotoBridge-0.3.12-FlatAlbum/gallery-installed.png`，只留本地不传私人照片。用户结果位于 `/Users/l/Documents/IP15/电脑导入相机胶卷`，无子文件夹；原来的带编号目录完整保留。新版全量 USB 导出及 7402 项完成仍是待验收，不以旧样本、自动测试或云编译替代。
