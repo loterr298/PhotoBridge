@@ -1,4 +1,5 @@
 import AppKit
+import PhotoBridgeCore
 import Foundation
 import ImageCaptureCore
 import SwiftUI
@@ -47,6 +48,8 @@ final class MacTransferModel: ObservableObject {
     @Published var busy = false
     @Published var progressFraction = 0.0
     @Published var progressText = ""
+    @Published var progressCountText = ""
+    @Published var progressPercentText = "—"
     @Published var speedText = ""
     @Published var etaText = ""
     @Published var currentResource = ""
@@ -70,6 +73,7 @@ final class MacTransferModel: ObservableObject {
 
     private let bundleIdentifier = "com.photobridge.OrderProbe"
     private var progressTask: Task<Void, Never>?
+    private var importProgressTask: Task<Void, Never>?
     private var controlFile: URL?
 
     init() {
@@ -296,6 +300,7 @@ final class MacTransferModel: ObservableObject {
         runScript("upload_resume.py", arguments: ["--local", directory.path, "--journal-id", identity],
                   progressFile: uploadProgressFile(in: directory, identity: identity), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
+            self?.observePhoneImport(result)
             self?.userMessage = result.success ? "照片已发送到 iPhone，请在 iPhone 点“恢复到新相册”。" : "发送没有完成，请重新连接 iPhone 后重试。"
         }
     }
@@ -334,6 +339,7 @@ final class MacTransferModel: ObservableObject {
         runScript("upload_resume.py", arguments: ["--local", directory.path, "--resume-journal", journal.path, "--journal-id", identity],
                   progressFile: uploadProgressFile(in: directory, identity: identity), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
+            self?.observePhoneImport(result)
             self?.userMessage = result.success ? "照片已发送到 iPhone，请在 iPhone 点“恢复到新相册”。" : "继续发送没有完成，请重试。"
         }
         }
@@ -469,6 +475,8 @@ final class MacTransferModel: ObservableObject {
                            completion: @escaping (ScriptResult) -> Void) {
         guard !busy else { return }
         busy = true
+        importProgressTask?.cancel(); importProgressTask = nil
+        progressCountText = ""; progressPercentText = "—"
         self.controlFile = controlFile
         if let controlFile { try? FileManager.default.removeItem(at: controlFile) }
         progressFraction = 0
@@ -530,49 +538,65 @@ final class MacTransferModel: ObservableObject {
     }
 
     private func applyProgress(_ json: [String: Any]) {
-        if let assets = (json["assetsVerified"] as? NSNumber)?.intValue {
-            let total = (json["totalAssets"] as? NSNumber)?.intValue ?? 0
-            let state = json["status"] as? String ?? ""
-            progressIndeterminate = total == 0 || state == "FINALIZING"
-            progressFraction = total > 0 ? min(state == "COMMITTED" ? 1 : 0.99, Double(assets) / Double(total)) : 0
-            if total == 0 {
-                let scanned = (json["scannedAssets"] as? NSNumber)?.intValue ?? 0
-                let scanTotal = (json["scanTotalAssets"] as? NSNumber)?.intValue ?? 0
-                progressText = scanTotal > 0 ? "正在读取相册：\(scanned.formatted()) / \(scanTotal.formatted()) 张" : "正在读取相册…"
-                progressIndeterminate = scanTotal == 0
-                progressFraction = scanTotal > 0 ? Double(scanned) / Double(scanTotal) : 0
-            } else {
-                progressText = state == "FINALIZING" ? "全部照片已接收，正在核对保存记录…" : "已保存 \(assets.formatted()) / \(total.formatted()) 张"
+        func count(_ key: String) -> Int {
+            guard let n = json[key] as? NSNumber, let safe = ProgressNumber.nonnegativeInt64(n.doubleValue) else { return 0 }
+            return Int(safe)
+        }
+        let state = json["status"] as? String ?? json["state"] as? String ?? ""
+        let uploading = (json["remote"] as? String ?? "").hasPrefix("RestoreInbox/")
+        let assets = count("assetsVerified"), total = count("totalAssets")
+        let scanning = total == 0
+        let done = scanning ? count("scannedAssets") : assets
+        let expected = scanning ? count("scanTotalAssets") : total
+        let progress = PhotoProgress(completed: done, total: expected,
+            finished: ["COMMITTED", "USB_VERIFIED"].contains(state))
+        progressIndeterminate = expected == 0
+        progressFraction = progress.fraction
+        progressCountText = expected > 0 ? progress.countText : "正在读取总张数…"
+        progressPercentText = progress.percentText
+        if scanning { progressText = "正在读取照片" }
+        else if state == "FINALIZING" { progressText = "正在完成最后检查" }
+        else if state == "COMMITTED" { progressText = "已保存到 Mac" }
+        else if state == "USB_VERIFIED" { progressText = "已发送到 iPhone，等待导入" }
+        else if ["STOPPED", "FAILED"].contains(state) { progressText = "尚未完成，进度已保留" }
+        else { progressText = uploading ? "正在发送到 iPhone" : "正在保存到 Mac" }
+        if json["phoneInForeground"] as? Bool == false { progressText = "请回到 iPhone 的 PhotoBridge，继续准备照片" }
+        let bytes = ProgressNumber.nonnegativeInt64((json["bytesVerified"] as? NSNumber)?.doubleValue ?? 0) ?? 0
+        if let number = json["bytesPerSecond"] as? NSNumber,
+           let speed = ProgressNumber.nonnegativeInt64(number.doubleValue), speed > 0 {
+            speedText = "\(formatBytes(speed))/s · \(formatBytes(bytes))"
+        } else { speedText = bytes > 0 ? formatBytes(bytes) : "" }
+        if let eta = json["etaSeconds"] as? NSNumber,
+           let seconds = ProgressNumber.nonnegativeInt64(eta.doubleValue.rounded()), seconds < 31_536_000 {
+            etaText = "约剩 \(formatDuration(Double(seconds)))"
+        } else { etaText = "" }
+        currentResource = json["currentResource"] as? String ?? ""
+    }
+
+    private func observePhoneImport(_ result: ScriptResult) {
+        guard result.success, let raw = result.text.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: raw) as? [String: Any],
+              let remote = json["remote"] as? String, remote.hasPrefix("RestoreInbox/"),
+              let session = remote.split(separator: "/").last.map(String.init), UUID(uuidString: session) != nil else { return }
+        importProgressTask?.cancel()
+        importProgressTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                guard !Task.isCancelled, let self, !self.busy else { return }
+                let result = try? await self.executeScriptAsync("mac_control.py", arguments: ["read", "--bundle", self.bundleIdentifier, "--path", "Control/restore-progress.json"])
+                guard !Task.isCancelled else { return }
+                if let result, result.success, let raw = result.text.data(using: .utf8),
+                   let value = TransferDisplay.decode(raw), value.direction == "IMPORT", value.sessionID == session {
+                    self.progressText = value.label
+                    self.progressFraction = value.progress.fraction
+                    self.progressCountText = value.progress.countText
+                    self.progressPercentText = value.progress.percentText
+                    self.progressIndeterminate = value.total == 0
+                    self.speedText = ""; self.etaText = ""; self.currentResource = ""
+                    if value.finished { return }
+                }
             }
-            if json["phoneInForeground"] as? Bool == false {
-                progressText = "请回到 iPhone 的 PhotoBridge，继续准备照片"
-            }
-            let bytes = (json["bytesVerified"] as? NSNumber)?.int64Value ?? 0
-            if let speed = (json["bytesPerSecond"] as? NSNumber)?.doubleValue, speed > 0 {
-                speedText = "\(formatBytes(Int64(speed)))/s · 已保存 \(formatBytes(bytes))"
-            } else { speedText = "" }
-            etaText = "" // Total original byte count is unknown until PhotoKit reads it.
-            currentResource = json["currentResource"] as? String ?? ""
-            return
         }
-        progressIndeterminate = false
-        let bytes = (json["bytesVerified"] as? NSNumber)?.doubleValue ?? 0
-        let total = (json["totalBytes"] as? NSNumber)?.doubleValue ?? 0
-        progressFraction = total > 0 ? min((json["state"] as? String) == "UPLOADING" ? 0.99 : 1, max(0, bytes / total)) : 0
-        let resources = (json["resourcesVerified"] as? NSNumber)?.intValue ?? 0
-        let totalResources = (json["totalResources"] as? NSNumber)?.intValue ?? 0
-        progressText = totalResources > 0 ? "\(resources)/\(totalResources) 项 · \(formatBytes(Int64(bytes))) / \(formatBytes(Int64(total)))" : "已保存 \(formatBytes(Int64(bytes)))"
-        if let speed = (json["bytesPerSecond"] as? NSNumber)?.doubleValue, speed > 0 {
-            speedText = "\(formatBytes(Int64(speed)))/s"
-        } else {
-            speedText = "速度计算中"
-        }
-        if let eta = (json["etaSeconds"] as? NSNumber)?.doubleValue, eta.isFinite {
-            etaText = "约剩 \(formatDuration(eta))"
-        } else {
-            etaText = "剩余时间计算中"
-        }
-        currentResource = (json["currentResource"] as? String) ?? ""
     }
 
     private func formatBytes(_ value: Int64) -> String {
@@ -580,7 +604,7 @@ final class MacTransferModel: ObservableObject {
     }
 
     private func formatDuration(_ seconds: Double) -> String {
-        let total = max(0, Int(seconds.rounded()))
+        let total = ProgressNumber.nonnegativeInt64(seconds.rounded()) ?? 0
         if total < 60 { return "\(total) 秒" }
         return "\(total / 60) 分 \(total % 60) 秒"
     }
@@ -747,15 +771,20 @@ struct PhotoBridgeMacApp: App {
                             }
                         }
 
-                        if transfer.busy {
+                        if transfer.busy || !transfer.progressText.isEmpty {
                             MacCard {
                                 VStack(alignment: .leading, spacing: 10) {
                                     HStack { Text("当前进度").font(.headline); Spacer(); Text(transfer.speedText).font(.caption).foregroundStyle(.secondary) }
+                                    HStack {
+                                        Text(transfer.progressCountText).font(.title3.weight(.semibold))
+                                        Spacer()
+                                        Text(transfer.progressPercentText).font(.title2.bold()).foregroundStyle(Color.macBridgeBlue)
+                                    }.monospacedDigit()
                                     if transfer.progressIndeterminate { ProgressView().controlSize(.small) }
                                     else { ProgressView(value: transfer.progressFraction).tint(.macBridgeBlue) }
                                     if !transfer.currentResource.isEmpty { Text(transfer.currentResource).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
                                     HStack { Text(transfer.progressText).font(.callout.monospacedDigit()); Spacer(); Text(transfer.etaText).font(.caption).foregroundStyle(.secondary) }
-                                    Button("暂停并保留进度") { transfer.requestCancel() }.buttonStyle(.bordered)
+                                    if transfer.busy { Button("暂停并保留进度") { transfer.requestCancel() }.buttonStyle(.bordered) }
                                 }
                             }
                         }
