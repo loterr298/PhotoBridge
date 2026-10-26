@@ -41,8 +41,9 @@ final class CameraDiscovery: NSObject, ObservableObject, ICDeviceBrowserDelegate
 @MainActor
 final class MacTransferModel: ObservableObject {
     @Published var usbState = "等待连接"
-    @Published var userMessage = "用数据线连接 iPhone，然后点“检查连接”。"
-    @Published var output = "用数据线连接 iPhone，解锁并点“信任”，然后检查连接。"
+    @Published var connectionMessage = "用数据线连接，解锁并打开手机上的 PhotoBridge。"
+    @Published var userMessage = ""
+    @Published var output = ""
     @Published var sessions: [String] = []
     @Published var selectedSession = ""
     @Published var busy = false
@@ -70,6 +71,9 @@ final class MacTransferModel: ObservableObject {
     private var pendingExportTask: Task<Void, Never>?
     private var pendingUploadTask: Task<Void, Never>?
     private var activeExportRequestID: String?
+    private var connectionTask: Task<Void, Never>?
+    private var connectionFreshness = ConnectionFreshness()
+    private var connectionGeneration = UUID()
 
     private let bundleIdentifier = "com.photobridge.OrderProbe"
     private var progressTask: Task<Void, Never>?
@@ -81,12 +85,59 @@ final class MacTransferModel: ObservableObject {
         if let path = recentBackups.first, FileManager.default.fileExists(atPath: path) { savedFolder = URL(fileURLWithPath: path) }
     }
 
-    func discover() {
-        runScript("usb_probe.py", arguments: ["discover", "--bundle", bundleIdentifier]) { [weak self] result in
-            self?.usbState = result.success ? "已连接" : "未连接"
-            self?.userMessage = result.success ? "iPhone 已连接，可以开始保存。" : result.terminalFailure ? result.text : "还没有连接 iPhone，请检查数据线和信任设置。"
-            self?.output = result.text
-            if result.success { self?.refreshAlbums() }
+    func invalidateConnection() {
+        connectionGeneration = UUID()
+        connectionFreshness.invalidate()
+        usbState = "等待连接"
+        connectionMessage = "正在自动确认连接…"
+    }
+
+    func startConnectionMonitoring() {
+        guard connectionTask == nil else { return }
+        // Independent checks never reset a transfer or cancel its progress watcher.
+        connectionTask = Task { [weak self] in
+            var confirmedNonce: String?
+            var needsAlbums = false
+            while !Task.isCancelled {
+                guard let self else { return }
+                if !self.connectionFreshness.isConnected(now: ProcessInfo.processInfo.systemUptime) { self.usbState = "等待连接" }
+                let nonce = UUID().uuidString
+                let generation = self.connectionGeneration
+                let started = ProcessInfo.processInfo.systemUptime
+                var args = ["heartbeat", "--bundle", self.bundleIdentifier, "--request-id", nonce]
+                if let confirmedNonce { args += ["--confirmed-nonce", confirmedNonce] }
+                let result = try? await self.executeScriptAsync("mac_control.py", arguments: args)
+                guard !Task.isCancelled else { return }
+                // A pre-sleep result must not resurrect a connection on wake.
+                guard generation == self.connectionGeneration,
+                      ProcessInfo.processInfo.systemUptime - started < 5 else {
+                    confirmedNonce = nil
+                    self.invalidateConnection()
+                    continue
+                }
+                let data = result?.text.data(using: .utf8)
+                let value = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+                let ready = result?.success == true && value?["status"] as? String == "CONNECTED" && value?["nonce"] as? String == nonce
+                if ready {
+                    if self.usbState != "已连接" { needsAlbums = true }
+                    confirmedNonce = nonce
+                    self.connectionFreshness.confirm(now: ProcessInfo.processInfo.systemUptime)
+                    self.usbState = "已连接"
+                    self.connectionMessage = "USB 有线连接 · 请保持手机 App 在前台"
+                } else {
+                    confirmedNonce = nil
+                    self.connectionFreshness.invalidate()
+                    self.usbState = "等待连接"
+                    self.connectionMessage = value?["status"] as? String == "PHONE_NOT_READY"
+                        ? "已找到 iPhone，请解锁并打开最新版 PhotoBridge。"
+                        : "用数据线连接，解锁手机并确认“信任此电脑”。"
+                }
+                if ready && needsAlbums && !self.busy && !self.loadingAlbums {
+                    needsAlbums = false
+                    self.refreshAlbums()
+                }
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
         }
     }
 
@@ -619,7 +670,7 @@ final class MacTransferModel: ObservableObject {
         let script = try scriptURL(name)
         let isControl = name == "mac_control.py" || (name == "usb_probe.py" && arguments.first == "discover")
         let result = try BoundedCommand.run(executable: URL(fileURLWithPath: "/usr/bin/env"),
-            arguments: ["python3", script.path] + arguments, timeout: isControl ? 30 : nil, cancelFile: cancelFile)
+            arguments: ["python3", script.path] + arguments, timeout: arguments.first == "heartbeat" ? 4 : isControl ? 30 : nil, cancelFile: cancelFile)
         if result.interruption == .timedOut { return ScriptResult(success: false, text: "iPhone 暂时没有回应。请解锁手机并打开 PhotoBridge 后重试。", terminalFailure: true) }
         if result.interruption == .cancelled { return ScriptResult(success: false, text: "已暂停，已保存的照片和进度保留。重新连接后可继续。") }
         if result.truncated { return ScriptResult(success: false, text: "返回的信息过多，已停止显示。原照片不受影响，请重新操作。", terminalFailure: true) }
@@ -643,6 +694,8 @@ final class MacTransferModel: ObservableObject {
 }
 
 extension Color {
+    static let macConnectedFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : NSColor(red: 0.79, green: 0.94, blue: 0.83, alpha: 1) })
+    static let macConnectedInk = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.69, green: 0.94, blue: 0.76, alpha: 1) : NSColor(red: 0.10, green: 0.35, blue: 0.19, alpha: 1) })
     static let macBridgeBlue = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.65, green: 0.76, blue: 0.82, alpha: 1) : NSColor(red: 0.28, green: 0.39, blue: 0.46, alpha: 1) })
     static let macBridgeSky = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .windowBackgroundColor : NSColor(red: 0.965, green: 0.972, blue: 0.976, alpha: 1) })
     static let macBridgeInk = Color(nsColor: .labelColor)
@@ -699,13 +752,17 @@ private struct MacTransferScreen: View {
                     HStack(spacing: 12) {
                         Image(systemName: "iphone").font(.title2).foregroundStyle(Color.macBridgeBlue)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(connected ? "iPhone 已连接" : "连接你的 iPhone").font(.headline)
-                            Text(connected ? "请保持手机解锁，PhotoBridge 在前台" : "用数据线连接，并在手机上点“信任此电脑”")
+                            Text(connected ? "iPhone 已连接" : "正在等待 iPhone").font(.headline)
+                            Text(transfer.connectionMessage)
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Button(connected ? "重新连接" : "连接 iPhone") { transfer.discover() }
-                            .disabled(working).buttonStyle(MacSoftButtonStyle())
+                        Label(connected ? "已连接" : "自动连接中", systemImage: connected ? "checkmark.circle.fill" : "cable.connector")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(connected ? Color.macConnectedInk : Color.macBridgeMuted)
+                            .padding(.horizontal, 18).padding(.vertical, 12)
+                            .background(connected ? Color.macConnectedFill : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
+                            .accessibilityIdentifier("connectionStatus")
                     }
                     if transfer.busy || !transfer.progressText.isEmpty { progress }
                     HStack(alignment: .top, spacing: 20) {
@@ -727,7 +784,9 @@ private struct MacTransferScreen: View {
         }
         .frame(minWidth: 760, minHeight: 620)
         .sheet(isPresented: $transfer.showAlbum) { SavedAlbumView(model: transfer) }
-        .onAppear { transfer.discover() }
+        .onAppear { transfer.startConnectionMonitoring() }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.willSleepNotification)) { _ in transfer.invalidateConnection() }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)) { _ in transfer.invalidateConnection() }
     }
     private var exportControls: some View {
         VStack(alignment: .leading, spacing: 20) {
