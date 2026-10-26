@@ -106,7 +106,7 @@ def upload(client, local, previous_journal=None, cancel_file=None, journal_id=No
             if observed.getvalue() != owner_raw: raise ValueError('Upload owner does not match journal')
             request = dict(schemaVersion='1.0.0', kind='PhotoBridgeRestoreRequest', sessionID=session,
                 state='USB_VERIFIED', sourceManifestSHA256=digest, assetCount=len(manifest['assets']),
-                resourceCount=len(resources), byteCount=total, photosImport='NOT_RUN')
+                resourceCount=len(resources), byteCount=total, photosImport='NOT_RUN', albumName=manifest['sourceOrder']['albumName'])
             request_raw = json.dumps(request, indent=2).encode()
             entries = [(r['storedRelativePath'], r['byteCount'], r['sha256'], None) for r in resources]
             entries += [('album-order.json', len(raw), digest, raw),
