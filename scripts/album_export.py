@@ -244,7 +244,7 @@ def download_album(client, remote, local, cancel_file=None):
         attribute_log.close()
 
 
-def download_live_album(client, request_id, album_identifier, local, cancel_file=None, idle_timeout=1800, previous=None, flat=False, status_interval=.25):
+def download_live_album(client, request_id, album_identifier, local, cancel_file=None, idle_timeout=1800, previous=None, flat=False, status_interval=.25, progress_callback=None):
     """Receive published asset records immediately, then bind them to the final manifest.
 
     Photos bytes never enter the control channel. A record is only published by
@@ -270,7 +270,13 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
                     albumIdentifier=album_identifier, reusedVerifiedResources=0, totalAssets=0, resourcesVerified=0, bytesVerified=0, totalResources=0,
                     totalBytes=0, restoration='NOT_RUN', message='正在连接 iPhone…')
     journal = local_path(local, 'transfer-progress.json')
-    write_json(journal, progress)
+    def report():
+        total = progress['totalAssets']
+        done = progress['assetsVerified']
+        progress['percent'] = (100 if progress['status'] == 'COMMITTED' else min(99, done * 100 // total)) if total else None
+        write_json(journal, progress)
+        if progress_callback: progress_callback(progress)
+    report()
 
     def read_optional(path, maximum=64 * 1024 * 1024):
         try: return read_snapshot(client, path, maximum)
@@ -306,7 +312,7 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
                 progress['phoneInForeground'] = value['phoneInForeground']
         if time.monotonic() - last_activity > idle_timeout:
             raise TimeoutError('iPhone 长时间没有新进度，请保持手机解锁并打开 PhotoBridge')
-        write_json(journal, progress)
+        report()
         last_poll = now; last_job = value
         return value
 
@@ -355,7 +361,7 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
                 for resource in asset['resources']:
                     job()
                     progress.update(status='DOWNLOADING', currentResource=resource['originalFilename'])
-                    write_json(journal, progress)
+                    report()
                     reader = client
                     if previous is not None and (local_path(previous, resource['storedRelativePath']).exists() or local_path(previous, resource['storedRelativePath']).is_symlink()):
                         old = regular_path(previous, resource['storedRelativePath'])
@@ -380,8 +386,8 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
                 publish_photo(local, asset)
                 record_digests.append(hashlib.sha256(json.dumps(asset, sort_keys=True).encode()).digest())
                 progress['assetsVerified'] = ordinal
-                write_json(journal, progress)
-        progress['status'] = 'FINALIZING'; write_json(journal, progress)
+                report()
+        progress['status'] = 'FINALIZING'; report()
         final_raw = wait_file(remote + '/album-order.json')
         final = json.loads(final_raw); validate_manifest(final)
         if final['sessionID'] != session or final['sourceOrder'] != source:
@@ -399,11 +405,11 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
                         totalBytes=progress['bytesVerified'], sourceManifestSHA256=hashlib.sha256(final_raw).hexdigest(),
                         seconds=time.monotonic() - start, message='全部照片已保存并校验')
         write_json(local_path(local, 'transfer-manifest.json'), progress, exclusive=True)
-        write_json(journal, progress)
+        report()
         return progress
     except Exception as error:
         progress.update(status='STOPPED' if isinstance(error, CancellationRequested) else 'FAILED', error=str(error))
-        write_json(journal, progress)
+        report()
         raise
 
 
@@ -494,7 +500,9 @@ def main():
         if args.command == 'list': result = {'status': 'DISCOVERED', 'sessions': client.list('Exports')}
         elif args.command == 'live':
             if not args.request_id or not args.album_id or args.local is None: raise ValueError('Missing live export arguments')
-            result = download_live_album(client, args.request_id, args.album_id, args.local, args.cancel_file, previous=args.previous, flat=args.flat)
+            from transfer_progress import ProgressRelay
+            relay = ProgressRelay(client, args.request_id, 'TO_MAC')
+            result = download_live_album(client, args.request_id, args.album_id, args.local, args.cancel_file, previous=args.previous, flat=args.flat, progress_callback=relay)
         else:
             if not args.remote or args.local is None: raise ValueError('--remote and NEW --local directory required')
             result = download_album(client, args.remote, args.local, args.cancel_file)

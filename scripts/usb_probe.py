@@ -257,10 +257,26 @@ class AFC:
     def write_new(self, path, source):
         self._write_file(path, source, None)
 
-    def _write_file(self, path, source, offset):
+    def replace_progress(self, path, raw):
+        # Sole replacement exception: bounded, disposable UI metadata. Never media.
+        if path != 'Control/transfer-progress.json' or len(raw) > 65536:
+            raise ValueError('Only bounded transfer display metadata may be replaced')
+        value = json.loads(raw)
+        if not isinstance(value, dict) or value.get('kind') != 'PhotoBridgeTransferDisplay':
+            raise ValueError('Invalid transfer display metadata')
+        if self.info('Control').get('st_ifmt') != 'S_IFDIR': raise ValueError('Invalid Control directory')
+        if 'transfer-progress.json' in self.list('Control'):
+            info = self.info(path)
+            if info.get('st_ifmt') != 'S_IFREG' or info.get('st_nlink') != '1':
+                raise ValueError('Invalid transfer display file')
+        import io
+        self._write_file(path, io.BytesIO(raw), None, replace_display=True)
+
+    def _write_file(self, path, source, offset, replace_display=False):
         # Called only in a freshly created UUID session; fail if filename already exists.
         parent, name = path.rsplit('/', 1)
-        if offset is None and name in self.list(parent): raise FileExistsError(path)
+        if replace_display and path != 'Control/transfer-progress.json': raise ValueError('Display path required')
+        if offset is None and not replace_display and name in self.list(parent): raise FileExistsError(path)
         handle = C.c_uint64()
         self.check(self.lib.afc_file_open(self.afc, documents_path(path).encode(), 3 if offset is None else 2, C.byref(handle)), 'AFC open write')
         def writer(data):
