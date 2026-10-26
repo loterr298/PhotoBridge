@@ -213,3 +213,9 @@ do {
 
 try runProgressChecks()
 try runTransferDisplayChecks()
+
+#if os(macOS)
+try runCommandChecks()
+#endif
+
+try runControlInboxChecks()
