@@ -502,6 +502,9 @@ final class MacTransferModel: ObservableObject {
                let json = await Task.detached(priority: .utility, operation: { Self.readProgress(progressFile) }).value { applyProgress(json) }
             if let controlFile { try? FileManager.default.removeItem(at: controlFile) }
             self.controlFile = nil
+            // Connection/list commands have no transfer progress. Do not leave
+            // their initial spinner visible after returning to the idle screen.
+            if progressFile == nil { progressText = "" }
             busy = false
             completion(result)
         }
