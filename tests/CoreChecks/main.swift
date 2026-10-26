@@ -210,3 +210,6 @@ do {
     try runBatchChecks()
     print("3 batch queue checks passed")
 } catch { fputs("FAIL batch queue: \(error)\n", stderr); exit(1) }
+
+try runProgressChecks()
+try runTransferDisplayChecks()
