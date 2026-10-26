@@ -69,7 +69,7 @@ jobs:
           import pathlib, plistlib
           app = pathlib.Path('build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app')
           info = plistlib.loads((app / 'Info.plist').read_bytes())
-          expected = {'CFBundleDisplayName': 'PhotoBridge', 'CFBundleShortVersionString': '0.3.17', 'CFBundleVersion': '21', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
+          expected = {'CFBundleDisplayName': 'PhotoBridge', 'CFBundleShortVersionString': '0.3.18', 'CFBundleVersion': '22', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
           for key, value in expected.items():
               assert info.get(key) == value, f'Invalid compiled Info.plist: {key}'
           privacy = plistlib.loads((app / 'PrivacyInfo.xcprivacy').read_bytes())
@@ -82,7 +82,7 @@ jobs:
           ditto -c -k --keepParent build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/PhotoBridgeOrderProbe-unsigned.app.zip
           mkdir -p build/ipa/Payload
           ditto build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/ipa/Payload/PhotoBridgeOrderProbe.app
-          ditto -c -k --keepParent build/ipa/Payload build/PhotoBridgeOrderProbe-0.3.17-unsigned.ipa
+          ditto -c -k --keepParent build/ipa/Payload build/PhotoBridgeOrderProbe-0.3.18-unsigned.ipa
       - name: Exercise actual iPhone simulator user flows
         run: |
           set -o pipefail
@@ -103,6 +103,7 @@ jobs:
             PHOTOBRIDGE_BUILD_COMMIT="$GITHUB_SHA" test 2>&1 | tee build/logs/ios-ui-tests.log
           xcrun xcresulttool export attachments --path build/ios-ui.xcresult --output-path build/ui-screenshots
           ditto -c -k --keepParent build/ios-ui.xcresult build/iOS-UI-tests.xcresult.zip
+          python3 tests/simulator_connection.py "$DEVICE_ID" 2>&1 | tee build/logs/simulator-connection.log
       - name: Build Intel macOS App
         run: |
           set -o pipefail
