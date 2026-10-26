@@ -51,6 +51,25 @@ def read(client, path):
     return value
 
 
+def heartbeat(client, nonce, confirmed_nonce=None, wait=1.5):
+    uuid.UUID(nonce)
+    if confirmed_nonce is not None: uuid.UUID(confirmed_nonce)
+    ensure_directory(client, 'Control')
+    client.replace_connection(json.dumps(dict(kind='PhotoBridgeConnection', nonce=nonce,
+                                             confirmedNonce=confirmed_nonce)).encode())
+    deadline = time.monotonic() + wait
+    while True:
+        try:
+            reply = read(client, 'Control/connection-reply.json')
+            if (isinstance(reply, dict) and reply.get('kind') == 'PhotoBridgeConnectionReply'
+                    and reply.get('nonce', '').lower() == nonce.lower()):
+                return dict(status='CONNECTED' if reply.get('foreground') is True else 'PHONE_NOT_READY', nonce=nonce)
+        except (ValueError, OSError, RuntimeError, TypeError, AttributeError):
+            pass  # A concurrent small-file replacement can be incomplete; retry.
+        if time.monotonic() >= deadline: return dict(status='PHONE_NOT_READY')
+        time.sleep(0.1)
+
+
 def continuation_plan(client, journal):
     request = journal['requestID']; album = journal['albumIdentifier']
     if str(uuid.UUID(request)).lower() != request.lower(): raise ValueError('Invalid request identity')
@@ -69,17 +88,20 @@ def continuation_plan(client, journal):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['send', 'read', 'resume-plan'])
+    parser.add_argument('command', choices=['send', 'read', 'resume-plan', 'heartbeat'])
     parser.add_argument('--bundle', default='com.photobridge.OrderProbe')
     parser.add_argument('--request-id')
     parser.add_argument('--payload-file')
     parser.add_argument('--path')
+    parser.add_argument('--confirmed-nonce')
     args = parser.parse_args()
     client = None
     try:
         client = AFC()
         client.vend(args.bundle)
-        if args.command == 'send':
+        if args.command == 'heartbeat':
+            result = heartbeat(client, args.request_id, args.confirmed_nonce)
+        elif args.command == 'send':
             if not args.request_id or not args.payload_file:
                 raise ValueError('--request-id and --payload-file are required')
             with open(args.payload_file, 'rb') as source:
