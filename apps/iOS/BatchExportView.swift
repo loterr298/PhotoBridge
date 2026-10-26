@@ -10,6 +10,7 @@ final class BatchExportModel: ObservableObject {
     @Published var completedAlbums = 0
     @Published var totalAlbums = 0
     @Published var resourcesCompleted = 0
+    @Published var photoProgress = PhotoProgress(completed: 0, total: 0)
     @Published var bytesCompleted = 0
     @Published var detail = ""
     @Published var allowNetwork = false
@@ -30,6 +31,7 @@ final class BatchExportModel: ObservableObject {
             let monitor = Task { @MainActor [weak self] in
                 while let self, self.exporter.busy {
                     self.resourcesCompleted = self.exporter.resourcesCompleted
+                    self.photoProgress = PhotoProgress(completed: self.exporter.scanning ? self.exporter.scannedAssets : self.exporter.assetsCompleted, total: self.exporter.scanning ? self.exporter.scanTotalAssets : self.exporter.totalAssets)
                     self.bytesCompleted = self.exporter.bytesCompleted
                     self.detail = self.exporter.message
                     try? await Task.sleep(nanoseconds: 250_000_000)
@@ -96,7 +98,7 @@ struct BatchExportView: View {
                     ProgressView(value: Double(model.completedAlbums), total: Double(max(1, model.totalAlbums)))
                     Text("正在保存：\(model.current)")
                     Text(model.detail).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                    Text("已保存 \(model.resourcesCompleted) 项 · \(ByteCountFormatter.string(fromByteCount: Int64(model.bytesCompleted), countStyle: .file))")
+                    PhotoCountView(title: "当前相册", progress: model.photoProgress)
                         .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                     Button("暂停并保留进度") { model.requestStop() }
                 }

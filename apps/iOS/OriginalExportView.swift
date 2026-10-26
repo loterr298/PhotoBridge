@@ -144,23 +144,10 @@ struct OriginalExportView: View {
     private var progressBlock: some View {
         VStack(spacing: 12) {
             if exporter.scanning {
-                statusCard(icon: "photo.stack", title: "正在准备照片", detail: "正在读取相册，请稍候…", showsSpinner: true)
-            } else if exporter.busy && exporter.totalResources > 0 {
-                let progress = Double(exporter.resourcesCompleted) / Double(exporter.totalResources)
+                BridgeCard { PhotoCountView(title: "正在读取相册", progress: PhotoProgress(completed: exporter.scannedAssets, total: exporter.scanTotalAssets)) }
+            } else if exporter.busy && exporter.totalAssets > 0 {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("正在备份")
-                            .font(.headline)
-                        Spacer()
-                        Text("\(Int(progress * 100))%")
-                            .font(.subheadline.monospacedDigit().weight(.semibold))
-                            .foregroundStyle(Color.bridgeBlue)
-                    }
-                    ProgressView(value: progress)
-                        .tint(.bridgeBlue)
-                    Text("已保存 \(exporter.resourcesCompleted) / \(exporter.totalResources) 个文件")
-                        .font(.caption)
-                        .foregroundStyle(Color.bridgeMuted)
+                    PhotoCountView(title: exporter.state == "FINALIZING" ? "正在完成最后检查" : "正在准备照片", progress: PhotoProgress(completed: exporter.assetsCompleted, total: exporter.totalAssets))
                     Button("暂停备份") { exporter.requestStop() }
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.bridgeBlue)

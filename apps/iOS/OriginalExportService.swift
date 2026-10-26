@@ -53,6 +53,8 @@ private final class StreamingManifestWriter {
     @Published var scannedAssets = 0
     @Published var scanTotalAssets = 0
     @Published var message = "尚未导出"
+    @Published var assetsCompleted = 0
+    @Published var totalAssets = 0
     @Published var resourcesCompleted = 0
     @Published var totalResources = 0
     @Published var bytesCompleted = 0
@@ -84,7 +86,7 @@ private final class StreamingManifestWriter {
         result.enumerateObjects { asset, index, stop in
             do { try cancellation.check() } catch { stop.pointee = true; return }
             autoreleasepool { sources.append(Self.source(asset, resources: PHAssetResource.assetResources(for: asset))) }
-            if (index + 1) % 100 == 0 || index + 1 == result.count { progress(index + 1, result.count) }
+            progress(index + 1, result.count)
         }
         try cancellation.check()
         return (current.localizedTitle ?? "未命名相簿", sources)
@@ -145,6 +147,7 @@ private final class StreamingManifestWriter {
         guard !busy else { return }
         busy = true; scanning = true; state = "SCANNING"; scannedAssets = 0; scanTotalAssets = 0; stopRequested = false; resourcesCompleted = 0; totalResources = 0; bytesCompleted = 0
         let cancellation = OperationCancellation(); self.cancellation = cancellation
+        assetsCompleted = 0; totalAssets = 0
         reusedResources = 0; photoKitResourcesRead = 0; sessionName = nil
         message = "正在读取相册…"
         defer { scanning = false; busy = false }
@@ -152,7 +155,7 @@ private final class StreamingManifestWriter {
         let build = Bundle.main.object(forInfoDictionaryKey: "PhotoBridgeBuildCommit") as? String ?? "local-unversioned"
         func journal(_ state: String, error: String? = nil) throws {
             guard let directory else { return }
-            var value: [String: Any] = ["status": state, "resourcesCompleted": resourcesCompleted,
+            var value: [String: Any] = ["status": state, "assetsCompleted": assetsCompleted, "totalAssets": totalAssets, "resourcesCompleted": resourcesCompleted,
                 "bytesCompleted": bytesCompleted, "reusedVerifiedResources": reusedResources,
                 "photoKitResourcesRead": photoKitResourcesRead, "partialResourceBytesReused": 0,
                 "networkAllowed": allowNetwork, "restoration": "NOT_RUN", "originalMediaModified": false,
@@ -168,11 +171,23 @@ private final class StreamingManifestWriter {
             let collectionIdentifier = collection.localIdentifier
             message = "正在读取相册…"
             await Task.yield()
+            let latest = LatestPhotoCount()
+            let scanUI = Task { [weak self] in
+                while !Task.isCancelled {
+                    let value = latest.read()
+                    self?.scannedAssets = value.completed; self?.scanTotalAssets = value.total
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                }
+            }
+            defer { scanUI.cancel() }
             let captured = try await Task.detached(priority: .userInitiated) {
                 try Self.capture(localIdentifier: collectionIdentifier, cancellation: cancellation) { done, total in
-                    Task { @MainActor [weak self] in self?.scannedAssets = done; self?.scanTotalAssets = total }
+                    latest.update(completed: done, total: total)
                 }
             }.value
+            scanUI.cancel()
+            scannedAssets = captured.assets.count; scanTotalAssets = captured.assets.count
+            totalAssets = captured.assets.count
             let sources = captured.assets
             scanning = false; state = "STAGING"
             message = "已读取 \(sources.count) 张照片，准备开始备份"
@@ -222,7 +237,9 @@ private final class StreamingManifestWriter {
             try FileManager.default.createDirectory(at: records, withIntermediateDirectories: false)
             try journal("EXPORTING")
             let manifestPart = dir.appendingPathComponent("album-order.json.part")
-            let manifestWriter = try StreamingManifestWriter(sessionID: session, sourceOrder: snapshot, to: manifestPart)
+            let manifestWriter = try await Task.detached(priority: .utility) {
+                try autoreleasepool { try StreamingManifestWriter(sessionID: session, sourceOrder: frozenSnapshot, to: manifestPart) }
+            }.value
             for (index, source) in sources.enumerated() {
                 var exported: [ExportResource] = []
                 for resourceIndex in source.resources.indices {
@@ -274,7 +291,8 @@ private final class StreamingManifestWriter {
                 let recordPart = recordURL.appendingPathExtension("part")
                 try encoder.encode(group).write(to: recordPart, options: .withoutOverwriting)
                 try StagingFiles.commit(part: recordPart, destination: recordURL)
-                try manifestWriter.append(group)
+                try await Task.detached(priority: .utility) { try autoreleasepool { try manifestWriter.append(group) } }.value
+                assetsCompleted = index + 1
             }
             try checkStopAndPermission()
             state = "FINALIZING"; message = "正在核对相册和保存记录…"
@@ -292,7 +310,7 @@ private final class StreamingManifestWriter {
             try checkStopAndPermission()
             try journal("FINALIZING_MANIFEST")
             message = "正在整理保存记录，请不要关闭 App"
-            try manifestWriter.finish()
+            try await Task.detached(priority: .utility) { try manifestWriter.finish() }.value
             try StagingFiles.commit(part: manifestPart, destination: dir.appendingPathComponent("album-order.json"))
             try journal("STAGED")
             state = "STAGED"

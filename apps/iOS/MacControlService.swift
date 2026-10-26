@@ -2,6 +2,7 @@ import Foundation
 import Photos
 import SwiftUI
 import UIKit
+import PhotoBridgeCore
 
 /// Request-scoped USB control. Only an open, authorized phone app reads Photos.
 /// Accepted requests are recorded before work and never replayed after relaunch.
@@ -12,6 +13,12 @@ final class MacControlService: ObservableObject {
     @Published var message = "在 Mac 上选择相册和保存位置即可开始"
     @Published var completed = 0
     @Published var total = 0
+    @Published var macProgress: TransferDisplay?
+    var preparationProgress: PhotoProgress { PhotoProgress(completed: completed, total: total, finished: false) }
+    var exportDisplay: TransferDisplay? {
+        guard let macProgress, !active || macProgress.operationID == activeRequestID else { return nil }
+        return macProgress
+    }
     private var phoneInForeground = true
     private var loop: Task<Void, Never>?
     private var activeRequestID: String?
@@ -42,6 +49,11 @@ final class MacControlService: ObservableObject {
         loop = Task { [weak self] in
             while !Task.isCancelled {
                 self?.pollOnce()
+                if let url = self?.root.appendingPathComponent("transfer-progress.json") {
+                    let value = await Task.detached(priority: .utility) { TransferDisplay.read(at: url) }.value
+                    guard !Task.isCancelled else { return }
+                    if let value { self?.macProgress = value }
+                }
                 try? await Task.sleep(nanoseconds: 400_000_000)
             }
         }
@@ -84,12 +96,13 @@ final class MacControlService: ObservableObject {
     private func publishJob() {
         guard let id = activeRequestID else { return }
         message = exporter.message
-        completed = exporter.scanning ? exporter.scannedAssets : exporter.resourcesCompleted
-        total = exporter.scanning ? exporter.scanTotalAssets : exporter.totalResources
+        completed = exporter.scanning ? exporter.scannedAssets : exporter.assetsCompleted
+        total = exporter.scanning ? exporter.scanTotalAssets : exporter.totalAssets
         let value: [String: Any] = ["requestID": id, "albumIdentifier": albumIdentifier,
             "status": exporter.state, "sessionID": exporter.sessionName ?? "",
             "phoneInForeground": phoneInForeground,
             "resourcesCompleted": exporter.resourcesCompleted, "totalResources": exporter.totalResources,
+            "assetsCompleted": exporter.assetsCompleted, "totalAssets": exporter.totalAssets,
             "scannedAssets": exporter.scannedAssets, "scanTotalAssets": exporter.scanTotalAssets,
             "bytesCompleted": exporter.bytesCompleted, "message": exporter.message,
             "error": ["FAILED", "STOPPED"].contains(exporter.state) ? exporter.message : ""]
@@ -163,15 +176,15 @@ struct MacExportCompanionView: View {
                     if library.authorization != .authorized {
                         BridgePrimaryButton(action: { Task { await library.request() } }) { Text("允许访问照片") }
                     }
-                    if control.active {
+                    if let display = control.exportDisplay, display.direction == "TO_MAC" {
+                        BridgeCard {
+                            PhotoCountView(title: display.presentationLabel(), progress: display.progress)
+                        }
+                    } else if control.active {
                         BridgeCard {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(control.message).font(.headline)
-                                if control.total > 0 {
-                                    ProgressView(value: Double(control.completed), total: Double(control.total)).tint(.bridgeBlue)
-                                    Text("已读取 \(control.completed.formatted()) / \(control.total.formatted())")
-                                        .font(.subheadline.monospacedDigit()).foregroundStyle(Color.bridgeMuted)
-                                } else { ProgressView("正在读取相册…") }
+                                PhotoCountView(title: "正在准备照片", progress: control.preparationProgress)
                                 Text("保存进度和完成结果请查看 Mac。")
                                     .font(.caption).foregroundStyle(Color.bridgeMuted)
                             }
@@ -183,5 +196,27 @@ struct MacExportCompanionView: View {
             }
         }
         .task { library.reload() }
+    }
+}
+
+
+struct PhotoCountView: View {
+    let title: String
+    let progress: PhotoProgress
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title).font(.headline)
+            if progress.total > 0 {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(progress.countText).font(.title3.weight(.semibold))
+                    Spacer()
+                    Text(progress.percentText).font(.title2.bold()).foregroundStyle(Color.bridgeBlue)
+                }.monospacedDigit()
+                ProgressView(value: progress.fraction).tint(.bridgeBlue)
+            } else {
+                ProgressView("正在读取总张数…")
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }

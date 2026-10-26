@@ -1,10 +1,12 @@
 import SwiftUI
+import PhotoBridgeCore
 
 struct RestoreView: View {
+    @EnvironmentObject private var control: MacControlService
     @StateObject private var service = RestoreService()
     @State private var session = ""
     @State private var title = "PhotoBridge 相册"
-        private var finished: Bool { service.totalAssets > 0 && service.completed == service.totalAssets && service.message.hasPrefix("恢复完成") }
+    private var finished: Bool { service.verifiedFinished }
     private var friendlyMessage: String {
         let value = service.message
         if value.hasPrefix("正在检查") { return "正在检查照片…" }
@@ -23,6 +25,9 @@ struct RestoreView: View {
                             Text("导入到 iPhone").font(.system(size: 34, weight: .bold, design: .rounded)).foregroundStyle(Color.bridgeInk)
                             Text("选择 Mac 上的照片，按原相册顺序导入").foregroundStyle(.secondary)
                         }
+                        if let display = control.macProgress, display.direction == "TO_IPHONE", !service.busy, !finished, (session.isEmpty || display.sessionID == session) {
+                            BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress) }
+                        }
                         BridgeCard {
                             VStack(alignment: .leading, spacing: 14) {
                                 HStack(spacing: 12) {
@@ -32,14 +37,14 @@ struct RestoreView: View {
                                         Text("会创建一个新相册，不会改动原相册").font(.subheadline).foregroundStyle(.secondary)
                                     }
                                 }
-                                Button("查找 Mac 照片") { service.refresh(); session = service.sessions.last ?? "" }
+                                Button("查找 Mac 照片") { service.refresh(); session = service.sessions.last ?? "" }.disabled(service.busy)
                                     .buttonStyle(.borderedProminent).tint(.bridgeBlue).controlSize(.large)
                                 if service.sessions.isEmpty {
                                     Text("还没有找到照片。请先在 Mac 选择文件夹并发送。").font(.subheadline).foregroundStyle(.secondary)
                                 } else {
                                     Picker("选择照片", selection: $session) {
                                         ForEach(service.sessions, id: \.self) { value in Text("保存 \(value.prefix(8))").tag(value) }
-                                    }
+                                    }.disabled(service.busy)
                                     Button("检查照片") { Task { await service.preflight(session: session, allowTimestampRewrite: false) } }
                                         .buttonStyle(.bordered).controlSize(.large).disabled(service.busy || session.isEmpty)
                                 }
@@ -53,8 +58,7 @@ struct RestoreView: View {
                                     .buttonStyle(.borderedProminent).tint(.bridgeBlue).controlSize(.large)
                                     .disabled(!service.ready || service.busy)
                                 if service.busy {
-                                    ProgressView(value: service.totalAssets > 0 ? Double(service.completed) / Double(service.totalAssets) : nil).tint(.bridgeBlue)
-                                    HStack { Text("正在导入"); Spacer(); Text("\(service.completed)/\(service.totalAssets)") }.font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                                    PhotoCountView(title: service.phase == "CHECKING" ? "正在检查照片" : service.phase == "FINALIZING" ? "正在完成最后检查" : "正在导入到相册", progress: service.displayProgress)
                                     Button("暂停并保留进度") { service.requestStop() }.buttonStyle(.bordered)
                                 }
                             }
@@ -63,7 +67,7 @@ struct RestoreView: View {
                             HStack(spacing: 12) {
                                 BridgeIconCircle(systemImage: "checkmark.circle.fill", tint: .green, size: 48)
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("导入完成").font(.headline)
+                                    PhotoCountView(title: "导入完成", progress: service.displayProgress)
                                     Text("完成后可在系统照片中查看新相册").font(.subheadline).foregroundStyle(.secondary)
                                 }
                             }.padding(.horizontal, 4)
