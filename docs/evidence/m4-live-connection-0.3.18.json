@@ -10,8 +10,36 @@
     "IntelCompile": "PASS: build/connection-final-mac.log",
     "review": "No P1/P2; wake generation fix applied"
   },
-  "cloud": "PENDING",
-  "simulator": "PENDING actual handshake/expiry screenshots",
+  "cloud": {
+    "run": "https://github.com/loterr298/PhotoBridge/actions/runs/40367597895",
+    "source": "cfe7e5f1b5349ebc2bdcb0c7657b6eb8b43ab344",
+    "result": "SUCCESS",
+    "pythonTests": 103,
+    "swiftUnitTests": 7,
+    "iOSUITests": 2,
+    "artifactSHA256": "4f342d375b09805abafa475737b367182759d622ea9041ae1249295a4de09c39",
+    "sourceFilesMatched": 107
+  },
+  "simulator": {
+    "exchange": "PASS: actual app fresh nonce replies",
+    "visual": "PASS: green, expiry to waiting, relaunch waiting; screenshots inspected",
+    "transport": "LOCAL SIMULATOR FILES, NOT USB"
+  },
   "physicalUSB": "NOT_RUN: USB-only discovery -3, no device",
-  "preservation": "Only two fixed disposable connection metadata slots; no media writes; transfer progress/acceptance unchanged"
+  "preservation": "Only two fixed disposable connection metadata slots; no media writes; transfer progress/acceptance unchanged",
+  "delivery": {
+    "directory": "build/PhotoBridge-0.3.18-LiveConnection",
+    "packages": {
+      "PhotoBridgeMac-0.3.18-Intel.zip": "ab0d1c2d36f3a3f7ac58b2ee93dc01180b49a85130afb37779f2d127cf31d668",
+      "PhotoBridgeOrderProbe-0.3.18-unsigned.ipa": "b880f094c63b1a25a1cd27f9c571a464f31bc3448557a475fc4728683c99f3a1"
+    },
+    "MacInstall": {
+      "path": "/Applications/PhotoBridgeMac.app",
+      "backup": "build/installed-backups/PhotoBridgeMac-before-0.3.18.app",
+      "strictSignature": "PASS",
+      "byteMatchedFiles": 13
+    },
+    "nativeVersion": "0.3.18 (22)",
+    "iPhonePersonalSigning": "NOT_RUN; unsigned package requires user personal signing"
+  }
 }
