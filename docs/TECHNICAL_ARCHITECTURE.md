@@ -75,3 +75,12 @@
 - 原文件就地改写 EXIF 时间；删除原文件；传输照片经第三方网络服务器。
 - 将 Mac 的 ImageCaptureCore 目录顺序当成 iPhone 相簿手动顺序。
 - 自称“所有 iPhone 主图库视图一律固定排序”。
+
+
+## Live USB connection lease (0.3.18)
+
+Mac runs one non-overlapping automatic heartbeat worker, independently of media/progress tasks. Each invocation opens the existing USB-only AFC/House Arrest transport, writes <=4096-byte `Control/connection-request.json` (fresh UUID nonce plus previously read reply nonce), then waits up to1.5s for a matching `connection-reply.json`. The helper process has a4s hard deadline; successful cycles sleep2s. No Photos access or transfer reset is performed by this worker. First connection/reconnection schedules album enumeration once when idle.
+
+iPhone has a separate400ms worker, bounded regular/single-link reads and atomic reply writes. It echoes nonce/foreground state. The Mac confirms it read that reply in the next challenge; only a fresh confirmation of the phone's preceding reply enables phone green. Re-reading the same file never renews an8s uptime lease. Foreground transitions/relaunch invalidate it. Mac sleep/wake invalidates the probe generation and rejects a pre-sleep result; failed checks clear its state. No wall-clock agreement is required.
+
+Two fixed disposable connection files and the existing progress file are the only UI metadata replacements. Source media, manifests and journals retain no-overwrite behavior. Partial JSON is retried; invalid/oversized/link records cannot authorize anything. Connection status is advisory and never authorizes Photos writes, hash acceptance or completed-transfer reporting. Separate AFC heartbeat sessions introduce small background I/O; real-device concurrent-transfer/latency/sleep testing remains required.
