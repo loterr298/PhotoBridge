@@ -60,3 +60,10 @@ Next action:
 ```
 
 > 未拿到真机时状态只能为 `NOT_RUN` 或 `BLOCKED`，不能列为 PASS。
+
+
+## Automatic connection acceptance (0.3.18)
+
+- Automated core: initial one-way challenge cannot confirm phone green; matching next nonce confirmation can. Repeated persisted challenge cannot extend8s lease; expiry/relaunch/foreground invalidation require a fresh exchange. Missing/partial/oversized metadata ignored. Python USB boundary rejects mismatched/background replies and media/link replacements.
+- Actual simulator: both transfer tabs initially waiting; companion nonce exchange/replies, green screenshot, stop writes9s→waiting screenshot, relaunch with persisted metadata→waiting screenshot. This is **simulator local-file exchange only**, never physical USB acceptance.
+- Physical-device pending: open both updated apps without pressing any connection button; green automatically, albums load once. Pull cable during idle and copy; both revert within the bounded timeout without clearing transfer progress. Reconnect automatically. Background/lock/quit phone→no stale green; open again→fresh green. Sleep/wake Mac→waiting until a new exchange. Measure transition timing, concurrent AFC throughput and errors; no result may be marked PASS without device evidence.
