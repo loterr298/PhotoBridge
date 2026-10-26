@@ -10,8 +10,8 @@
     "controlTimeout": "SIGTERM-ignoring process killed within bounded deadline PASS",
     "pause": "grace window then stopped child PASS",
     "malformedQueue": "8 invalid commands then valid command PASS",
-    "nativeMac": "direction switch, options, folder chooser cancel, actual2707-photo gallery scroll/dismiss PASS",
-    "iosUI": "PENDING actual simulator execution",
+    "nativeMac": "PASS final cloud119: simultaneous two-area layout and About0.3.17(21); prior read-only gallery2707/scroll/chooser-cancel checks retained",
+    "iosUI": "PASS 2 actual simulator UI tests; iPhone17Pro/iOS26.2; exported screenshots inspected",
     "device": "NOT_RUN"
   },
   "ui": {
@@ -36,5 +36,31 @@
     "64MiB manifest bound",
     "Phone staging space required",
     "No absolute crash-free guarantee"
-  ]
+  ],
+  "releaseDate": "2026-10-27",
+  "cloud": {
+    "run": "https://github.com/loterr298/PhotoBridge/actions/runs/40358348500",
+    "source": "d7d43380b07e7a136987f426627dba3a4b49e43c",
+    "result": "SUCCESS",
+    "sourceFilesCompared": 103,
+    "mismatches": [],
+    "toolchain": "Xcode16.4/iOS18.5 SDK",
+    "simulatorRuntime": "iOS26.2",
+    "artifactSHA256": "de4f3d2b6865ee5a3e119f72363f485c138e47ae1e2572c154b384385f4ab8a5",
+    "zipCRC": "PASS",
+    "innerSHA256SUMS": "PASS"
+  },
+  "packages": {
+    "iphoneSHA256": "b75828e9207585c46727c0e36479ecb8f0c41d47cf69fbaad55f4bcff6c31dfd",
+    "macSHA256": "df7c35038c6e9e6fe86424291c367993c5ce022f6822da5514d280bb33993ce0",
+    "path": "build/PhotoBridge-0.3.17-CalmUI"
+  },
+  "installedMac": {
+    "path": "/Applications/PhotoBridgeMac.app",
+    "source": "cloud119",
+    "signature": "strict PASS",
+    "byteParity": "executable/plist/11 scripts PASS",
+    "actualAbout": "0.3.17 (21)",
+    "phoneInstall": "NOT_RUN unsigned personal signing required"
+  }
 }
