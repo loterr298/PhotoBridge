@@ -219,3 +219,4 @@ try runCommandChecks()
 #endif
 
 try runControlInboxChecks()
+try runConnectionChecks()
