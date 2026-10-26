@@ -179,7 +179,7 @@ private struct RestoreInboxRequest: Decodable {
                     for resource in asset.resources { try RestoreSafety.verifyResource(resource, in: directory, checkCancellation: cancellation.check) }
                 }.value
                 preflightReport["resourcesHashVerified"] = (preflightReport["resourcesHashVerified"] as? Int ?? 0) + asset.resources.count
-                checked = asset.ordinal
+                self.checked = asset.ordinal
             }
             try checkPermissionAndStop()
             selected = directory; manifest = candidate; manifestData = raw; requestData = requestRaw; ready = true

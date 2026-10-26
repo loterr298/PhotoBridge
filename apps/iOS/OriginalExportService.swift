@@ -68,7 +68,7 @@ private final class StreamingManifestWriter {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("Exports")
     }
     func requestStop() { stopRequested = true; cancellation.cancel() }
-    private static func source(_ asset: PHAsset, resources: [PHAssetResource]) -> StagingAssetSource {
+    private nonisolated static func source(_ asset: PHAsset, resources: [PHAssetResource]) -> StagingAssetSource {
         StagingAssetSource(identifier: asset.localIdentifier, modificationDate: asset.modificationDate,
             creationDate: asset.creationDate, pixelWidth: asset.pixelWidth, pixelHeight: asset.pixelHeight,
             mediaType: asset.mediaType.rawValue, mediaSubtypes: UInt64(asset.mediaSubtypes.rawValue),
