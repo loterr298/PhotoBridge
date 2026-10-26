@@ -69,7 +69,7 @@ jobs:
           import pathlib, plistlib
           app = pathlib.Path('build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app')
           info = plistlib.loads((app / 'Info.plist').read_bytes())
-          expected = {'CFBundleDisplayName': 'PhotoBridge', 'CFBundleShortVersionString': '0.3.16', 'CFBundleVersion': '20', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
+          expected = {'CFBundleDisplayName': 'PhotoBridge', 'CFBundleShortVersionString': '0.3.17', 'CFBundleVersion': '21', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
           for key, value in expected.items():
               assert info.get(key) == value, f'Invalid compiled Info.plist: {key}'
           privacy = plistlib.loads((app / 'PrivacyInfo.xcprivacy').read_bytes())
@@ -82,7 +82,27 @@ jobs:
           ditto -c -k --keepParent build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/PhotoBridgeOrderProbe-unsigned.app.zip
           mkdir -p build/ipa/Payload
           ditto build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/ipa/Payload/PhotoBridgeOrderProbe.app
-          ditto -c -k --keepParent build/ipa/Payload build/PhotoBridgeOrderProbe-0.3.16-unsigned.ipa
+          ditto -c -k --keepParent build/ipa/Payload build/PhotoBridgeOrderProbe-0.3.17-unsigned.ipa
+      - name: Exercise actual iPhone simulator user flows
+        run: |
+          set -o pipefail
+          xcrun simctl list devices available -j > build/logs/simulators.json
+          DEVICE_ID=$(python3 - <<'PYSIM'
+          import json,re
+          devices=json.load(open('build/logs/simulators.json'))['devices']
+          runtimes=sorted((r for r in devices if '.iOS-' in r), key=lambda r:tuple(map(int,re.findall(r'\d+',r))), reverse=True)
+          matches=[d for r in runtimes for d in devices[r] if d.get('isAvailable') and 'iPhone' in d['name']]
+          assert matches, 'No available iPhone simulator: UI acceptance cannot run'
+          print(matches[0]['udid'])
+          PYSIM
+          )
+          xcodebuild -project PhotoBridge.xcodeproj -scheme PhotoBridgeUITests \
+            -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            -derivedDataPath build/SimulatorData -resultBundlePath build/ios-ui.xcresult \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
+            PHOTOBRIDGE_BUILD_COMMIT="$GITHUB_SHA" test 2>&1 | tee build/logs/ios-ui-tests.log
+          xcrun xcresulttool export attachments --path build/ios-ui.xcresult --output-path build/ui-screenshots
+          ditto -c -k --keepParent build/ios-ui.xcresult build/iOS-UI-tests.xcresult.zip
       - name: Build Intel macOS App
         run: |
           set -o pipefail
@@ -99,6 +119,7 @@ jobs:
             build/SHA256SUMS.txt
             build/verification/
             build/logs/
+            build/ui-screenshots/
             PhotoBridge.xcodeproj/project.pbxproj
           if-no-files-found: error
           retention-days: 14
