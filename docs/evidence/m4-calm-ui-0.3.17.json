@@ -1,0 +1,40 @@
+{
+  "version": "0.3.17",
+  "build": 21,
+  "date": "2026-10-26",
+  "scope": "bounded waits, phone UI work off main, quiet task surfaces",
+  "checks": {
+    "localGate": "PASS build/calm-ship-delivery.log",
+    "python": 101,
+    "commandOutput": "6MiB produced /65536 bytes retained PASS",
+    "controlTimeout": "SIGTERM-ignoring process killed within bounded deadline PASS",
+    "pause": "grace window then stopped child PASS",
+    "malformedQueue": "8 invalid commands then valid command PASS",
+    "nativeMac": "direction switch, options, folder chooser cancel, actual2707-photo gallery scroll/dismiss PASS",
+    "iosUI": "PENDING actual simulator execution",
+    "device": "NOT_RUN"
+  },
+  "ui": {
+    "primaryAction": "one per independent simultaneously visible export/import area",
+    "palette": "low-saturation slate/blue with semantic labels/surfaces",
+    "buttonContrastLight": 5.07,
+    "buttonDepth": "small neutral downward shadow",
+    "photosNotUploaded": true,
+    "macDirectionSelector": false
+  },
+  "unchanged": {
+    "sourceMedia": true,
+    "resourceSHA256": true,
+    "albumOrderAuthority": true,
+    "copyOnly": true,
+    "photosImportRequiresExplicitClick": true
+  },
+  "limits": [
+    "No physical iPhone/USB for this new acceptance",
+    "No signed-device installation",
+    "Recovery full-prefix cost still quadratic",
+    "64MiB manifest bound",
+    "Phone staging space required",
+    "No absolute crash-free guarantee"
+  ]
+}
