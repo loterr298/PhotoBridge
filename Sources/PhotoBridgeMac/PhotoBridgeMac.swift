@@ -84,7 +84,7 @@ final class MacTransferModel: ObservableObject {
     func discover() {
         runScript("usb_probe.py", arguments: ["discover", "--bundle", bundleIdentifier]) { [weak self] result in
             self?.usbState = result.success ? "已连接" : "未连接"
-            self?.userMessage = result.success ? "iPhone 已连接，可以开始保存。" : "还没有连接 iPhone，请检查数据线和信任设置。"
+            self?.userMessage = result.success ? "iPhone 已连接，可以开始保存。" : result.terminalFailure ? result.text : "还没有连接 iPhone，请检查数据线和信任设置。"
             self?.output = result.text
             if result.success { self?.refreshAlbums() }
         }
@@ -256,6 +256,7 @@ final class MacTransferModel: ObservableObject {
         for _ in 0..<120 {
             try Task.checkCancellation()
             let result = try await executeScriptAsync("mac_control.py", arguments: ["read", "--bundle", bundleIdentifier, "--path", "Control/Responses/\(id).json"])
+            if result.terminalFailure { throw NSError(domain: "PhotoBridgeMac", code: 17, userInfo: [NSLocalizedDescriptionKey: result.text]) }
             if result.success, let data = result.text.data(using: .utf8), let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
                 if (json["status"] as? String) == "FAILED" { throw NSError(domain: "PhotoBridgeMac", code: 14, userInfo: [NSLocalizedDescriptionKey: (json["error"] as? String) ?? "iPhone 操作失败"]) }
                 return json
@@ -468,6 +469,7 @@ final class MacTransferModel: ObservableObject {
     private struct ScriptResult {
         let success: Bool
         let text: String
+        var terminalFailure = false
     }
 
     private func runScript(_ name: String, arguments: [String], progressFile: URL? = nil,
@@ -492,7 +494,7 @@ final class MacTransferModel: ObservableObject {
                 do {
                     var commandArguments = arguments
                     if let controlFile { commandArguments += ["--cancel-file", controlFile.path] }
-                    return try Self.executeScript(name, arguments: commandArguments)
+                    return try Self.executeScript(name, arguments: commandArguments, cancelFile: controlFile)
                 } catch {
                     return ScriptResult(success: false, text: "未完成：\(error.localizedDescription)")
                 }
@@ -505,6 +507,7 @@ final class MacTransferModel: ObservableObject {
             // Connection/list commands have no transfer progress. Do not leave
             // their initial spinner visible after returning to the idle screen.
             if progressFile == nil { progressText = "" }
+            else if !result.success { progressText = "已停止，已保存的进度保留" }
             busy = false
             completion(result)
         }
@@ -612,19 +615,16 @@ final class MacTransferModel: ObservableObject {
         return "\(total / 60) 分 \(total % 60) 秒"
     }
 
-    nonisolated private static func executeScript(_ name: String, arguments: [String]) throws -> ScriptResult {
+    nonisolated private static func executeScript(_ name: String, arguments: [String], cancelFile: URL? = nil) throws -> ScriptResult {
         let script = try scriptURL(name)
-        let process = Process()
-        let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["python3", script.path] + arguments
-        process.standardOutput = pipe
-        process.standardError = pipe
-        try process.run()
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        let text = String(data: data, encoding: .utf8) ?? "脚本输出无法按 UTF-8 读取。"
-        return ScriptResult(success: process.terminationStatus == 0, text: text.trimmingCharacters(in: .whitespacesAndNewlines))
+        let isControl = name == "mac_control.py" || (name == "usb_probe.py" && arguments.first == "discover")
+        let result = try BoundedCommand.run(executable: URL(fileURLWithPath: "/usr/bin/env"),
+            arguments: ["python3", script.path] + arguments, timeout: isControl ? 30 : nil, cancelFile: cancelFile)
+        if result.interruption == .timedOut { return ScriptResult(success: false, text: "iPhone 暂时没有回应。请解锁手机并打开 PhotoBridge 后重试。", terminalFailure: true) }
+        if result.interruption == .cancelled { return ScriptResult(success: false, text: "已暂停，已保存的照片和进度保留。重新连接后可继续。") }
+        if result.truncated { return ScriptResult(success: false, text: "返回的信息过多，已停止显示。原照片不受影响，请重新操作。", terminalFailure: true) }
+        let text = String(data: result.output, encoding: .utf8) ?? "暂时无法读取结果，请重试。"
+        return ScriptResult(success: result.exitCode == 0, text: text.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     nonisolated private static func scriptURL(_ name: String) throws -> URL {
@@ -643,15 +643,24 @@ final class MacTransferModel: ObservableObject {
 }
 
 extension Color {
-    static let macBridgeBlue = Color(red: 0.16, green: 0.52, blue: 0.96)
-    static let macBridgeSky = Color(red: 0.90, green: 0.95, blue: 1.0)
-    static let macBridgeInk = Color(red: 0.08, green: 0.13, blue: 0.22)
-    static let macBridgeMuted = Color(red: 0.38, green: 0.47, blue: 0.62)
+    static let macBridgeBlue = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.65, green: 0.76, blue: 0.82, alpha: 1) : NSColor(red: 0.28, green: 0.39, blue: 0.46, alpha: 1) })
+    static let macBridgeSky = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .windowBackgroundColor : NSColor(red: 0.965, green: 0.972, blue: 0.976, alpha: 1) })
+    static let macBridgeInk = Color(nsColor: .labelColor)
+    static let macBridgeMuted = Color(nsColor: .secondaryLabelColor)
+    static let macBridgeButtonFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.21, green: 0.28, blue: 0.32, alpha: 1) : NSColor(red: 0.87, green: 0.91, blue: 0.93, alpha: 1) })
 }
 
-private struct MacBackground: View {
-    var body: some View {
-        LinearGradient(colors: [.macBridgeSky.opacity(0.66), Color.white.opacity(0.84), .white], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea()
+struct MacSoftButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var enabled
+    var primary = false
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.font(.body.weight(.semibold))
+            .padding(.horizontal, 16).padding(.vertical, 10).frame(minHeight: 36)
+            .foregroundStyle(primary ? Color.macBridgeBlue : Color.macBridgeInk)
+            .background(primary ? Color.macBridgeButtonFill : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .shadow(color: .black.opacity(enabled && !configuration.isPressed ? 0.055 : 0.015), radius: 5, y: 2)
+            .opacity(enabled ? (configuration.isPressed ? 0.76 : 1) : 0.45)
+            .contentShape(RoundedRectangle(cornerRadius: 13))
     }
 }
 
@@ -659,31 +668,148 @@ private struct MacCard<Content: View>: View {
     let content: Content
     init(@ViewBuilder content: () -> Content) { self.content = content() }
     var body: some View {
-        content.padding(20)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.94), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(.white.opacity(0.92), lineWidth: 1))
-            .shadow(color: .black.opacity(0.06), radius: 16, y: 7)
+        content.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: .black.opacity(0.035), radius: 10, y: 4)
     }
 }
 
-private struct MacIconCircle: View {
-    let systemImage: String
-    let tint: Color
+private struct MacTransferScreen: View {
+    @ObservedObject var transfer: MacTransferModel
+    @State private var direction = 0
+    @State private var showOptions = false
+    private var connected: Bool { transfer.usbState == "已连接" }
+    private var working: Bool { transfer.busy || transfer.loadingAlbums }
     var body: some View {
-        Image(systemName: systemImage).font(.system(size: 23, weight: .semibold)).foregroundStyle(tint)
-            .frame(width: 54, height: 54).background(tint.opacity(0.12), in: Circle())
-    }
-}
-
-private struct MacStatusPill: View {
-    let connected: Bool
-    var body: some View {
-        HStack(spacing: 7) {
-            Circle().fill(connected ? .green : .gray.opacity(0.6)).frame(width: 9, height: 9)
-            Text(connected ? "已连接 · 数据线" : "等待连接").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+        ZStack {
+            Color.macBridgeSky.ignoresSafeArea()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("照片传输").font(.system(size: 28, weight: .semibold)).foregroundStyle(Color.macBridgeInk)
+                        Spacer()
+                        Menu {
+                            Button("打开相册文件夹…") { transfer.chooseSavedAlbum() }
+                            if transfer.savedFolder != nil {
+                                Button("在 Finder 中显示") { transfer.openSavedFolder() }
+                            }
+                        } label: { Label("已保存的照片", systemImage: "photo.on.rectangle") }
+                        .menuStyle(.borderlessButton).fixedSize()
+                    }
+                    HStack(spacing: 12) {
+                        Image(systemName: "iphone").font(.title2).foregroundStyle(Color.macBridgeBlue)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(connected ? "iPhone 已连接" : "连接你的 iPhone").font(.headline)
+                            Text(connected ? "请保持手机解锁，PhotoBridge 在前台" : "用数据线连接，并在手机上点“信任此电脑”")
+                                .font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if connected {
+                            Button("重新连接") { transfer.discover() }.disabled(working).buttonStyle(MacSoftButtonStyle())
+                        }
+                    }
+                    Picker("传输方向", selection: $direction) {
+                        Text("导出到 Mac").tag(0)
+                        Text("导入到 iPhone").tag(1)
+                    }.pickerStyle(.segmented).controlSize(.large).tint(.macBridgeBlue)
+                        .labelsHidden().accessibilityLabel("传输方向").disabled(working)
+                    if transfer.busy || !transfer.progressText.isEmpty { progress }
+                    if !transfer.busy {
+                        MacCard {
+                            if direction == 0 { exportControls } else { importControls }
+                        }
+                    }
+                    if !transfer.userMessage.isEmpty && !transfer.userMessage.hasPrefix("还没有连接 iPhone") {
+                        Text(transfer.userMessage).font(.callout).foregroundStyle(.secondary)
+                            .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    if transfer.savedFolder != nil && !working {
+                        HStack(spacing: 12) {
+                            Button("查看已保存照片") { transfer.viewSavedAlbum() }.buttonStyle(MacSoftButtonStyle())
+                        }
+                    }
+                    Text("按原相册顺序传输，原照片不会删除。").font(.caption).foregroundStyle(.secondary)
+                }.padding(32).frame(maxWidth: 720, alignment: .leading).frame(maxWidth: .infinity)
+            }
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.92), in: Capsule())
+        .frame(minWidth: 720, minHeight: 620)
+        .sheet(isPresented: $transfer.showAlbum) { SavedAlbumView(model: transfer) }
+        .onAppear { transfer.discover() }
+        .onChange(of: direction) { _ in showOptions = false }
+    }
+    private var exportControls: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("选择 iPhone 相册").font(.title2.weight(.semibold))
+            if !transfer.albums.isEmpty {
+                Picker("相册", selection: $transfer.selectedAlbumID) {
+                    ForEach(transfer.albums) { Text("\($0.name) · \($0.count.formatted()) 张").tag($0.id) }
+                }.pickerStyle(.menu).controlSize(.large).disabled(working)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text(transfer.loadingAlbums ? "正在读取相册…" : "连接后，你的相册会显示在这里。")
+                    .foregroundStyle(.secondary).padding(.vertical, 8)
+            }
+            Button {
+                if !connected { transfer.discover() }
+                else if transfer.selectedAlbumID.isEmpty { transfer.refreshAlbums() }
+                else { transfer.startMacExport() }
+            } label: {
+                HStack {
+                    if working { ProgressView().controlSize(.small) }
+                    else { Image(systemName: connected ? "arrow.down.to.line" : "iphone") }
+                    Text(!connected ? "连接并读取相册" : transfer.selectedAlbumID.isEmpty ? "读取相册" : "选择保存位置并导出")
+                }.frame(maxWidth: .infinity)
+            }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working)
+            DisclosureGroup("更多选项", isExpanded: $showOptions) {
+                VStack(alignment: .leading, spacing: 16) {
+                    Toggle("需要时从 iCloud 获取原图", isOn: $transfer.allowCloudDownload).disabled(working)
+                    HStack(spacing: 12) {
+                        Button("刷新相册") { transfer.refreshAlbums() }.disabled(working || !connected)
+                        Button("继续未完成的导出") { transfer.continueMacExport() }.disabled(working || transfer.albums.isEmpty)
+                    }.buttonStyle(MacSoftButtonStyle())
+                }.padding(.top, 14)
+            }.font(.subheadline).tint(.macBridgeBlue)
+        }
+    }
+    private var importControls: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("选择 Mac 相册").font(.title2.weight(.semibold))
+            Text("选择 PhotoBridge 保存的完整相册文件夹。发送后，在 iPhone 确认导入到新相册。")
+                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Button {
+                if connected { transfer.uploadBackup() } else { transfer.discover() }
+            } label: {
+                Label(connected ? "选择相册文件夹并发送" : "连接 iPhone", systemImage: "arrow.up.to.line")
+                    .frame(maxWidth: .infinity)
+            }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working)
+            DisclosureGroup("继续上次任务", isExpanded: $showOptions) {
+                Button("选择未完成的发送") { transfer.resumeUpload() }
+                    .buttonStyle(MacSoftButtonStyle()).disabled(working || !connected).padding(.top, 12)
+            }.font(.subheadline).tint(.macBridgeBlue)
+        }
+    }
+    private var progress: some View {
+        MacCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    Text(transfer.progressText).font(.headline)
+                    Spacer()
+                    Text(transfer.progressPercentText).font(.title2.weight(.semibold)).foregroundStyle(Color.macBridgeBlue)
+                }
+                Text(transfer.progressCountText).font(.title3).monospacedDigit()
+                if transfer.progressIndeterminate { ProgressView().controlSize(.small) }
+                else { ProgressView(value: transfer.progressFraction).tint(.macBridgeBlue) }
+                HStack {
+                    Text(transfer.speedText).font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Text(transfer.etaText).font(.caption).foregroundStyle(.secondary)
+                    if transfer.busy { Button("暂停") { transfer.requestCancel() }.buttonStyle(MacSoftButtonStyle()) }
+                }
+                if !transfer.currentResource.isEmpty {
+                    Text(transfer.currentResource).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+        }
     }
 }
 
@@ -691,124 +817,6 @@ private struct MacStatusPill: View {
 struct PhotoBridgeMacApp: App {
     @StateObject private var transfer = MacTransferModel()
     var body: some Scene {
-        WindowGroup("PhotoBridge") {
-            ZStack {
-                MacBackground()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 7) {
-                                Text("照片传输").font(.system(size: 34, weight: .bold, design: .rounded)).foregroundStyle(Color.macBridgeInk)
-                                Text("两步完成照片备份和导入").font(.title3).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            MacStatusPill(connected: transfer.usbState == "已连接")
-                        }
-
-                        MacCard {
-                            HStack(spacing: 16) {
-                                MacIconCircle(systemImage: "iphone.gen3", tint: .macBridgeBlue)
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(transfer.usbState == "已连接" ? "iPhone 已连接" : "请连接 iPhone") .font(.title3.weight(.semibold))
-                                    Text(transfer.usbState == "已连接" ? "数据线连接已就绪" : "解锁 iPhone 并点“信任此电脑”") .font(.subheadline).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Button("检查连接") { transfer.discover() }.disabled(transfer.busy || transfer.loadingAlbums).buttonStyle(.bordered).controlSize(.large)
-                            }
-                        }
-
-                        MacCard {
-                            VStack(alignment: .leading, spacing: 14) {
-                                HStack(spacing: 12) {
-                                    Text("1").font(.headline).foregroundStyle(.white).frame(width: 30, height: 30).background(Color.macBridgeBlue, in: Circle())
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("导出到 Mac").font(.title3.weight(.semibold))
-                                        Text("在这里选择相册和保存位置，照片会按原顺序逐张写入 Mac").font(.subheadline).foregroundStyle(.secondary)
-                                    }
-                                }
-                                HStack(spacing: 10) {
-                                    Button(transfer.loadingAlbums ? "正在读取相册…" : "刷新相册") { transfer.refreshAlbums() }.disabled(transfer.busy || transfer.loadingAlbums).buttonStyle(.bordered).controlSize(.large)
-                                    if transfer.albums.isEmpty { Text("连接后读取相册").font(.subheadline).foregroundStyle(.secondary) }
-                                }
-                                if !transfer.albums.isEmpty {
-                                    Picker("相册", selection: $transfer.selectedAlbumID) {
-                                        ForEach(transfer.albums) { album in
-                                            Text("\(album.name) · \(album.count.formatted()) 张").tag(album.id)
-                                        }
-                                    }
-                                }
-                                Toggle("需要时从 iCloud 获取原图", isOn: $transfer.allowCloudDownload).disabled(transfer.busy)
-                                    .font(.subheadline).foregroundStyle(.secondary)
-                                Button {
-                                    transfer.startMacExport()
-                                } label: {
-                                    Label("选择文件夹并开始导出", systemImage: "arrow.down.to.line.compact")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent).tint(.macBridgeBlue).controlSize(.large)
-                                .disabled(transfer.busy || transfer.loadingAlbums || transfer.selectedAlbumID.isEmpty)
-                                Button("继续未完成的导出") { transfer.continueMacExport() }
-                                    .disabled(transfer.busy || transfer.loadingAlbums || transfer.albums.isEmpty)
-                                    .buttonStyle(.bordered)
-                                if !transfer.remoteStageText.isEmpty {
-                                    Text(transfer.remoteStageText).font(.caption).foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-
-                        MacCard {
-                            VStack(alignment: .leading, spacing: 14) {
-                                HStack(spacing: 12) {
-                                    Text("2").font(.headline).foregroundStyle(.white).frame(width: 30, height: 30).background(Color.macBridgeBlue, in: Circle())
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("从 Mac 导出到 iPhone").font(.title3.weight(.semibold))
-                                        Text("选择 Mac 上的照片文件夹，按原顺序发送到 iPhone").font(.subheadline).foregroundStyle(.secondary)
-                                    }
-                                }
-                                HStack(spacing: 10) {
-                                    Button("选择文件夹并发送") { transfer.uploadBackup() }.buttonStyle(.borderedProminent).tint(.macBridgeBlue).controlSize(.large)
-                                        .disabled(transfer.busy || transfer.loadingAlbums)
-                                    Button("继续上次发送") { transfer.resumeUpload() }.buttonStyle(.bordered).controlSize(.large)
-                                        .disabled(transfer.busy || transfer.loadingAlbums)
-                                }
-                            }
-                        }
-
-                        if transfer.busy || !transfer.progressText.isEmpty {
-                            MacCard {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    HStack { Text("当前进度").font(.headline); Spacer(); Text(transfer.speedText).font(.caption).foregroundStyle(.secondary) }
-                                    HStack {
-                                        Text(transfer.progressCountText).font(.title3.weight(.semibold))
-                                        Spacer()
-                                        Text(transfer.progressPercentText).font(.title2.bold()).foregroundStyle(Color.macBridgeBlue)
-                                    }.monospacedDigit()
-                                    if transfer.progressIndeterminate { ProgressView().controlSize(.small) }
-                                    else { ProgressView(value: transfer.progressFraction).tint(.macBridgeBlue) }
-                                    if !transfer.currentResource.isEmpty { Text(transfer.currentResource).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
-                                    HStack { Text(transfer.progressText).font(.callout.monospacedDigit()); Spacer(); Text(transfer.etaText).font(.caption).foregroundStyle(.secondary) }
-                                    if transfer.busy { Button("暂停并保留进度") { transfer.requestCancel() }.buttonStyle(.bordered) }
-                                }
-                            }
-                        }
-
-                        Button("打开已保存的相册…") { transfer.chooseSavedAlbum() }.buttonStyle(.bordered)
-                        if transfer.savedFolder != nil {
-                            HStack {
-                                Button("查看已保存照片") { transfer.viewSavedAlbum() }.buttonStyle(.borderedProminent).tint(.macBridgeBlue)
-                                Button("在 Finder 中打开文件夹") { transfer.openSavedFolder() }.buttonStyle(.bordered)
-                            }
-                            Text("所有照片保存在同一文件夹；按名称升序查看，就是相册顺序。").font(.caption).foregroundStyle(.secondary)
-                        }
-                        Text(transfer.userMessage).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
-                        Text("原照片不会删除、覆盖或改变。").font(.caption).foregroundStyle(.secondary)
-                    }
-                    .padding(30).frame(maxWidth: 900, alignment: .leading)
-                }
-            }
-            .frame(minWidth: 760, minHeight: 650)
-            .sheet(isPresented: $transfer.showAlbum) { SavedAlbumView(model: transfer) }
-            .onAppear { transfer.discover() }
-        }
+        WindowGroup("PhotoBridge") { MacTransferScreen(transfer: transfer) }
     }
 }

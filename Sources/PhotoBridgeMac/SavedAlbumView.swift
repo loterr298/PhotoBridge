@@ -74,9 +74,9 @@ struct SavedAlbumView: View {
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("选择其他相册") { model.chooseSavedAlbum() }
-                Button("打开文件夹") { model.openSavedFolder() }
-                Button("完成") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button("选择其他相册") { model.chooseSavedAlbum() }.buttonStyle(MacSoftButtonStyle())
+                Button("打开文件夹") { model.openSavedFolder() }.buttonStyle(MacSoftButtonStyle())
+                Button("完成") { dismiss() }.buttonStyle(MacSoftButtonStyle(primary: true)).keyboardShortcut(.cancelAction)
             }
             if model.loadingPreview {
                 Spacer()
