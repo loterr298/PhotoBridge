@@ -53,6 +53,31 @@ class UploadContinuationChecks(unittest.TestCase):
         client.interrupted = False
         return source, phone, m, files, client, writes, offsets, journals[0]
 
+    def test_logical_photo_count_only_advances_after_all_live_resources(self):
+        with tempfile.TemporaryDirectory() as d:
+            source, phone, m, files, c, writes, offsets = self.setup_files(Path(d))
+            c.interrupted = False
+            # Both resources belong to the first logical photo, second removed.
+            extra = m['assets'][1]['resources'][0]
+            old = source / extra['storedRelativePath']
+            extra.update(resourceIndex=2, storedRelativePath='Resources/000001/0002.HEIC')
+            old.rename(source / extra['storedRelativePath'])
+            m['assets'][0]['resources'].append(extra)
+            m['assets'] = m['assets'][:1]
+            m['sourceOrder']['members'] = m['sourceOrder']['members'][:1]
+            raw = json.dumps(m).encode()
+            (source / 'album-order.json').write_bytes(raw)
+            receipt = json.loads((source / 'transfer-manifest.json').read_bytes())
+            receipt['sourceManifestSHA256'] = hashlib.sha256(raw).hexdigest()
+            (source / 'transfer-manifest.json').write_text(json.dumps(receipt))
+            reports = []
+            result = self.module.upload(c, source, progress=lambda value: reports.append(dict(value)))
+            counts = [v['assetsVerified'] for v in reports if v.get('resourcesVerified') in (1, 2)]
+            self.assertIn(0, counts)
+            self.assertEqual(result['assetsVerified'], 1)
+            self.assertEqual(result['totalAssets'], 1)
+            self.assertEqual(result['percent'], 100)
+
     def test_complete_files_are_not_rewritten_and_partial_uses_exact_offset(self):
         with tempfile.TemporaryDirectory() as d:
             source, phone, m, files, c, writes, offsets, journal = self.interrupted(Path(d))

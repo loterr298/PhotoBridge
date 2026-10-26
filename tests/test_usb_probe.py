@@ -3,6 +3,27 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'scripts'))
 import usb_probe as p
 
 class USBChecks(unittest.TestCase):
+    def test_only_bounded_ui_metadata_can_be_replaced(self):
+        import ctypes, json
+        class Library:
+            def afc_file_open(self, afc, path, mode, handle): self.mode = mode; return 0
+            def afc_file_write(self, afc, handle, buffer, length, count):
+                self.data = ctypes.string_at(buffer, length); count._obj.value = length; return 0
+            def afc_file_close(self, *args): return 0
+        client = p.AFC.__new__(p.AFC); client.afc = None; client.lib = Library()
+        client.list = lambda path: ['transfer-progress.json']
+        client.info = lambda path: dict(st_ifmt='S_IFDIR' if path == 'Control' else 'S_IFREG', st_nlink='1', st_size='0')
+        raw = b'{"kind":"PhotoBridgeTransferDisplay","completed":1,"total":3}'
+        client.replace_progress('Control/transfer-progress.json', raw)
+        self.assertEqual(client.lib.mode, 3)
+        self.assertEqual(client.lib.data, raw)
+        for path, data in [('Exports/a.HEIC', raw), ('Control/../a', raw),
+                           ('Control/transfer-progress.json', b' ' * 65537),
+                           ('Control/transfer-progress.json', b'not json')]:
+            with self.assertRaises(ValueError): client.replace_progress(path, data)
+        client.info = lambda path: dict(st_ifmt='S_IFDIR' if path == 'Control' else 'S_IFLNK', st_nlink='1', st_size='0')
+        with self.assertRaises(ValueError): client.replace_progress('Control/transfer-progress.json', raw)
+
     def test_partial_append_is_nontruncating_and_refuses_changed_eof(self):
         import ctypes
         class Library:
