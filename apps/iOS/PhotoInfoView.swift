@@ -23,7 +23,7 @@ struct PhotoInfoView: View {
                             Label("选择原始照片", systemImage: "photo.badge.plus")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(BridgeButtonStyle(primary: true))
                         .tint(.bridgeBlue)
                         .controlSize(.large)
                         .disabled(model.busy)
@@ -33,9 +33,9 @@ struct PhotoInfoView: View {
                         } else {
                             BridgeCard {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Label("照片里的信息，就在这里调整。", systemImage: "slider.horizontal.3")
+                                    Label("编辑拍摄信息", systemImage: "slider.horizontal.3")
                                         .font(.headline)
-                                    Text("选择 JPEG、HEIC 或 PNG，修改相机参数、时间和分辨率，然后直接保存到 iPhone 相册。")
+                                    Text("选择照片，调整拍摄信息、时间或尺寸，再保存为新副本。支持 JPEG、HEIC 和 PNG。")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -51,8 +51,7 @@ struct PhotoInfoView: View {
                     .padding(.bottom, 28)
                 }
             }
-            .navigationTitle("照片信息")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(true)
         }
         .task(id: pickerItems) { await model.importItems(pickerItems) }
     }
@@ -60,7 +59,7 @@ struct PhotoInfoView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 5) {
-                Text("照片信息").font(.system(size: 30, weight: .bold, design: .rounded)).foregroundStyle(Color.bridgeInk)
+                Text("照片信息").font(.largeTitle.bold()).foregroundStyle(Color.bridgeInk)
                 Text("编辑后直接存入 iPhone，不覆盖原照片").font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer()
@@ -127,7 +126,7 @@ struct PhotoInfoView: View {
                 Label("存入 iPhone 相册", systemImage: "square.and.arrow.down")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent).tint(.bridgeBlue).controlSize(.large).disabled(model.busy)
+            .buttonStyle(BridgeButtonStyle(primary: true)).tint(.bridgeBlue).controlSize(.large).disabled(model.busy)
         }
     }
 
@@ -185,7 +184,7 @@ struct PhotoInfoView: View {
 final class PhotoInfoModel: ObservableObject {
     @Published var items: [PhotoInfoItem] = []
     @Published var selectedIndex = 0
-    @Published var busy = false
+    @Published var busy = false { didSet { PhoneActivity.shared.set("photo-info", active: busy) } }
     @Published var progress = 0.0
     @Published var progressText = ""
     @Published var message: String?

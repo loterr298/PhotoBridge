@@ -1,7 +1,6 @@
 import Foundation
 import Photos
 import SwiftUI
-import UIKit
 import PhotoBridgeCore
 
 /// Request-scoped USB control. Only an open, authorized phone app reads Photos.
@@ -19,6 +18,8 @@ final class MacControlService: ObservableObject {
         guard let macProgress, !active || macProgress.operationID == activeRequestID else { return nil }
         return macProgress
     }
+    private var acknowledged: Set<String> = []
+    private var lastJob: Data?
     private var phoneInForeground = true
     private var loop: Task<Void, Never>?
     private var activeRequestID: String?
@@ -35,24 +36,15 @@ final class MacControlService: ObservableObject {
                 try FileManager.default.createDirectory(at: root.appendingPathComponent(name), withIntermediateDirectories: true)
             }
         } catch { message = "无法准备连接，请重新打开 App"; return }
-        let jobs = root.appendingPathComponent("Jobs")
-        for name in (try? FileManager.default.contentsOfDirectory(atPath: jobs.path)) ?? [] where name.hasSuffix(".json") {
-            let url = jobs.appendingPathComponent(name)
-            if let data = try? Data(contentsOf: url),
-               var job = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               ["SCANNING", "STAGING", "FINALIZING"].contains(job["status"] as? String ?? "") {
-                job["status"] = "INTERRUPTED"
-                job["error"] = "iPhone App 已重新打开，请在 Mac 继续未完成的导出"
-                try? write(job, to: url)
-            }
-        }
+        let controlRoot = root
         loop = Task { [weak self] in
+            await Task.detached(priority: .utility) { Self.recoverJobs(in: controlRoot) }.value
             while !Task.isCancelled {
-                self?.pollOnce()
+                await self?.pollOnce()
                 if let url = self?.root.appendingPathComponent("transfer-progress.json") {
                     let value = await Task.detached(priority: .utility) { TransferDisplay.read(at: url) }.value
                     guard !Task.isCancelled else { return }
-                    if let value { self?.macProgress = value }
+                    if let value, self?.macProgress != value { self?.macProgress = value }
                 }
                 try? await Task.sleep(nanoseconds: 400_000_000)
             }
@@ -65,22 +57,32 @@ final class MacControlService: ObservableObject {
         try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]).write(to: url, options: .atomic)
     }
 
-    private func pollOnce() {
-        let requests = root.appendingPathComponent("Requests")
-        if let names = try? FileManager.default.contentsOfDirectory(atPath: requests.path) {
-            for name in names where name.hasSuffix(".json") {
-                let id = String(name.dropLast(5))
-                guard UUID(uuidString: id) != nil else { continue }
-                let response = root.appendingPathComponent("Responses/\(id).json")
-                guard !FileManager.default.fileExists(atPath: response.path),
-                      let data = try? Data(contentsOf: requests.appendingPathComponent(name)), data.count <= 65_536,
-                      let request = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                      request["id"] as? String == id else { continue }
-                do { try handle(request, id: id, response: response) }
+    private func pollOnce() async {
+        let controlRoot = root; let known = acknowledged
+        if let scan = try? await Task.detached(priority: .utility, operation: { try autoreleasepool { try ControlInbox.pending(in: controlRoot, ignoring: known) } }).value {
+            acknowledged.formUnion(scan.responded)
+            for item in scan.requests {
+                guard let request = try? JSONSerialization.jsonObject(with: item.data) as? [String: Any], request["id"] as? String == item.id else { continue }
+                let response = root.appendingPathComponent("Responses/\(item.id).json")
+                do { try await handle(request, id: item.id, response: response) }
                 catch { try? write(["status": "FAILED", "error": error.localizedDescription], to: response) }
+                if FileManager.default.fileExists(atPath: response.path) { acknowledged.insert(item.id) }
             }
         }
         publishJob()
+    }
+
+    nonisolated private static func recoverJobs(in root: URL) {
+        let jobs = root.appendingPathComponent("Jobs")
+        for name in (try? FileManager.default.contentsOfDirectory(atPath: jobs.path)) ?? [] where name.hasSuffix(".json") {
+            let url = jobs.appendingPathComponent(name)
+            guard let a = try? FileManager.default.attributesOfItem(atPath: url.path), a[.type] as? FileAttributeType == .typeRegular,
+                  let size = a[.size] as? NSNumber, size.intValue <= 65_536,
+                  let data = try? Data(contentsOf: url), var job = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  ["SCANNING", "STAGING", "FINALIZING"].contains(job["status"] as? String ?? "") else { continue }
+            job["status"] = "INTERRUPTED"; job["error"] = "iPhone App 已重新打开，请在 Mac 继续未完成的导出"
+            try? JSONSerialization.data(withJSONObject: job, options: [.sortedKeys]).write(to: url, options: .atomic)
+        }
     }
 
     func setForeground(_ foreground: Bool) {
@@ -90,14 +92,16 @@ final class MacControlService: ObservableObject {
     }
 
     private func updateIdleTimer() {
-        UIApplication.shared.isIdleTimerDisabled = active && phoneInForeground
+        PhoneActivity.shared.set("export", active: active)
+        PhoneActivity.shared.setForeground(phoneInForeground)
     }
 
     private func publishJob() {
         guard let id = activeRequestID else { return }
-        message = exporter.message
-        completed = exporter.scanning ? exporter.scannedAssets : exporter.assetsCompleted
-        total = exporter.scanning ? exporter.scanTotalAssets : exporter.totalAssets
+        if message != exporter.message { message = exporter.message }
+        let done = exporter.scanning ? exporter.scannedAssets : exporter.assetsCompleted
+        let count = exporter.scanning ? exporter.scanTotalAssets : exporter.totalAssets
+        if completed != done { completed = done }; if total != count { total = count }
         let value: [String: Any] = ["requestID": id, "albumIdentifier": albumIdentifier,
             "status": exporter.state, "sessionID": exporter.sessionName ?? "",
             "phoneInForeground": phoneInForeground,
@@ -106,11 +110,14 @@ final class MacControlService: ObservableObject {
             "scannedAssets": exporter.scannedAssets, "scanTotalAssets": exporter.scanTotalAssets,
             "bytesCompleted": exporter.bytesCompleted, "message": exporter.message,
             "error": ["FAILED", "STOPPED"].contains(exporter.state) ? exporter.message : ""]
-        do { try write(value, to: root.appendingPathComponent("Jobs/\(id).json")) }
+        do {
+            let raw = try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys])
+            if raw != lastJob { try raw.write(to: root.appendingPathComponent("Jobs/\(id).json"), options: .atomic); lastJob = raw }
+        }
         catch { exporter.requestStop(); message = "连接记录无法保存，已暂停以保留照片" }
     }
 
-    private func handle(_ request: [String: Any], id: String, response: URL) throws {
+    private func handle(_ request: [String: Any], id: String, response: URL) async throws {
         guard let expiry = request["expiresAt"] as? Double, expiry >= Date().timeIntervalSince1970,
               expiry <= Date().timeIntervalSince1970 + 600 else {
             throw NSError(domain: "PhotoBridge", code: 1, userInfo: [NSLocalizedDescriptionKey: "这次请求已过期，请在 Mac 重新操作"])
@@ -120,12 +127,17 @@ final class MacControlService: ObservableObject {
             guard PHPhotoLibrary.authorizationStatus(for: .readWrite) == .authorized else {
                 throw NSError(domain: "PhotoBridge", code: 2, userInfo: [NSLocalizedDescriptionKey: "请在 iPhone 允许访问全部照片"])
             }
-            var albums: [[String: Any]] = []
-            PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil).enumerateObjects { collection, _, _ in
-                albums.append(["id": collection.localIdentifier, "name": collection.localizedTitle ?? "未命名相册",
-                               "count": PHAsset.fetchAssets(in: collection, options: nil).count])
-            }
-            try write(["status": "OK", "albums": albums], to: response)
+            try await Task.detached(priority: .utility) {
+                try autoreleasepool {
+                    var albums: [[String: Any]] = []
+                    PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil).enumerateObjects { collection, _, _ in
+                        autoreleasepool { albums.append(["id": collection.localIdentifier, "name": collection.localizedTitle ?? "未命名相册",
+                            "count": PHAsset.fetchAssets(in: collection, options: nil).count]) }
+                    }
+                    try PhotoOperationChecks.requireFullAccess()
+                    try JSONSerialization.data(withJSONObject: ["status": "OK", "albums": albums], options: [.sortedKeys]).write(to: response, options: .atomic)
+                }
+            }.value
         case "startExport":
             guard !active && !exporter.busy, let identifier = request["albumIdentifier"] as? String,
                   let collection = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [identifier], options: nil).firstObject else {
@@ -142,7 +154,7 @@ final class MacControlService: ObservableObject {
             Task {
                 await exporter.start(collection: collection, allowNetwork: allowNetwork, resumeSession: request["resumeSession"] as? String)
                 active = false
-                pollOnce()
+                publishJob()
             }
         case "stopExport":
             if request["targetRequestID"] as? String == activeRequestID { exporter.requestStop() }
@@ -157,45 +169,46 @@ final class MacControlService: ObservableObject {
 struct MacExportCompanionView: View {
     @EnvironmentObject private var control: MacControlService
     @EnvironmentObject private var library: LibraryProbe
+    @State private var showHelp = false
     var body: some View {
         ZStack {
             BridgeBackground()
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    Text("导出到 Mac").font(.system(size: 36, weight: .bold, design: .rounded)).foregroundStyle(Color.bridgeInk)
-                    BridgeCard {
-                        VStack(spacing: 20) {
-                            BridgeIconCircle(systemImage: "laptopcomputer", tint: .bridgeBlue, size: 72)
-                            Text(control.active ? "正在向 Mac 提供照片" : "在 Mac 上开始导出").font(.title2.bold())
-                            Text("连接数据线，打开 Mac 上的 PhotoBridge，选择相册和保存文件夹。")
-                                .foregroundStyle(Color.bridgeMuted).multilineTextAlignment(.center)
-                            Text("导出完成前，请保持 PhotoBridge 在前台。切到其他 App 后，手机可能暂停处理。")
-                                .font(.subheadline).foregroundStyle(Color.bridgeMuted)
-                        }.frame(maxWidth: .infinity).padding(.vertical, 12)
-                    }
-                    if library.authorization != .authorized {
-                        BridgePrimaryButton(action: { Task { await library.request() } }) { Text("允许访问照片") }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("导出到 Mac").font(.largeTitle.bold()).foregroundStyle(Color.bridgeInk)
+                        Text("在电脑上选择相册，照片会按原顺序保存。")
+                            .font(.subheadline).foregroundStyle(.secondary)
                     }
                     if let display = control.exportDisplay, display.direction == "TO_MAC" {
-                        BridgeCard {
-                            PhotoCountView(title: display.presentationLabel(), progress: display.progress)
-                        }
+                        BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress) }
                     } else if control.active {
+                        BridgeCard { PhotoCountView(title: "正在准备照片", progress: control.preparationProgress) }
+                    } else {
                         BridgeCard {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text(control.message).font(.headline)
-                                PhotoCountView(title: "正在准备照片", progress: control.preparationProgress)
-                                Text("保存进度和完成结果请查看 Mac。")
-                                    .font(.caption).foregroundStyle(Color.bridgeMuted)
-                            }
+                            HStack(alignment: .top, spacing: 16) {
+                                Image(systemName: "laptopcomputer").font(.system(size: 32, weight: .light)).foregroundStyle(Color.bridgeBlue)
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("在 Mac 上开始").font(.title3.weight(.semibold))
+                                    Text("连接数据线，打开两端 PhotoBridge。在 Mac 选择相册和保存文件夹。")
+                                        .font(.body).foregroundStyle(.secondary)
+                                }
+                            }.frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
-                    Text("保留相册顺序和原始画质，原照片不会删除。")
-                        .font(.subheadline).foregroundStyle(Color.bridgeMuted)
-                }.padding(24)
+                    if library.authorization != .authorized {
+                        BridgePrimaryButton(action: { Task { await library.requestAccessOnly() } }) { Text("允许访问照片") }
+                    }
+                    Text("传输时请保持 App 在前台。原照片不会删除。")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    DisclosureGroup("连接帮助", isExpanded: $showHelp) {
+                        Text("解锁 iPhone，在手机上确认“信任此电脑”，然后在 Mac 点击“连接 iPhone”。")
+                            .font(.subheadline).foregroundStyle(.secondary).padding(.top, 8)
+                    }.font(.subheadline).tint(.bridgeBlue)
+                }.padding(24).frame(maxWidth: 580, alignment: .leading).frame(maxWidth: .infinity)
             }
         }
-        .task { library.reload() }
+        .task { library.reloadAuthorization() }
     }
 }
 

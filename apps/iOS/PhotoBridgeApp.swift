@@ -10,7 +10,7 @@ struct PhotoBridgeApp: App {
     var body: some Scene {
         WindowGroup {
             TabView {
-                MacExportCompanionView().tabItem { Label("备份到 Mac", systemImage: "arrow.down.to.line.compact") }.tag(0)
+                MacExportCompanionView().tabItem { Label("导出到 Mac", systemImage: "arrow.down.to.line.compact") }.tag(0)
                 RestoreView().tabItem { Label("导入到 iPhone", systemImage: "arrow.up.to.line.compact") }.tag(1)
                 PhotoInfoView().tabItem { Label("照片信息", systemImage: "slider.horizontal.3") }.tag(2)
             }
@@ -49,6 +49,11 @@ final class LibraryProbe: ObservableObject {
         case .notDetermined: return "notDetermined"; @unknown default: return "unknown" }
     }
     func request() async { _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite); reload() }
+    func reloadAuthorization() { authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite) }
+    func requestAccessOnly() async {
+        _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+        reloadAuthorization()
+    }
     func reload() {
         authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         albums = []
@@ -113,7 +118,7 @@ struct AlbumsView: View {
                                 NavigationLink { AlbumTransferPicker() } label: {
                                     Label("选择相册开始备份", systemImage: "photo.on.rectangle.angled")
                                         .frame(maxWidth: .infinity)
-                                }.buttonStyle(.borderedProminent).tint(.bridgeBlue).controlSize(.large)
+                                }.buttonStyle(BridgeButtonStyle(primary: true)).tint(.bridgeBlue).controlSize(.large)
                             }
                         }
 

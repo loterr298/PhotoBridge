@@ -15,7 +15,9 @@ private struct RestoreInboxRequest: Decodable {
 
 @MainActor final class RestoreService: ObservableObject {
     @Published var sessions: [String] = []
-    @Published var busy = false
+    @Published var sessionLabels: [String: String] = [:]
+    @Published var loadingSessions = false
+    @Published var busy = false { didSet { PhoneActivity.shared.set("import", active: busy) } }
     @Published var ready = false
     @Published var message = "请先在 Mac 完成备份，再回来查找备份。"
     @Published var preflightReportSummary = ""
@@ -41,14 +43,35 @@ private struct RestoreInboxRequest: Decodable {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("RestoreInbox")
     }
 
-    func refresh() {
-        guard !busy else { return }
-        invalidate()
+    func refresh() async {
+        guard !busy && !loadingSessions else { return }
+        invalidate(); loadingSessions = true
+        defer { loadingSessions = false }
+        let folder = inbox
         do {
-            try FileManager.default.createDirectory(at: inbox, withIntermediateDirectories: true)
-            sessions = try FileManager.default.contentsOfDirectory(atPath: inbox.path)
-                .filter { UUID(uuidString: $0) != nil }.sorted()
-        } catch { message = "找不到 Mac 备份：\(error.localizedDescription)" }
+            let entries = try await Task.detached(priority: .utility) {
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                try StagingResume.requireDirectory(folder)
+                var values: [(String, String, Date)] = []
+                for name in try FileManager.default.contentsOfDirectory(atPath: folder.path) where UUID(uuidString: name) != nil {
+                    try Task.checkCancellation()
+                    let session = folder.appendingPathComponent(name)
+                    guard (try? StagingResume.requireDirectory(session)) != nil,
+                          !FileManager.default.fileExists(atPath: session.appendingPathComponent("restore-report.json").path) else { continue }
+                    let file = session.appendingPathComponent("restore-request.json")
+                    guard let a = try? FileManager.default.attributesOfItem(atPath: file.path), a[.type] as? FileAttributeType == .typeRegular,
+                          let size = a[.size] as? NSNumber, size.intValue <= 65_536,
+                          let data = try? Data(contentsOf: file),
+                          let request = try? JSONDecoder().decode(RestoreInboxRequest.self, from: data), request.sessionID == name, request.state == "USB_VERIFIED" else { continue }
+                    let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+                    let album = String((object?["albumName"] as? String ?? "收到的相册").prefix(128))
+                    let date = (a[.modificationDate] as? Date) ?? .distantPast
+                    values.append((name, "\(album) · \(request.assetCount.formatted()) 张 · \(date.formatted(date: .abbreviated, time: .shortened))", date))
+                }
+                return values.sorted { $0.2 == $1.2 ? $0.0 < $1.0 : $0.2 < $1.2 }
+            }.value
+            sessions = entries.map { $0.0 }; sessionLabels = Dictionary(uniqueKeysWithValues: entries.map { ($0.0, $0.1) })
+        } catch { message = "暂时无法读取收到的照片，请重新查找。" }
     }
     func invalidate() { guard !busy else { return }; verifiedFinished = false; completed = 0; checked = 0; totalAssets = 0; phase = "IDLE"; preflightReportSummary = ""; sharedPreflightReport = false; privatePreflightReport = nil; ready = false; recovering = false; savedTitle = ""; manifest = nil; selected = nil; manifestData = nil; requestData = nil; allowEditTimestampRewrite = false }
     func requestStop() { stopRequested = true; cancellation.cancel() }
