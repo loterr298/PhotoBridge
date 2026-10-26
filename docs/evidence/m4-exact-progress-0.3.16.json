@@ -23,16 +23,52 @@
     "mailboxUpdates": 50001,
     "relayUpdates": 50001,
     "relayWritesUnderFrozenClock": 2,
-    "cloud": "PENDING",
+    "cloud": "SUCCESS",
     "device": "NOT_RUN",
     "localGate": "PASS build/count-final-delivery.log",
     "exactPercentRegression": "29/100,57/100,58/100; full-width integer arithmetic PASS",
-    "swiftXCTest": "LOCAL_BLOCKED_NO_XCODE; cloud pending"
+    "swiftXCTest": "PASS 7 tests",
+    "finalCloud": 117,
+    "nativeIdleRegression": "PASS final cloud117; connection-only command leaves no transfer spinner"
   },
   "limitations": [
     "Unsigned iPhone package requires personal signing",
     "Not a proof of zero crashes",
     "Real 50000-photo Photos/USB test not run",
     "Full recovery prefix checks remain quadratic"
-  ]
+  ],
+  "cloud": {
+    "run": "https://github.com/loterr298/PhotoBridge/actions/runs/40293805889",
+    "source": "eeee5fc732834eec4b0ef69b8157aaa1ac0cb6b0",
+    "sourceFilesCompared": 97,
+    "sourceMismatches": [],
+    "toolchain": "Xcode16.4 / iOS SDK18.5",
+    "ios": "arm64 build succeeded",
+    "mac": "x86_64 strict ad-hoc signature verified",
+    "artifactSHA256": "374fdce9874188ff3a1269a9498cb3b8bbe3f9b3d227c897326635a98a9d06fe",
+    "artifactCRC": "PASS",
+    "innerSHA256SUMS": "PASS"
+  },
+  "packages": {
+    "iphone": "build/PhotoBridge-0.3.16-ExactProgress/PhotoBridgeOrderProbe-0.3.16-unsigned.ipa",
+    "iphoneSHA256": "f9791c8615355b6395f402dbc7dee2a2c352b49588802b22a51947d515371134",
+    "mac": "build/PhotoBridge-0.3.16-ExactProgress/PhotoBridgeMac-0.3.16-Intel.zip",
+    "macSHA256": "68ba743d8b40dcedc8f157f305b3c00f01c2ee86d677e156609f426a0ee06e2c"
+  },
+  "installation": {
+    "mac": "/Applications/PhotoBridgeMac.app",
+    "byteMatches": "executable/plist/11 Python scripts PASS",
+    "signature": "strict PASS",
+    "previousUserVersion": "build/installed-backups/PhotoBridgeMac-before-0.3.16.app",
+    "nativeFinalLaunch": "PASS: actual homepage idle spinner absent; About 0.3.16 (20) observed",
+    "iphone": "NOT_INSTALLED: requires personal signing"
+  },
+  "cloudFailure115": {
+    "result": "FAILED iOS compile, fixed",
+    "errors": [
+      "OriginalExportView missing PhotoBridgeCore import",
+      "local checked tuple shadowed checked counter"
+    ],
+    "logs": "build/cloud-115-failed/build/logs/ios-build.log"
+  }
 }
