@@ -676,8 +676,8 @@ private struct MacCard<Content: View>: View {
 
 private struct MacTransferScreen: View {
     @ObservedObject var transfer: MacTransferModel
-    @State private var direction = 0
-    @State private var showOptions = false
+    @State private var exportOptions = false
+    @State private var importOptions = false
     private var connected: Bool { transfer.usbState == "已连接" }
     private var working: Bool { transfer.busy || transfer.loadingAlbums }
     var body: some View {
@@ -704,20 +704,13 @@ private struct MacTransferScreen: View {
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
                         Spacer()
-                        if connected {
-                            Button("重新连接") { transfer.discover() }.disabled(working).buttonStyle(MacSoftButtonStyle())
-                        }
+                        Button(connected ? "重新连接" : "连接 iPhone") { transfer.discover() }
+                            .disabled(working).buttonStyle(MacSoftButtonStyle())
                     }
-                    Picker("传输方向", selection: $direction) {
-                        Text("导出到 Mac").tag(0)
-                        Text("导入到 iPhone").tag(1)
-                    }.pickerStyle(.segmented).controlSize(.large).tint(.macBridgeBlue)
-                        .labelsHidden().accessibilityLabel("传输方向").disabled(working)
                     if transfer.busy || !transfer.progressText.isEmpty { progress }
-                    if !transfer.busy {
-                        MacCard {
-                            if direction == 0 { exportControls } else { importControls }
-                        }
+                    HStack(alignment: .top, spacing: 20) {
+                        MacCard { exportControls }.frame(maxWidth: .infinity)
+                        MacCard { importControls }.frame(maxWidth: .infinity)
                     }
                     if !transfer.userMessage.isEmpty && !transfer.userMessage.hasPrefix("还没有连接 iPhone") {
                         Text(transfer.userMessage).font(.callout).foregroundStyle(.secondary)
@@ -729,17 +722,16 @@ private struct MacTransferScreen: View {
                         }
                     }
                     Text("按原相册顺序传输，原照片不会删除。").font(.caption).foregroundStyle(.secondary)
-                }.padding(32).frame(maxWidth: 720, alignment: .leading).frame(maxWidth: .infinity)
+                }.padding(32).frame(maxWidth: 1080, alignment: .leading).frame(maxWidth: .infinity)
             }
         }
-        .frame(minWidth: 720, minHeight: 620)
+        .frame(minWidth: 760, minHeight: 620)
         .sheet(isPresented: $transfer.showAlbum) { SavedAlbumView(model: transfer) }
         .onAppear { transfer.discover() }
-        .onChange(of: direction) { _ in showOptions = false }
     }
     private var exportControls: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("选择 iPhone 相册").font(.title2.weight(.semibold))
+            Text("导出到 Mac").font(.title2.weight(.semibold))
             if !transfer.albums.isEmpty {
                 Picker("相册", selection: $transfer.selectedAlbumID) {
                     ForEach(transfer.albums) { Text("\($0.name) · \($0.count.formatted()) 张").tag($0.id) }
@@ -750,17 +742,16 @@ private struct MacTransferScreen: View {
                     .foregroundStyle(.secondary).padding(.vertical, 8)
             }
             Button {
-                if !connected { transfer.discover() }
-                else if transfer.selectedAlbumID.isEmpty { transfer.refreshAlbums() }
+                if transfer.selectedAlbumID.isEmpty { transfer.refreshAlbums() }
                 else { transfer.startMacExport() }
             } label: {
                 HStack {
-                    if working { ProgressView().controlSize(.small) }
+                    if transfer.loadingAlbums { ProgressView().controlSize(.small) }
                     else { Image(systemName: connected ? "arrow.down.to.line" : "iphone") }
-                    Text(!connected ? "连接并读取相册" : transfer.selectedAlbumID.isEmpty ? "读取相册" : "选择保存位置并导出")
+                    Text(connected && transfer.selectedAlbumID.isEmpty ? "读取相册" : "选择保存位置并导出")
                 }.frame(maxWidth: .infinity)
-            }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working)
-            DisclosureGroup("更多选项", isExpanded: $showOptions) {
+            }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working || !connected)
+            DisclosureGroup("更多选项", isExpanded: $exportOptions) {
                 VStack(alignment: .leading, spacing: 16) {
                     Toggle("需要时从 iCloud 获取原图", isOn: $transfer.allowCloudDownload).disabled(working)
                     HStack(spacing: 12) {
@@ -773,16 +764,16 @@ private struct MacTransferScreen: View {
     }
     private var importControls: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("选择 Mac 相册").font(.title2.weight(.semibold))
+            Text("导入到 iPhone").font(.title2.weight(.semibold))
             Text("选择 PhotoBridge 保存的完整相册文件夹。发送后，在 iPhone 确认导入到新相册。")
                 .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Button {
-                if connected { transfer.uploadBackup() } else { transfer.discover() }
+                transfer.uploadBackup()
             } label: {
-                Label(connected ? "选择相册文件夹并发送" : "连接 iPhone", systemImage: "arrow.up.to.line")
+                Label("选择文件夹并发送", systemImage: "arrow.up.to.line")
                     .frame(maxWidth: .infinity)
-            }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working)
-            DisclosureGroup("继续上次任务", isExpanded: $showOptions) {
+            }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working || !connected)
+            DisclosureGroup("继续上次任务", isExpanded: $importOptions) {
                 Button("选择未完成的发送") { transfer.resumeUpload() }
                     .buttonStyle(MacSoftButtonStyle()).disabled(working || !connected).padding(.top, 12)
             }.font(.subheadline).tint(.macBridgeBlue)
