@@ -19,7 +19,7 @@ private struct RestoreInboxRequest: Decodable {
     @Published var loadingSessions = false
     @Published var busy = false { didSet { PhoneActivity.shared.set("import", active: busy) } }
     @Published var ready = false
-    @Published var message = "请先在 Mac 完成备份，再回来查找备份。"
+    @Published var message = ""
     @Published var preflightReportSummary = ""
     @Published var sharedPreflightReport = false
     private var privatePreflightReport: URL?
@@ -45,7 +45,7 @@ private struct RestoreInboxRequest: Decodable {
 
     func refresh() async {
         guard !busy && !loadingSessions else { return }
-        invalidate(); loadingSessions = true
+        invalidate(); message = ""; loadingSessions = true
         defer { loadingSessions = false }
         let folder = inbox
         do {
