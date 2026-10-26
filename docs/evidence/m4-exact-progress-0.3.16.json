@@ -1,0 +1,38 @@
+{
+  "version": "0.3.16",
+  "build": 20,
+  "date": "2026-10-26",
+  "request": "Exact integer logical-photo counts and percentages; stability",
+  "progress": {
+    "unit": "logical_photo",
+    "livePhotoCountsAs": 1,
+    "percent": "integer_floor_capped_99_until_final_acceptance",
+    "unknownTotal": "indeterminate",
+    "scanRefresh": "single_latest_value_mailbox_250ms",
+    "usbDisplay": "bounded_64KiB_coalesced_250ms",
+    "macImport": "matching_restore_inbox_session"
+  },
+  "dataSafety": {
+    "originalMediaModified": false,
+    "photosWritesThisRun": false,
+    "overwritingException": "Control/transfer-progress.json UI-only",
+    "finalAcceptance": "existing media hash/order/durable report"
+  },
+  "tests": {
+    "python": 101,
+    "mailboxUpdates": 50001,
+    "relayUpdates": 50001,
+    "relayWritesUnderFrozenClock": 2,
+    "cloud": "PENDING",
+    "device": "NOT_RUN",
+    "localGate": "PASS build/count-final-delivery.log",
+    "exactPercentRegression": "29/100,57/100,58/100; full-width integer arithmetic PASS",
+    "swiftXCTest": "LOCAL_BLOCKED_NO_XCODE; cloud pending"
+  },
+  "limitations": [
+    "Unsigned iPhone package requires personal signing",
+    "Not a proof of zero crashes",
+    "Real 50000-photo Photos/USB test not run",
+    "Full recovery prefix checks remain quadratic"
+  ]
+}
