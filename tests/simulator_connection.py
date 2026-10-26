@@ -15,6 +15,13 @@ def main(device):
     bundle = 'com.photobridge.OrderProbe'
     def sim(*args):
         return subprocess.check_output(['xcrun', 'simctl', *args], text=True).strip()
+    # xcodebuild may shut down its target after UI testing. Prepare an explicit
+    # instance instead of assuming the test runner left a foreground app alive.
+    devices = json.loads(sim('list', 'devices', 'available', '-j'))['devices']
+    target = next(d for group in devices.values() for d in group if d['udid'] == device)
+    if target['state'] != 'Booted': sim('boot', device)
+    sim('bootstatus', device, '-b')
+    sim('install', device, 'build/SimulatorData/Build/Products/Debug-iphonesimulator/PhotoBridgeOrderProbe.app')
     root = pathlib.Path(sim('get_app_container', device, bundle, 'data')) / 'Documents' / 'Control'
     out = pathlib.Path('build/ui-screenshots'); out.mkdir(parents=True, exist_ok=True)
     sim('launch', '--terminate-running-process', device, bundle)
