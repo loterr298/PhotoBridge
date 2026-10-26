@@ -26,7 +26,7 @@
 
 0.3.6 新增[Photos 事务恢复协议](docs/PHOTOS_TRANSACTION_RECOVERY_RUNBOOK.md)：按持久化 placeholder 标识核对既有副本，全部重新回读后再创建剩余项；状态不明确及旧版失败会话拒绝重放。新二进制已在本机3-Live样本完成首项提交后停止、用户确认重启、同一会话继续；首个ID与相簿不变、仅创建剩余2项、6资源独立USB字节一致、17旧文件不变，系统照片3张顺序及播放经用户确认。见[限定样本证据](docs/evidence/m3-photos-transaction-device-recovery-verified.json)。提交中强杀/系统终止及权限/空间/iCloud故障仍未验证。
 
-## 当前用户流程（Mac 0.3.15 / build19；iPhone 0.3.15 / build19）
+## 当前用户流程（Mac 0.3.16 / build20；iPhone 0.3.16 / build20）
 
 1. 数据线连接 iPhone 和 Mac，解锁手机并打开新版 PhotoBridge，允许访问全部照片。
 2. 在 Mac 点击“读取 iPhone 相册”，选定相册，再点“选择文件夹并开始导出”。所选位置内会创建一个新的相册文件夹，全部照片直接保存在里面，没有逐张子文件夹。
