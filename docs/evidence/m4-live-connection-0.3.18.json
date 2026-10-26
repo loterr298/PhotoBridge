@@ -1,0 +1,17 @@
+{
+  "version": "0.3.18",
+  "build": 22,
+  "date": "2026-10-27",
+  "scope": "Automatic USB-only challenge/reply status and green connection surfaces",
+  "local": {
+    "deliveryGate": "PASS: build/connection-delivery.log",
+    "pythonTests": 103,
+    "core": "PASS: build/connection-final-core.log",
+    "IntelCompile": "PASS: build/connection-final-mac.log",
+    "review": "No P1/P2; wake generation fix applied"
+  },
+  "cloud": "PENDING",
+  "simulator": "PENDING actual handshake/expiry screenshots",
+  "physicalUSB": "NOT_RUN: USB-only discovery -3, no device",
+  "preservation": "Only two fixed disposable connection metadata slots; no media writes; transfer progress/acceptance unchanged"
+}
