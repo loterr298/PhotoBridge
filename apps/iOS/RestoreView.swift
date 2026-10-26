@@ -31,6 +31,7 @@ struct RestoreView: View {
                             Text("把 Mac 发来的照片，保存到新相册。")
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
+                        PhoneConnectionStatus(connected: control.connected)
                         if let display = control.macProgress, display.direction == "TO_IPHONE", !service.busy, !finished, (session.isEmpty || display.sessionID == session) {
                             BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress) }
                         }

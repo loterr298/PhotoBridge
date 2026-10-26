@@ -13,6 +13,7 @@ final class MacControlService: ObservableObject {
     @Published var completed = 0
     @Published var total = 0
     @Published var macProgress: TransferDisplay?
+    @Published private(set) var connected = false
     var preparationProgress: PhotoProgress { PhotoProgress(completed: completed, total: total, finished: false) }
     var exportDisplay: TransferDisplay? {
         guard let macProgress, !active || macProgress.operationID == activeRequestID else { return nil }
@@ -22,6 +23,8 @@ final class MacControlService: ObservableObject {
     private var lastJob: Data?
     private var phoneInForeground = true
     private var loop: Task<Void, Never>?
+    private var heartbeatTask: Task<Void, Never>?
+    private var connection = PhoneConnection()
     private var activeRequestID: String?
     private var albumIdentifier = ""
     private var root: URL {
@@ -37,6 +40,26 @@ final class MacControlService: ObservableObject {
             }
         } catch { message = "无法准备连接，请重新打开 App"; return }
         let controlRoot = root
+        // Separate from album enumeration so slow PhotoKit work cannot block it.
+        heartbeatTask = Task { [weak self] in
+            var lastReply: ConnectionReply?
+            while !Task.isCancelled {
+                let request = await Task.detached(priority: .utility) { ConnectionRequest.read(in: controlRoot) }.value
+                guard let self, !Task.isCancelled else { return }
+                if let request {
+                    let reply = self.connection.receive(request, now: ProcessInfo.processInfo.systemUptime, foreground: self.phoneInForeground)
+                    if reply != lastReply {
+                        do {
+                            try await Task.detached(priority: .utility) { try reply.write(in: controlRoot) }.value
+                            lastReply = reply
+                        } catch { self.connection.invalidate() }
+                    }
+                }
+                let ready = self.phoneInForeground && self.connection.isConnected(now: ProcessInfo.processInfo.systemUptime)
+                if self.connected != ready { self.connected = ready }
+                try? await Task.sleep(nanoseconds: 400_000_000)
+            }
+        }
         loop = Task { [weak self] in
             await Task.detached(priority: .utility) { Self.recoverJobs(in: controlRoot) }.value
             while !Task.isCancelled {
@@ -86,6 +109,7 @@ final class MacControlService: ObservableObject {
     }
 
     func setForeground(_ foreground: Bool) {
+        if phoneInForeground != foreground { connection.invalidate(); connected = false }
         phoneInForeground = foreground
         updateIdleTimer()
         publishJob()
@@ -180,6 +204,7 @@ struct MacExportCompanionView: View {
                         Text("在电脑上选择相册，照片会按原顺序保存。")
                             .font(.subheadline).foregroundStyle(.secondary)
                     }
+                    PhoneConnectionStatus(connected: control.connected)
                     if let display = control.exportDisplay, display.direction == "TO_MAC" {
                         BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress) }
                     } else if control.active {
@@ -202,7 +227,7 @@ struct MacExportCompanionView: View {
                     Text("传输时请保持 App 在前台。原照片不会删除。")
                         .font(.subheadline).foregroundStyle(.secondary)
                     DisclosureGroup("连接帮助", isExpanded: $showHelp) {
-                        Text("解锁 iPhone，在手机上确认“信任此电脑”，然后在 Mac 点击“连接 iPhone”。")
+                        Text("打开两端 PhotoBridge，用数据线连接并解锁 iPhone。如出现提示，请选择“信任此电脑”。连接状态会自动更新。")
                             .font(.subheadline).foregroundStyle(.secondary).padding(.top, 8)
                     }.font(.subheadline).tint(.bridgeBlue)
                 }.padding(24).frame(maxWidth: 580, alignment: .leading).frame(maxWidth: .infinity)
