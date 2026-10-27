@@ -62,6 +62,7 @@ final class MacTransferModel: ObservableObject {
     @Published var loadingAlbums = false
     @Published var progressIndeterminate = true
     @Published var savedFolder: URL?
+    @Published var exportFolderName = ""
     @Published var allowCloudDownload = false
     @Published var showAlbum = false
     @Published var savedAlbumName = "已保存的相册"
@@ -186,7 +187,10 @@ final class MacTransferModel: ObservableObject {
                 }
                 await MainActor.run {
                     self.albums = loaded
-                    if !loaded.contains(where: { $0.id == self.selectedAlbumID }) { self.selectedAlbumID = loaded.first?.id ?? "" }
+                    if !loaded.contains(where: { $0.id == self.selectedAlbumID }) {
+                        self.selectedAlbumID = loaded.first?.id ?? ""
+                        self.exportFolderName = loaded.first.map { ExportFolderName.sanitize($0.name) } ?? ""
+                    }
                     self.userMessage = loaded.isEmpty ? "没有可用相册，请在 iPhone 允许访问照片。" : "已加载 \(loaded.count) 个相册"
                 }
             } catch {
@@ -202,9 +206,21 @@ final class MacTransferModel: ObservableObject {
         guard let album = albums.first(where: { $0.id == selectedAlbumID }) else { userMessage = "请先选择一个相册。"; return }
         guard let parent = previous?.deletingLastPathComponent() ?? chooseDirectory(title: "选择照片保存位置") else { return }
         let requestID = existingRequestID ?? UUID().uuidString
-        let folderID = existingRequestID == nil ? requestID : UUID().uuidString
-        let safeName = album.name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
-        let folder = parent.appendingPathComponent("\(String(safeName.prefix(80)))-\(folderID.prefix(8))", isDirectory: true)
+        // A continuation always writes to a new sibling. The previous folder
+        // is the source of truth; an editable name must never redirect it back
+        // onto the old directory or an unrelated existing backup.
+        let requestedName: String
+        if let previous {
+            requestedName = ExportFolderName.continuationName(for: previous.lastPathComponent)
+        } else {
+            requestedName = exportFolderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? album.name : exportFolderName
+        }
+        let folderName = ExportFolderName.sanitize(requestedName)
+        let folder = parent.appendingPathComponent(folderName, isDirectory: true)
+        if FileManager.default.fileExists(atPath: folder.path) {
+            userMessage = "文件夹“\(folderName)”已经存在，请换一个名称。"
+            return
+        }
         rememberBackup(folder)
         savedFolder = folder
         busy = true; progressIndeterminate = true; progressFraction = 0
@@ -796,6 +812,14 @@ private struct MacTransferScreen: View {
                     ForEach(transfer.albums) { Text("\($0.name) · \($0.count.formatted()) 张").tag($0.id) }
                 }.pickerStyle(.menu).controlSize(.large).disabled(working)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .onChange(of: transfer.selectedAlbumID) { selected in
+                        if let album = transfer.albums.first(where: { $0.id == selected }) {
+                            transfer.exportFolderName = ExportFolderName.sanitize(album.name)
+                        }
+                    }
+                TextField("导出文件夹名称", text: $transfer.exportFolderName)
+                    .textFieldStyle(.roundedBorder).disabled(working)
+                    .help("照片会直接保存到这个文件夹，文件夹内不再创建子文件夹")
             } else {
                 Text(transfer.loadingAlbums ? "正在读取相册…" : "连接后，你的相册会显示在这里。")
                     .foregroundStyle(.secondary).padding(.vertical, 8)
