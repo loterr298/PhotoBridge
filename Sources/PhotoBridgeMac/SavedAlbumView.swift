@@ -12,7 +12,7 @@ private enum AlbumThumbnailCache {
     }()
 }
 
-private struct SavedPhotoThumbnail: View {
+struct SavedPhotoThumbnail: View {
     let photo: BackupAssetPreview
     @State private var image: NSImage?
     @State private var request: QLThumbnailGenerator.Request?
@@ -58,6 +58,29 @@ private struct SavedPhotoThumbnail: View {
                 }
                 loading = false
             }
+        }
+    }
+}
+
+struct FolderThumbnailGrid: View {
+    let photos: [BackupAssetPreview]
+    let loading: Bool
+    let emptyText: String
+    var body: some View {
+        if loading {
+            ProgressView("正在读取缩略图…").frame(maxWidth: .infinity, minHeight: 120)
+        } else if photos.isEmpty {
+            Text(emptyText).font(.subheadline).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
+        } else {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 92, maximum: 132), spacing: 10)], spacing: 12) {
+                    ForEach(photos) { photo in
+                        SavedPhotoThumbnail(photo: photo)
+                    }
+                }
+            }
+            .frame(maxHeight: 300)
         }
     }
 }
