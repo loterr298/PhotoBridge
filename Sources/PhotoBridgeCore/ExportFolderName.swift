@@ -14,6 +14,9 @@ public enum ExportFolderName {
     }
 
     public static func continuationName(for previous: String) -> String {
-        sanitize(previous + "-继续")
+        let suffix = "-继续"
+        let base = sanitize(previous)
+        let reserved = max(1, 80 - suffix.count)
+        return sanitize(String(base.prefix(reserved)) + suffix)
     }
 }
