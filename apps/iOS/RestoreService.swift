@@ -2,6 +2,13 @@ import SwiftUI
 import Photos
 import PhotoBridgeCore
 
+struct RestorePreviewItem: Identifiable, Equatable, Sendable {
+    let id: String
+    let ordinal: Int
+    let filename: String
+    let url: URL
+}
+
 private struct RestoreInboxRequest: Decodable {
     let schemaVersion: String
     let kind: String
@@ -16,6 +23,8 @@ private struct RestoreInboxRequest: Decodable {
 @MainActor final class RestoreService: ObservableObject {
     @Published var sessions: [String] = []
     @Published var sessionLabels: [String: String] = [:]
+    @Published var previewItems: [RestorePreviewItem] = []
+    @Published var loadingPreview = false
     @Published var loadingSessions = false
     @Published var busy = false { didSet { PhoneActivity.shared.set("import", active: busy) } }
     @Published var ready = false
@@ -73,7 +82,31 @@ private struct RestoreInboxRequest: Decodable {
             sessions = entries.map { $0.0 }; sessionLabels = Dictionary(uniqueKeysWithValues: entries.map { ($0.0, $0.1) })
         } catch { message = "暂时无法读取收到的照片，请重新查找。" }
     }
-    func invalidate() { guard !busy else { return }; verifiedFinished = false; completed = 0; checked = 0; totalAssets = 0; phase = "IDLE"; preflightReportSummary = ""; sharedPreflightReport = false; privatePreflightReport = nil; ready = false; recovering = false; savedTitle = ""; manifest = nil; selected = nil; manifestData = nil; requestData = nil; allowEditTimestampRewrite = false }
+    func invalidate() { guard !busy else { return }; verifiedFinished = false; completed = 0; checked = 0; totalAssets = 0; phase = "IDLE"; preflightReportSummary = ""; sharedPreflightReport = false; privatePreflightReport = nil; ready = false; recovering = false; savedTitle = ""; manifest = nil; selected = nil; manifestData = nil; requestData = nil; allowEditTimestampRewrite = false; previewItems = []; loadingPreview = false }
+    func loadPreview(session: String) async {
+        guard UUID(uuidString: session) != nil else { previewItems = []; return }
+        loadingPreview = true
+        let folder = inbox.appendingPathComponent(session, isDirectory: true)
+        let values = await Task.detached(priority: .utility) { Self.previewItems(in: folder) }.value
+        guard !Task.isCancelled else { return }
+        previewItems = values
+        loadingPreview = false
+    }
+    nonisolated private static func previewItems(in folder: URL) -> [RestorePreviewItem] {
+        guard let data = try? Data(contentsOf: folder.appendingPathComponent("album-order.json")),
+              let manifest = try? JSONDecoder().decode(AlbumExportManifest.self, from: data) else { return [] }
+        return manifest.assets.compactMap { asset in
+            let resource = asset.resources.first { item in
+                let path = folder.appendingPathComponent(item.storedRelativePath)
+                let ext = path.pathExtension.lowercased()
+                return FileManager.default.fileExists(atPath: path.path) && ["jpg", "jpeg", "heic", "png", "dng", "tif", "tiff"].contains(ext)
+            } ?? asset.resources.first { FileManager.default.fileExists(atPath: folder.appendingPathComponent($0.storedRelativePath).path) }
+            guard let resource else { return nil }
+            let url = folder.appendingPathComponent(resource.storedRelativePath)
+            return RestorePreviewItem(id: "\(asset.ordinal)-\(resource.resourceIndex)", ordinal: asset.ordinal,
+                                      filename: resource.originalFilename, url: url)
+        }
+    }
     func requestStop() { stopRequested = true; cancellation.cancel() }
     private func checkPermissionAndStop() throws {
         guard !stopRequested && !Task.isCancelled else { throw ExportError.invalidManifest("已在事务边界停止；不会自动重复导入") }

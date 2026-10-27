@@ -1,5 +1,7 @@
 import SwiftUI
 import PhotoBridgeCore
+import ImageIO
+import UIKit
 
 struct RestoreView: View {
     @EnvironmentObject private var control: MacControlService
@@ -19,6 +21,7 @@ struct RestoreView: View {
     private func refresh() async {
         await service.refresh()
         session = service.sessions.last ?? ""
+        if !session.isEmpty { await service.loadPreview(session: session) }
     }
     var body: some View {
         NavigationStack {
@@ -61,6 +64,7 @@ struct RestoreView: View {
                                                 Text(service.sessionLabels[value] ?? "收到的相册").tag(value)
                                             }
                                         }.pickerStyle(.menu).disabled(working)
+                                        RestoreThumbnailGrid(items: service.previewItems, loading: service.loadingPreview)
                                         VStack(alignment: .leading, spacing: 8) {
                                             Text("新相册名称").font(.subheadline).foregroundStyle(.secondary)
                                             TextField("相册名称", text: $title).padding(13)
@@ -101,7 +105,59 @@ struct RestoreView: View {
         }
         .task { if service.sessions.isEmpty && !service.busy { await refresh() } }
         .onChange(of: service.savedTitle) { value in if !value.isEmpty { title = value } }
-        .onChange(of: session) { _ in service.invalidate() }
+        .onChange(of: session) { value in
+            service.invalidate()
+            Task { await service.loadPreview(session: value) }
+        }
         .onChange(of: allowEditedTimeReset) { _ in service.invalidate() }
+    }
+}
+
+private struct RestoreThumbnailGrid: View {
+    let items: [RestorePreviewItem]
+    let loading: Bool
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("文件夹预览").font(.subheadline.weight(.semibold))
+            if loading {
+                ProgressView("正在读取缩略图…").frame(maxWidth: .infinity, minHeight: 90)
+            } else if items.isEmpty {
+                Text("还没有可预览的照片").font(.subheadline).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 70)
+            } else {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 4), spacing: 5) {
+                    ForEach(items) { item in RestoreThumbnailCell(item: item) }
+                }
+                Text("共 \(items.count.formatted()) 张，按文件夹顺序显示").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct RestoreThumbnailCell: View {
+    let item: RestorePreviewItem
+    @State private var image: UIImage?
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: 8).fill(Color(uiColor: .tertiarySystemGroupedBackground))
+            if let image { Image(uiImage: image).resizable().scaledToFill() }
+            else { Image(systemName: "photo").foregroundStyle(.secondary) }
+            Text(String(format: "%04d", item.ordinal)).font(.caption2.monospacedDigit()).foregroundStyle(.white)
+                .padding(4).background(.black.opacity(0.48), in: Capsule()).padding(4)
+        }
+        .frame(height: 74).clipShape(RoundedRectangle(cornerRadius: 8))
+        .task(id: item.url) { image = await Self.thumbnail(at: item.url) }
+        .accessibilityLabel("第 \(item.ordinal) 张，\(item.filename)")
+    }
+    private static func thumbnail(at url: URL) async -> UIImage? {
+        await Task.detached(priority: .utility) {
+            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+                  let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                    kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceCreateThumbnailWithTransform: true,
+                    kCGImageSourceThumbnailMaxPixelSize: 240
+                  ] as CFDictionary) else { return nil }
+            return UIImage(cgImage: image)
+        }.value
     }
 }

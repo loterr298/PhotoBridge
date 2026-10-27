@@ -246,9 +246,10 @@ struct PhotoCountView: View {
             Text(title).font(.headline)
             if progress.total > 0 {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(progress.countText).font(.title3.weight(.semibold))
+                    Text(progress.countText).font(.title3.weight(.semibold)).frame(width: 150, alignment: .leading)
                     Spacer()
                     Text(progress.percentText).font(.title2.bold()).foregroundStyle(Color.bridgeBlue)
+                        .frame(width: 56, alignment: .trailing)
                 }.monospacedDigit()
                 ProgressView(value: progress.fraction).tint(.bridgeBlue)
             } else {

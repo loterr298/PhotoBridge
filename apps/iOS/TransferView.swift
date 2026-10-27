@@ -145,9 +145,9 @@ struct TransferSessionCard: View {
                 if let albumName = summary.albumName, !albumName.isEmpty { Text(albumName).font(.headline) }
                 if summary.totalBytes > 0 {
                     ProgressView(value: summary.fraction).tint(.bridgeBlue)
-                    HStack { Text("\(summary.completed)/\(summary.total) 项"); Spacer(); Text("\(ByteCountFormatter.string(fromByteCount: summary.bytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file))") }
+                    HStack { Text("\(summary.completed)/\(summary.total) 项").frame(width: 74, alignment: .leading); Spacer(); Text("\(ByteCountFormatter.string(fromByteCount: summary.bytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file))") }
                         .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                } else { Text("已保存 \(summary.completed) 项").font(.caption).foregroundStyle(.secondary) }
+                } else { Text("已保存 \(summary.completed) 项").font(.caption.monospacedDigit()).frame(width: 110, alignment: .leading).foregroundStyle(.secondary) }
                 if let error = summary.error, !error.isEmpty { Text(error).font(.caption).foregroundStyle(.red).lineLimit(2) }
             }
         }
