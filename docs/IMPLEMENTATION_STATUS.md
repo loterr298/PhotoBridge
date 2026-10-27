@@ -998,3 +998,12 @@ Final cloud **#121** ([40367597895](https://github.com/loterr298/PhotoBridge/act
 Final artifact SHA256`4f342d375b09805abafa475737b367182759d622ea9041ae1249295a4de09c39`; ZIP CRC/all inner SHA256SUMS PASS. IPA version/build/source match, SHA256`b880f094c63b1a25a1cd27f9c571a464f31bc3448557a475fc4728683c99f3a1`; Intel ZIP`ab0d1c2d36f3a3f7ac58b2ee93dc01180b49a85130afb37779f2d127cf31d668`. Packages build/PhotoBridge-0.3.18-LiveConnection/; logs build/cloud-121/build/logs/.
 
 Automatically updated /Applications/PhotoBridgeMac.app from final cloud121; strict signature and13 files (executable/plist/11 Python helpers) byte-match. Prior0.3.17 app preserved at build/installed-backups/PhotoBridgeMac-before-0.3.18.app. Actual About confirms0.3.18(22), main window automatically waits with no connection button. No iPhone currently detected; no new physical USB/cable-pull/concurrent transfer/sleep-wake acceptance claimed. iPhone unsigned IPA has not been personally signed/installed. Original media untouched; Photos writes still require explicit user action.
+
+
+### M4.31 Custom export folder names (0.3.19/build23, 2026-10-28)
+
+User request: replace random-looking export folder suffixes with a customizable folder name. Added a Mac text field below album selection; it defaults to the selected album name and is sanitized for path separators/control characters, bounded to80 characters, and safe for empty/dot labels. New exports use exactly this readable folder component with no request ID suffix. Existing directories are never overwritten; the operation stops with a clear message. Continuation defaults to the prior folder name plus “-继续” when no custom label is supplied, preserving manifest/request identity separately. CoreChecks covers Chinese names, separators, blank/dot fallback and length bound.
+
+Current local status: CoreChecks custom-name checks and PhotoBridgeMac debug compile PASS (build/folder-name-green.log, build/folder-name-mac-build.log). Full delivery gate and cloud release for 0.3.19 are pending.
+
+Follow-up correction: review caught continuation accidentally reusing the editable default label. Fixed so every continuation derives `previous.lastPathComponent + "-继续"`, checks destination collision for every request, and leaves the previous folder untouched. CoreChecks and full delivery gate rerun PASS (`build/folder-name-green-2.log`, `build/folder-name-delivery-2.log`).
