@@ -220,3 +220,4 @@ try runCommandChecks()
 
 try runControlInboxChecks()
 try runConnectionChecks()
+try runExportFolderNameChecks()
