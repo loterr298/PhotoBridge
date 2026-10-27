@@ -1007,3 +1007,6 @@ User request: replace random-looking export folder suffixes with a customizable 
 Current local status: CoreChecks custom-name checks and PhotoBridgeMac debug compile PASS (build/folder-name-green.log, build/folder-name-mac-build.log). Full delivery gate and cloud release for 0.3.19 are pending.
 
 Follow-up correction: review caught continuation accidentally reusing the editable default label. Fixed so every continuation derives `previous.lastPathComponent + "-继续"`, checks destination collision for every request, and leaves the previous folder untouched. CoreChecks and full delivery gate rerun PASS (`build/folder-name-green-2.log`, `build/folder-name-delivery-2.log`).
+
+
+Cloud #122 (40537308344) did not start a runner: GitHub reported failed account payment/spending limit. No cloud artifact was used. Local Intel package 0.3.19/build23 was rebuilt, strict-signed, installed at `/Applications/PhotoBridgeMac.app`, and its previous app was preserved at `build/installed-backups/PhotoBridgeMac-before-0.3.19.app`. Package: `build/PhotoBridge-0.3.19-CustomFolder/PhotoBridgeMac-0.3.19-Intel.zip`, SHA256 `6fe5e19efeb6ddc7f9e4676f8b825e2673bcb23015e1feafe08ddc91985b7245`.
