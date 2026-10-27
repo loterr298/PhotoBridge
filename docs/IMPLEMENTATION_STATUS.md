@@ -1010,3 +1010,5 @@ Follow-up correction: review caught continuation accidentally reusing the editab
 
 
 Cloud #122 (40537308344) did not start a runner: GitHub reported failed account payment/spending limit. No cloud artifact was used. Local Intel package 0.3.19/build23 was rebuilt, strict-signed, installed at `/Applications/PhotoBridgeMac.app`, and its previous app was preserved at `build/installed-backups/PhotoBridgeMac-before-0.3.19.app`. Package: `build/PhotoBridge-0.3.19-CustomFolder/PhotoBridgeMac-0.3.19-Intel.zip`, SHA256 `6fe5e19efeb6ddc7f9e4676f8b825e2673bcb23015e1feafe08ddc91985b7245`.
+
+Final naming edge fix: continuation labels now reserve space for `-继续` before the 80-character limit, so even a maximum-length previous name produces a distinct bounded sibling. RED/GREEN evidence: `build/folder-name-max-red.log` then `build/folder-name-max-green.log`; final full gate `build/folder-name-final-delivery.log` PASS. Local Mac package was rebuilt and reinstalled; current SHA256 is `5b49917c70aae4d471f440542cf200296e20c41e118bad811e2e8e86a61eda7a`.
