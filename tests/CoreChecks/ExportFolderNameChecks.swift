@@ -9,4 +9,7 @@ func runExportFolderNameChecks() throws {
     let longName = String(repeating: "照片", count: 100)
     try require(ExportFolderName.sanitize(longName).count <= 80, "folder name has a bounded length")
     try require(ExportFolderName.continuationName(for: "家庭照片") == "家庭照片-继续", "resume uses a new readable folder")
+    let maximum = String(repeating: "照", count: 80)
+    try require(ExportFolderName.continuationName(for: maximum) != ExportFolderName.sanitize(maximum), "maximum-length resume name stays distinct")
+    try require(ExportFolderName.continuationName(for: maximum).count <= 80, "maximum-length continuation stays bounded")
 }
