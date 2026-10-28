@@ -26,6 +26,7 @@ def snapshot(*, status: str, started_monotonic: float, now_monotonic: float,
         'bytesPerSecond': speed,
         'etaSeconds': eta,
         'currentResource': current_resource,
+        'elapsedSeconds': elapsed,
     }
 
     if assets_verified is not None and total_assets is not None:
@@ -59,7 +60,8 @@ class ProgressRelay:
             done, total = state.get('scannedAssets', 0), state.get('scanTotalAssets', 0)
         value = dict(kind='PhotoBridgeTransferDisplay', operationID=self.operation_id,
                      direction=self.direction, phase=phase, completed=done, total=total,
-                     sessionID=state.get('remote', '').split('/')[-1], updatedAt=time.time())
+                     sessionID=state.get('remote', '').split('/')[-1], updatedAt=time.time(),
+                     elapsedSeconds=state.get('elapsedSeconds', state.get('seconds')))
         try:
             if not self.prepared:
                 self.client.mkdir('Control')

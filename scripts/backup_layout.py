@@ -41,18 +41,19 @@ def primary_resource(asset):
 def visible_name(asset):
     resource = primary_resource(asset)
     original = PurePosixPath(resource['originalFilename']).name
-    ext = PurePosixPath(original).suffix[1:]
-    ext = ext if re.fullmatch(r'[A-Za-z0-9]{1,10}',ext) else 'bin'
-    stem = original[:-(len(ext)+1)] if original.endswith('.'+ext) else original
-    stem = ''.join('-' if c in '/\\:' or ord(c)<32 else c for c in stem).strip(' .') or '照片'
-    while len(stem.encode('utf-8')) > 160: stem = stem[:-1]
-    return f'{asset["ordinal"]:06d}_{stem}.{ext}'
+    safe = ''.join('-' if c in '/\\:' or ord(c) < 32 else c for c in original).strip(' .')
+    return safe or '照片'
 
 def publish_photo(root, asset):
     if not is_flat(root): return
     source = local_path(root,primary_resource(asset)['storedRelativePath'])
     if not stat.S_ISREG(source.lstat().st_mode): raise ValueError('Photo must be a regular verified file')
     destination = Path(root)/visible_name(asset)
+    if destination.exists() or destination.is_symlink():
+        stem, suffix = destination.stem, destination.suffix
+        index = 2
+        while (Path(root) / f'{stem} ({index}){suffix}').exists(): index += 1
+        destination = Path(root) / f'{stem} ({index}){suffix}'
     os.link(source,destination,follow_symlinks=False)  # Exclusive; no extra media bytes or re-encoding.
     if not stat.S_ISREG(destination.lstat().st_mode): raise ValueError('Invalid visible photo link')
 
