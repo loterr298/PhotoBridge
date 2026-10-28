@@ -145,10 +145,10 @@ struct OriginalExportView: View {
     private var progressBlock: some View {
         VStack(spacing: 12) {
             if exporter.scanning {
-                BridgeCard { PhotoCountView(title: "正在读取相册", progress: PhotoProgress(completed: exporter.scannedAssets, total: exporter.scanTotalAssets)) }
+                BridgeCard { PhotoCountView(title: "正在读取相册", progress: PhotoProgress(completed: exporter.scannedAssets, total: exporter.scanTotalAssets), elapsedSeconds: exporter.elapsedSeconds) }
             } else if exporter.busy && exporter.totalAssets > 0 {
                 VStack(alignment: .leading, spacing: 12) {
-                    PhotoCountView(title: exporter.state == "FINALIZING" ? "正在完成最后检查" : "正在准备照片", progress: PhotoProgress(completed: exporter.assetsCompleted, total: exporter.totalAssets))
+                    PhotoCountView(title: exporter.state == "FINALIZING" ? "正在完成最后检查" : "正在准备照片", progress: PhotoProgress(completed: exporter.assetsCompleted, total: exporter.totalAssets), elapsedSeconds: exporter.elapsedSeconds)
                     Button("暂停备份") { exporter.requestStop() }
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.bridgeBlue)
@@ -157,7 +157,7 @@ struct OriginalExportView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             } else if isFinished {
-                statusCard(icon: "checkmark.circle.fill", title: "照片已准备好", detail: "回到 Mac，选择保存文件夹即可完成备份", showsSpinner: false)
+                statusCard(icon: "checkmark.circle.fill", title: "照片已准备好", detail: "回到 Mac，选择保存文件夹即可完成备份\n用时 \(elapsedText(exporter.elapsedSeconds))", showsSpinner: false)
             } else if hasStarted {
                 failureCard
             }
@@ -236,5 +236,10 @@ struct OriginalExportView: View {
            let available = attributes[.systemFreeSize] as? NSNumber {
             freeSpace = ByteCountFormatter.string(fromByteCount: available.int64Value, countStyle: .file)
         }
+    }
+
+    private func elapsedText(_ value: Double) -> String {
+        let seconds = max(0, Int(value.rounded()))
+        return seconds < 60 ? "\(seconds) 秒" : "\(seconds / 60) 分 \(seconds % 60) 秒"
     }
 }

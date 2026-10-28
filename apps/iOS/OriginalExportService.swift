@@ -61,13 +61,17 @@ private final class StreamingManifestWriter {
     @Published var reusedResources = 0
     @Published var photoKitResourcesRead = 0
     @Published var sessionName: String?
+    @Published var elapsedSeconds: Double = 0
     @Published var candidates: [StagingCandidate] = []
     private var stopRequested = false
     private var cancellation = OperationCancellation()
+    private var operationStartedAt: Date?
+    private var elapsedTask: Task<Void, Never>?
     private var exports: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("Exports")
     }
     func requestStop() { stopRequested = true; cancellation.cancel() }
+    deinit { elapsedTask?.cancel() }
     private nonisolated static func source(_ asset: PHAsset, resources: [PHAssetResource]) -> StagingAssetSource {
         StagingAssetSource(identifier: asset.localIdentifier, modificationDate: asset.modificationDate,
             creationDate: asset.creationDate, pixelWidth: asset.pixelWidth, pixelHeight: asset.pixelHeight,
@@ -146,11 +150,24 @@ private final class StreamingManifestWriter {
     func start(collection: PHAssetCollection, allowNetwork: Bool, resumeSession: String? = nil, stopAfterResources: Int? = nil) async {
         guard !busy else { return }
         busy = true; scanning = true; state = "SCANNING"; scannedAssets = 0; scanTotalAssets = 0; stopRequested = false; resourcesCompleted = 0; totalResources = 0; bytesCompleted = 0
+        operationStartedAt = Date(); elapsedSeconds = 0
+        elapsedTask?.cancel()
+        elapsedTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                if let started = self.operationStartedAt { self.elapsedSeconds = max(0, Date().timeIntervalSince(started)) }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
         let cancellation = OperationCancellation(); self.cancellation = cancellation
         assetsCompleted = 0; totalAssets = 0
         reusedResources = 0; photoKitResourcesRead = 0; sessionName = nil
         message = "正在读取相册…"
-        defer { scanning = false; busy = false }
+        defer {
+            if let started = operationStartedAt { elapsedSeconds = max(0, Date().timeIntervalSince(started)) }
+            elapsedTask?.cancel(); elapsedTask = nil; operationStartedAt = nil
+            scanning = false; busy = false
+        }
         var directory: URL?; var previous: URL?; var previousDigest: String?
         let build = Bundle.main.object(forInfoDictionaryKey: "PhotoBridgeBuildCommit") as? String ?? "local-unversioned"
         func journal(_ state: String, error: String? = nil) throws {
@@ -159,7 +176,8 @@ private final class StreamingManifestWriter {
                 "bytesCompleted": bytesCompleted, "reusedVerifiedResources": reusedResources,
                 "photoKitResourcesRead": photoKitResourcesRead, "partialResourceBytesReused": 0,
                 "networkAllowed": allowNetwork, "restoration": "NOT_RUN", "originalMediaModified": false,
-                "runningBuild": build, "oldStagingSessionWritten": false]
+                "runningBuild": build, "oldStagingSessionWritten": false,
+                "elapsedSeconds": max(0, operationStartedAt.map { Date().timeIntervalSince($0) } ?? 0)]
             if let resumeSession { value["resumedFromSession"] = resumeSession }
             if let previousDigest { value["previousPlanSHA256"] = previousDigest }
             if let error { value["error"] = error }
