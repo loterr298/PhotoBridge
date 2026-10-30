@@ -1050,3 +1050,8 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 新增回归覆盖：下载提交只哈希一次、上传发布前只复核一次；本轮 Python 测试 105 项通过。真实 50,000 张设备传输和 USB 实测吞吐仍需真机证据，不能由合成测试代替。
 
 本地 0.3.23/build27 Mac 包已覆盖安装到 `/Applications/PhotoBridgeMac.app`，Intel x86_64、版本号和严格签名通过。ZIP：`build/PhotoBridgeMac-Intel.zip`，SHA-256 `68f0c59fb09b7e076db1ed77821546b42871a86bab3ffb2728292ad7e4e48296`；旧安装保留在 `build/installed-backups/PhotoBridgeMac-before-0.3.23-20261028-230859.app`。完整门禁日志：`build/performance-stability-0.3.23.log`。
+## M4.37 云端模拟器启动容错（2026-10-30）
+
+- 公开仓库 0.3.23 的云端门禁、Swift/Python 单元测试和 iOS 真机编译已执行成功。
+- GitHub macOS-15 模拟器用户流程在首次启动应用时出现 Xcode launch timeout；日志明确为模拟器运行环境超时，不能标记 UI 通过。
+- CI 已增加 `simctl bootstatus -b` 与 180 秒 destination timeout；模拟器步骤保留原始日志并允许继续生成 Mac 包，避免环境超时掩盖可交付产物。
