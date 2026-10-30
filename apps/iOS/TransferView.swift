@@ -31,12 +31,13 @@ final class TransferHistoryModel: ObservableObject {
                 summary = TransferSessionSummary(identifier: summary.identifier, status: summary.status,
                     completed: summary.completed, total: resources.count, bytes: summary.bytes,
                     totalBytes: totalBytes, currentResource: summary.currentResource, error: summary.error,
-                    albumName: (manifestSource?["albumName"] as? String) ?? albumName)
+                    albumName: (manifestSource?["albumName"] as? String) ?? albumName,
+                    elapsedSeconds: summary.elapsedSeconds)
             } else if let albumName {
                 summary = TransferSessionSummary(identifier: summary.identifier, status: summary.status,
                     completed: summary.completed, total: summary.total, bytes: summary.bytes,
                     totalBytes: summary.totalBytes, currentResource: summary.currentResource,
-                    error: summary.error, albumName: albumName)
+                    error: summary.error, albumName: albumName, elapsedSeconds: summary.elapsedSeconds)
             }
             return summary
         }.sorted { $0.identifier > $1.identifier }
@@ -148,8 +149,15 @@ struct TransferSessionCard: View {
                     HStack { Text("\(summary.completed)/\(summary.total) 项").frame(width: 74, alignment: .leading); Spacer(); Text("\(ByteCountFormatter.string(fromByteCount: summary.bytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file))") }
                         .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 } else { Text("已保存 \(summary.completed) 项").font(.caption.monospacedDigit()).frame(width: 110, alignment: .leading).foregroundStyle(.secondary) }
+                if let elapsed = summary.elapsedSeconds {
+                    Text("已用 \(elapsedText(elapsed))").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
                 if let error = summary.error, !error.isEmpty { Text(error).font(.caption).foregroundStyle(.red).lineLimit(2) }
             }
         }
+    }
+    private func elapsedText(_ value: Double) -> String {
+        let seconds = max(0, Int(value.rounded()))
+        return seconds < 60 ? "\(seconds) 秒" : "\(seconds / 60) 分 \(seconds % 60) 秒"
     }
 }

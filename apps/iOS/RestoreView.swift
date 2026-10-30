@@ -36,7 +36,7 @@ struct RestoreView: View {
                         }
                         PhoneConnectionStatus(connected: control.connected)
                         if let display = control.macProgress, display.direction == "TO_IPHONE", !service.busy, !finished, (session.isEmpty || display.sessionID == session) {
-                            BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress) }
+                            BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress, elapsedSeconds: display.elapsedSeconds) }
                         }
                         if finished {
                             BridgeCard {
@@ -128,7 +128,8 @@ private struct RestoreThumbnailGrid: View {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 4), spacing: 5) {
                     ForEach(items) { item in RestoreThumbnailCell(item: item) }
                 }
-                Text("共 \(items.count.formatted()) 张，按文件夹顺序显示").font(.caption).foregroundStyle(.secondary)
+                Text(items.count == 2_000 ? "预览前 2,000 张，按文件夹顺序显示" : "共 \(items.count.formatted()) 张，按文件夹顺序显示")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
     }

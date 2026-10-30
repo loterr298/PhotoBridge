@@ -123,7 +123,7 @@ private final class StreamingManifestWriter {
         try cancellation.check()
         if let mismatch { throw ExportError.invalidManifest(mismatch) }
     }
-    private func checkedResources(_ expected: StagingAssetSource) throws -> [PHAssetResource] {
+    private func checkedAsset(_ expected: StagingAssetSource) throws -> (asset: PHAsset, resources: [PHAssetResource]) {
         try checkPermission()
         guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [expected.identifier], options: nil).firstObject else {
             throw ExportError.invalidManifest("来源照片已不可访问")
@@ -132,7 +132,14 @@ private final class StreamingManifestWriter {
         guard Self.source(asset, resources: resources) == expected else {
             throw ExportError.invalidManifest("照片编辑或资源目录已变化，停止以免混合新旧版本")
         }
-        return resources
+        return (asset, resources)
+    }
+
+    private func checkAssetSnapshot(_ expected: StagingAssetSource, asset: PHAsset) throws {
+        let resources = PHAssetResource.assetResources(for: asset)
+        guard Self.source(asset, resources: resources) == expected else {
+            throw ExportError.invalidManifest("照片编辑或资源目录已变化，停止以免混合新旧版本")
+        }
     }
     func refreshCandidates(collection: PHAssetCollection) async {
         guard !busy, FileManager.default.fileExists(atPath: exports.path) else { return }
@@ -260,9 +267,13 @@ private final class StreamingManifestWriter {
             }.value
             for (index, source) in sources.enumerated() {
                 var exported: [ExportResource] = []
+                // Fetch PhotoKit once per logical photo. Re-fetching the same
+                // asset for every resource caused large Live Photo albums to
+                // spend most of their time in repeated Photos queries.
+                let (photoAsset, resources) = try checkedAsset(source)
                 for resourceIndex in source.resources.indices {
                     try checkStopAndPermission()
-                    let resources = try checkedResources(source); let resource = resources[resourceIndex]
+                    let resource = resources[resourceIndex]
                     let relative = ResourcePaths.make(ordinal: index + 1, resourceIndex: resourceIndex + 1, originalFilename: resource.originalFilename)
                     let completed: ExportResource
                     if let cached = reusable[relative], let previous {
@@ -283,7 +294,7 @@ private final class StreamingManifestWriter {
                                 if let error { continuation.resume(throwing: error) } else { continuation.resume() }
                             }
                         }
-                        _ = try checkedResources(source)
+                        try checkAssetSnapshot(source, asset: photoAsset)
                         let receipt = try await Task.detached(priority: .utility) { try ProbeFiles.inspect(part, checkCancellation: cancellation.check) }.value
                         guard receipt.byteCount > 0 else { throw ExportError.invalidManifest("原始资源为空") }
                         try StagingFiles.commit(part: part, destination: destination)
@@ -291,7 +302,7 @@ private final class StreamingManifestWriter {
                             originalFilename: resource.originalFilename, uniformTypeIdentifier: resource.uniformTypeIdentifier,
                             storedRelativePath: relative, sha256: receipt.sha256, byteCount: receipt.byteCount)
                     }
-                    _ = try checkedResources(source)
+                    try checkAssetSnapshot(source, asset: photoAsset)
                     try await Task.detached(priority: .utility) {
                         try StagingResume.record(completed, ordinal: index + 1, plan: plan, digest: digest, in: dir, checkCancellation: cancellation.check)
                     }.value

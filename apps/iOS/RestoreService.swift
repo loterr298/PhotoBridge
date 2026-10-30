@@ -46,6 +46,8 @@ private struct RestoreInboxRequest: Decodable {
     private var manifestData: Data?
     private var requestData: Data?
     private var allowEditTimestampRewrite = false
+    private var previewGeneration = UUID()
+    private var operationStartedAt = Date().timeIntervalSince1970
     private var stopRequested = false
     private var cancellation = OperationCancellation()
     private var inbox: URL {
@@ -82,30 +84,51 @@ private struct RestoreInboxRequest: Decodable {
             sessions = entries.map { $0.0 }; sessionLabels = Dictionary(uniqueKeysWithValues: entries.map { ($0.0, $0.1) })
         } catch { message = "暂时无法读取收到的照片，请重新查找。" }
     }
-    func invalidate() { guard !busy else { return }; verifiedFinished = false; completed = 0; checked = 0; totalAssets = 0; phase = "IDLE"; preflightReportSummary = ""; sharedPreflightReport = false; privatePreflightReport = nil; ready = false; recovering = false; savedTitle = ""; manifest = nil; selected = nil; manifestData = nil; requestData = nil; allowEditTimestampRewrite = false; previewItems = []; loadingPreview = false }
+    func invalidate() { guard !busy else { return }; previewGeneration = UUID(); verifiedFinished = false; completed = 0; checked = 0; totalAssets = 0; phase = "IDLE"; preflightReportSummary = ""; sharedPreflightReport = false; privatePreflightReport = nil; ready = false; recovering = false; savedTitle = ""; manifest = nil; selected = nil; manifestData = nil; requestData = nil; allowEditTimestampRewrite = false; previewItems = []; loadingPreview = false }
     func loadPreview(session: String) async {
         guard UUID(uuidString: session) != nil else { previewItems = []; return }
+        let generation = UUID(); previewGeneration = generation
         loadingPreview = true
         let folder = inbox.appendingPathComponent(session, isDirectory: true)
         let values = await Task.detached(priority: .utility) { Self.previewItems(in: folder) }.value
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, generation == previewGeneration else { return }
         previewItems = values
         loadingPreview = false
     }
     nonisolated private static func previewItems(in folder: URL) -> [RestorePreviewItem] {
-        guard let data = try? Data(contentsOf: folder.appendingPathComponent("album-order.json")),
-              let manifest = try? JSONDecoder().decode(AlbumExportManifest.self, from: data) else { return [] }
-        return manifest.assets.compactMap { asset in
+        let manifestURL = folder.appendingPathComponent("album-order.json")
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: manifestURL.path),
+              attributes[.type] as? FileAttributeType == .typeRegular,
+              let size = attributes[.size] as? NSNumber, size.intValue <= 64 * 1024 * 1024,
+              let data = try? Data(contentsOf: manifestURL) else { return [] }
+        let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
+        guard let manifest = try? decoder.decode(AlbumExportManifest.self, from: data) else { return [] }
+        let limit = 2_000
+        return manifest.assets.prefix(limit).compactMap { asset in
             let resource = asset.resources.first { item in
-                let path = folder.appendingPathComponent(item.storedRelativePath)
+                guard let path = safePreviewURL(item.storedRelativePath, in: folder) else { return false }
                 let ext = path.pathExtension.lowercased()
-                return FileManager.default.fileExists(atPath: path.path) && ["jpg", "jpeg", "heic", "png", "dng", "tif", "tiff"].contains(ext)
-            } ?? asset.resources.first { FileManager.default.fileExists(atPath: folder.appendingPathComponent($0.storedRelativePath).path) }
+                return ["jpg", "jpeg", "heic", "png", "dng", "tif", "tiff"].contains(ext)
+            } ?? asset.resources.first { safePreviewURL($0.storedRelativePath, in: folder) != nil }
             guard let resource else { return nil }
-            let url = folder.appendingPathComponent(resource.storedRelativePath)
+            guard let url = safePreviewURL(resource.storedRelativePath, in: folder) else { return nil }
             return RestorePreviewItem(id: "\(asset.ordinal)-\(resource.resourceIndex)", ordinal: asset.ordinal,
                                       filename: resource.originalFilename, url: url)
         }
+    }
+    nonisolated private static func safePreviewURL(_ relative: String, in folder: URL) -> URL? {
+        let components = relative.split(separator: "/", omittingEmptySubsequences: false)
+        guard !components.isEmpty, components.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." && !$0.contains("\\") && !$0.contains("\0") }) else { return nil }
+        var current = folder
+        let manager = FileManager.default
+        guard (try? manager.attributesOfItem(atPath: folder.path))?[.type] as? FileAttributeType == .typeDirectory else { return nil }
+        for (index, component) in components.enumerated() {
+            current.appendPathComponent(String(component))
+            guard let attributes = try? manager.attributesOfItem(atPath: current.path),
+                  attributes[.type] as? FileAttributeType == (index == components.count - 1 ? .typeRegular : .typeDirectory),
+                  (attributes[.referenceCount] as? NSNumber)?.intValue == 1 else { return nil }
+        }
+        return current
     }
     func requestStop() { stopRequested = true; cancellation.cancel() }
     private func checkPermissionAndStop() throws {
@@ -146,7 +169,7 @@ private struct RestoreInboxRequest: Decodable {
     }
     func preflight(session: String, allowTimestampRewrite: Bool, simulateNoSpace: Bool = false) async {
         guard !busy else { return }
-        invalidate(); busy = true; stopRequested = false; completed = 0; totalAssets = 0; checked = 0; phase = "CHECKING"; verifiedFinished = false
+        invalidate(); busy = true; operationStartedAt = Date().timeIntervalSince1970; stopRequested = false; completed = 0; totalAssets = 0; checked = 0; phase = "CHECKING"; verifiedFinished = false
         let cancellation = OperationCancellation(); self.cancellation = cancellation
         message = "正在读取照片清单…"
         allowEditTimestampRewrite = allowTimestampRewrite; authorizedTimestampDifferences = 0
@@ -399,7 +422,8 @@ private struct RestoreInboxRequest: Decodable {
             if let error { log["error"] = error }
             let frozen = log; let run = runDirectory
             let display = TransferDisplay(operationID: operationID, direction: "IMPORT", phase: status,
-                completed: completed, total: totalAssets, sessionID: directory.lastPathComponent)
+                completed: completed, total: totalAssets, sessionID: directory.lastPathComponent,
+                elapsedSeconds: max(0, Date().timeIntervalSince1970 - operationStartedAt))
             let control = inbox.deletingLastPathComponent().appendingPathComponent("Control")
             try await Task.detached(priority: .utility) {
                 try autoreleasepool {

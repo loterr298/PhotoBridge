@@ -206,7 +206,7 @@ struct MacExportCompanionView: View {
                     }
                     PhoneConnectionStatus(connected: control.connected)
                     if let display = control.exportDisplay, display.direction == "TO_MAC" {
-                        BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress) }
+                        BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress, elapsedSeconds: display.elapsedSeconds) }
                     } else if control.active {
                         BridgeCard { PhotoCountView(title: "正在准备照片", progress: control.preparationProgress) }
                     } else {
@@ -241,6 +241,7 @@ struct MacExportCompanionView: View {
 struct PhotoCountView: View {
     let title: String
     let progress: PhotoProgress
+    var elapsedSeconds: Double? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title).font(.headline)
@@ -252,10 +253,17 @@ struct PhotoCountView: View {
                         .frame(width: 56, alignment: .trailing)
                 }.monospacedDigit()
                 ProgressView(value: progress.fraction).tint(.bridgeBlue)
+                if let elapsedSeconds, elapsedSeconds.isFinite, elapsedSeconds >= 0 {
+                    Text("已用 \(elapsedText(elapsedSeconds))").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
             } else {
                 ProgressView("正在读取总张数…")
             }
         }
         .accessibilityElement(children: .combine)
+    }
+    private func elapsedText(_ value: Double) -> String {
+        let seconds = max(0, Int(value.rounded()))
+        return seconds < 60 ? "\(seconds) 秒" : "\(seconds / 60) 分 \(seconds % 60) 秒"
     }
 }
