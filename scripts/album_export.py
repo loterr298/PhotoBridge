@@ -163,9 +163,15 @@ def copy_resource(client, remote, local, resource, logical):
     os.link(part, destination)
     os.utime(destination, ns=(before.st_atime_ns, int(logical.timestamp() * 1_000_000_000)), follow_symlinks=False)
     creation_status = set_copy_creation_time(destination, int(logical.timestamp() * 1_000_000_000))
-    after = destination.stat(); verified = inspect(destination)
-    if verified['sha256'] != resource['sha256'] or abs(after.st_mtime - logical.timestamp()) > .001:
-        raise ValueError('Post-attribute byte/time verification failed')
+    after = destination.stat()
+    # `destination` is an exclusive hard link to the already hashed `.part`.
+    # Re-hashing the same bytes here doubled disk I/O for every resource and
+    # made large exports appear stalled. Verify inode/size instead; the hash
+    # was completed before the link and no external process can reach this
+    # newly-created 0700 backup directory during the operation.
+    if (after.st_ino != before.st_ino or after.st_size != actual['byteCount']
+            or after.st_nlink < 2 or abs(after.st_mtime - logical.timestamp()) > .001):
+        raise ValueError('Post-attribute file/time verification failed')
     change = {'path': resource['storedRelativePath'],
         'oldMtimeNs': before.st_mtime_ns, 'newMtimeNs': after.st_mtime_ns,
         'oldBirthtime': getattr(before, 'st_birthtime', None),

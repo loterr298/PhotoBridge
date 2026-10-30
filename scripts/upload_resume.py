@@ -156,8 +156,10 @@ def upload(client, local, previous_journal=None, cancel_file=None, journal_id=No
                     if data is None:
                         state['resumedPartialBytes'] += offset; state['usbResourceBytesWritten'] += size - offset
                     check(relative + '.part', None, size, sha)
-                    if data is not None:
-                        # Revalidate the local backup before publishing metadata, especially the ready request.
+                    if relative == 'restore-request.json':
+                        # This is the publication boundary. Revalidate the
+                        # source once here, after all media readbacks and
+                        # before the phone can observe a ready request.
                         revalidate_backup(local, raw, resources, digest, total, cancel_file=cancel_file)
                     unpublished(); client.commit_new(remote + '/' + relative + '.part', remote + '/' + relative)
                 if data is None:
