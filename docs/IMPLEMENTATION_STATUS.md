@@ -1022,3 +1022,31 @@ Progress surfaces now use fixed-width monospaced count/percentage regions and Ma
 Review fixes before release: iPhone preview reads only regular manifests up to64 MiB, validates every preview path as a relative single-link directory/file chain, limits UI preview metadata to2,000 assets for large folders, and uses a generation token so an older session read cannot overwrite a newer selection. The UI labels the cap honestly. Mac preview task remains cancellable. Rechecked Mac build, CoreChecks and iOS syntax parse after these fixes.
 
 Cloud #123 (40549753131) was blocked before runner start by the same GitHub payment/spending-limit error as #122; no iPhone artifact was produced or used. Local 0.3.20 gate remains PASS after preview generation guard and bounded safe-path fixes. Mac package/install should be regenerated from the final local gate output before delivery.
+
+### M4.33 Timing, original names and ordered flat output (0.3.21/build25, 2026-10-28)
+
+User request: show elapsed/remaining time for save and upload tasks, use equal-width numbers and clear completion messages; keep the iPhone-visible original filenames; keep export speed stable; preserve exact iPhone album order. Progress records now carry finite `elapsedSeconds`; Mac and iPhone task cards/history show monospaced elapsed time alongside speed/ETA and terminal messages. Flat Mac aliases use the sanitized iPhone `originalFilename` basename directly; only an unavoidable duplicate gets a deterministic ` (2)` suffix, while the authoritative manifest keeps the exact source name and ordinal. Export validation continues to require contiguous ordinals and every resource group; no filename is used to infer order. Tests cover original names, duplicate collision preservation, elapsed progress and the existing order/hash checks.
+
+Final gate correction: the synthetic 1,000-asset flat export check now expects original basenames plus deterministic duplicate suffixes, rather than the old ordinal-prefixed aliases. The canonical manifest/order assertion remains unchanged. Full gate `build/timing-name-delivery-2.log` PASS: 103 Python tests, Core/Memory/Staging/Recovery/Scale checks, synthetic transfer, iOS syntax parse and Intel x86_64 package.
+
+### M4.34 iPhone 备份任务用时（0.3.21 本地增量修复，2026-10-28）
+
+补齐用户端保存页的任务反馈：iPhone 在读取相册、准备资源、最后检查和完成状态都显示同一任务的已用时间；`export-progress.json` 同步写入有限的 `elapsedSeconds`，Mac 端可继续显示用时、速度和预计剩余时间。完成卡片明确显示“照片已准备好”和总用时。计时不会参与文件验收，不改变原图、EXIF、顺序或恢复逻辑。
+
+本地增量验证：`swiftc -parse apps/iOS/*.swift` 通过；此前完整门禁 `build/timing-name-delivery-2.log` 仍为 103 项 Python 测试、核心检查、合成 1,000 项传输、iOS 语法解析和 Intel x86_64 打包全部 PASS。真实 iPhone 前台/锁屏行为和 GitHub 云编译仍按证据边界记录，未虚报通过。
+
+### M4.35 版本号（0.3.22/build26，2026-10-28）
+
+将本地增量修复提升为 0.3.22/build26，iOS 和 macOS 的显示版本、项目配置及 Actions 产物名称保持一致。云端是否能启动仍取决于 GitHub 账户的 Actions 计费限制。
+
+本地 0.3.22/build26 Mac 包已重新打包并覆盖安装到 `/Applications/PhotoBridgeMac.app`，Intel x86_64 与严格签名检查通过。ZIP：`build/PhotoBridgeMac-Intel.zip`，SHA-256 `1ba1f26ef8b8498cfe1e8b00e1b2c8800818e0812f97dd4df4615ed8184e8934`；旧安装保留在 `build/installed-backups/PhotoBridgeMac-before-0.3.22-20261028-222741.app`。这只是本地 Mac 包，不能替代 GitHub 云端 iOS IPA。
+
+最终 0.3.22 门禁：`build/final-0.3.22-delivery.log` 显示 103 项 Python 测试、Core/Memory/Staging/Recovery/Scale、1,000 项合成传输、iOS 语法解析和 Intel macOS 打包全部 PASS；真实 USB、真实 50,000 张照片和系统 Photos 人工验收仍保持 NOT_RUN，不以合成测试代替。
+
+### M4.36 大相册传输性能与稳定性（0.3.23/build27，2026-10-28）
+
+本轮只改有明确证据的重复工作：iPhone 保存每个逻辑照片只建立一次 PhotoKit 资源快照，资源写入后仍逐项复核当前资源目录；Mac 下载在 `.part` 已完成 SHA-256 后通过硬链接 inode/大小/时间校验完成提交，避免同一资源重复读取；Mac → iPhone 续传不再每个资源重新哈希整个备份，而是在发布 `restore-request.json` 前做一次完整源复核，仍拒绝源清单或资源变化。这样保持顺序、SHA-256、断点续传和原图只读边界，同时消除大批量传输的平方级重复校验。
+
+新增回归覆盖：下载提交只哈希一次、上传发布前只复核一次；本轮 Python 测试 105 项通过。真实 50,000 张设备传输和 USB 实测吞吐仍需真机证据，不能由合成测试代替。
+
+本地 0.3.23/build27 Mac 包已覆盖安装到 `/Applications/PhotoBridgeMac.app`，Intel x86_64、版本号和严格签名通过。ZIP：`build/PhotoBridgeMac-Intel.zip`，SHA-256 `68f0c59fb09b7e076db1ed77821546b42871a86bab3ffb2728292ad7e4e48296`；旧安装保留在 `build/installed-backups/PhotoBridgeMac-before-0.3.23-20261028-230859.app`。完整门禁日志：`build/performance-stability-0.3.23.log`。
