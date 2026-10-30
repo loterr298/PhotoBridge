@@ -15,6 +15,7 @@ import time
 import uuid
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from album_export import download_live_album, validate_manifest
+from backup_layout import visible_name
 from album_restore import validated_backup
 from upload_resume import upload
 
@@ -116,7 +117,14 @@ def main():
         download_seconds=time.monotonic()-started
         raw,observed,resources,digest,total=validated_backup(local)
         visible=sorted(p.name for p in local.iterdir() if not p.name.startswith('.'))
-        assert len(visible)==args.assets and all(name.startswith(f'{i:06d}_') for i,name in enumerate(visible,1))
+        expected_names=[]; used={}
+        for asset in manifest['assets']:
+            base=visible_name(asset); used[base]=used.get(base,0)+1
+            if used[base] == 1: expected_names.append(base)
+            else:
+                stem,suffix=Path(base).stem,Path(base).suffix
+                expected_names.append(f'{stem} ({used[base]}){suffix}')
+        assert len(visible)==args.assets and set(visible)==set(expected_names)
         assert not any(p.is_dir() for p in local.iterdir())
         assert [a['sourceAssetLocalIdentifier'] for a in observed['assets']]==[m['localIdentifier'] for m in observed['sourceOrder']['members']]
         inbox=Inbox();inbox._children={}
@@ -138,7 +146,7 @@ def main():
         assert not any(p.is_dir() for p in local.iterdir())
         report=dict(synthetic=True,assets=args.assets,resources=len(resources),bytes=total,manifestBytes=len(raw),
             export='PASS real local flat files; all resource hashes verified',upload='PASS synthetic AFC readback; all hashes and canonical manifest bytes equal',
-            order='PASS all source identifiers/ordinals and visible filename sequence',childDirectories=0,
+            order='PASS canonical manifest source identifiers/ordinals; visible names preserve original basenames with deterministic duplicate suffixes',childDirectories=0,
             injectedExportServiceInterruptions=source.reconnects,injectedUploadInterruption='PASS partial offset 17; previous journal unchanged; request unpublished until verified',
             downloadSeconds=download_seconds,uploadIncludingResumeSeconds=time.monotonic()-upload_start,statusPolls=source.status_reads,
             peakRSSBytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * (1 if sys.platform=='darwin' else 1024),photosImport='NOT_RUN',realUSBThroughput='NOT_MEASURED')

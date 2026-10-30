@@ -1,4 +1,4 @@
-import copy, hashlib, importlib.util, json, pathlib, sys, tempfile, unittest
+import copy, datetime, hashlib, importlib.util, json, pathlib, sys, tempfile, unittest
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'scripts'))
 
 class AlbumExportChecks(unittest.TestCase):
@@ -106,6 +106,21 @@ class AlbumExportChecks(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 self.module.download_album(self.client(m, files), 'Exports/' + m['sessionID'], target)
             for path, data in files.items(): self.assertEqual((target / path).read_bytes(), data)
+
+    def test_post_link_verification_reuses_prelink_hash(self):
+        """The final hard-link check must not hash each resource a second time."""
+        m, files = self.fixture(); resource = m['assets'][0]['resources'][0]
+        with tempfile.TemporaryDirectory() as d:
+            target = pathlib.Path(d) / 'new'; target.mkdir()
+            original_inspect = self.module.inspect; calls = []
+            self.module.inspect = lambda path: (calls.append(path), original_inspect(path))[1]
+            try:
+                self.module.copy_resource(self.client(m, files), 'Exports/' + m['sessionID'], target,
+                    resource, datetime.datetime.fromisoformat('2026-10-18T12:00:00+00:00'))
+            finally:
+                self.module.inspect = original_inspect
+            self.assertEqual(len(calls), 1)
+            self.assertEqual((target / resource['storedRelativePath']).read_bytes(), files[resource['storedRelativePath']])
 
     def test_corrupt_download_never_commits_and_keeps_failure_journal(self):
         m, files = self.fixture()

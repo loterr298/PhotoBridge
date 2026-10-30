@@ -30,6 +30,7 @@ class TransferProgressChecks(unittest.TestCase):
         self.assertAlmostEqual(value['bytesPerSecond'], 2 * 1024 * 1024)
         self.assertAlmostEqual(value['etaSeconds'], 10.0)
         self.assertEqual(value['currentResource'], 'Resources/000003/0001.HEIC')
+        self.assertEqual(value['elapsedSeconds'], 10.0)
 
     def test_photo_counts_and_percentage_wait_for_final_verification(self):
         from transfer_progress import snapshot

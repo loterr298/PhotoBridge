@@ -83,6 +83,18 @@ class BatchScalingChecks(unittest.TestCase):
             with mock.patch.object(album_restore.json, 'loads', side_effect=loads): upload_resume.upload(client, source)
             self.assertEqual(len(parses), 1, 'Publication must rehash resources without rebuilding the complete metadata graph')
 
+    def test_owned_upload_revalidates_source_once_at_publication_boundary(self):
+        helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
+        with tempfile.TemporaryDirectory() as d:
+            source, _, _, _, client, _, _ = helper.setup_files(Path(d)); client.interrupted = False
+            calls = []
+            real = upload_resume.revalidate_backup
+            def revalidate(*args, **kwargs):
+                calls.append(1); return real(*args, **kwargs)
+            with mock.patch.object(upload_resume, 'revalidate_backup', side_effect=revalidate):
+                upload_resume.upload(client, source)
+            self.assertEqual(len(calls), 1, 'Large uploads must revalidate once before publishing the ready request')
+
     def test_local_resource_change_after_usb_commit_still_blocks_publication(self):
         helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
         with tempfile.TemporaryDirectory() as d:

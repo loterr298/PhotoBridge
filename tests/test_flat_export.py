@@ -42,10 +42,10 @@ class FlatExportChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root=pathlib.Path(d)/'album';self.export(root,m,files)
             visible=sorted(p.name for p in root.iterdir() if not p.name.startswith('.'))
-            self.assertEqual(visible,['000001_same.JPG','000002_same.HEIC'])
+            self.assertEqual(visible,['same.HEIC','same.JPG'])
             self.assertFalse(any(p.is_dir() for p in root.iterdir()))
-            self.assertEqual((root/visible[0]).read_bytes(),b'visible-edited')
-            self.assertEqual((root/visible[1]).stat().st_mtime-(root/visible[0]).stat().st_mtime,5)
+            self.assertEqual((root/'same.JPG').read_bytes(),b'visible-edited')
+            self.assertEqual((root/'same.HEIC').stat().st_mtime-(root/'same.JPG').stat().st_mtime,5)
             raw,observed,resources,digest,total=album_restore.validated_backup(root)
             self.assertEqual(observed,m)
             for name,data in files.items():self.assertEqual(album_restore.regular_path(root,name).read_bytes(),data)
@@ -70,7 +70,7 @@ class FlatExportChecks(unittest.TestCase):
             organized=pathlib.Path(d)/'organized'
             album_export.organize_local_album(old,organized)
             self.assertFalse(any(p.is_dir() for p in organized.iterdir()))
-            self.assertEqual([p.name for p in organized.iterdir() if not p.name.startswith('.')],['000001_same.JPG'])
+            self.assertEqual([p.name for p in organized.iterdir() if not p.name.startswith('.')],['same.JPG'])
             progress=json.loads(album_restore.regular_path(organized,'transfer-progress.json').read_text())
             self.assertEqual(progress['assetsVerified'],1);self.assertEqual(progress['status'],'STOPPED');self.assertNotIn('error',progress)
             self.assertFalse((organized/'.photobridge-transfer-manifest.json').exists())
@@ -107,11 +107,12 @@ class FlatExportChecks(unittest.TestCase):
         m,files=fixture()
         with tempfile.TemporaryDirectory() as d:
             root=pathlib.Path(d)/'album';self.export(root,m,files)
-            existing=root/'000001_same.JPG';before=existing.read_bytes()
-            with self.assertRaises(FileExistsError):backup_layout.publish_photo(root,m['assets'][0])
+            existing=root/'same.JPG';before=existing.read_bytes()
+            backup_layout.publish_photo(root,m['assets'][0])
             self.assertEqual(existing.read_bytes(),before)
+            self.assertTrue((root/'same (2).JPG').is_file())
 
     def test_flat_names_do_not_allow_original_filename_paths_to_escape(self):
         import backup_layout
         m,files=fixture();m['assets'][0]['resources'][1]['originalFilename']='../../evil:photo.JPG'
-        self.assertEqual(backup_layout.visible_name(m['assets'][0]),'000001_evil-photo.JPG')
+        self.assertEqual(backup_layout.visible_name(m['assets'][0]),'evil-photo.JPG')
