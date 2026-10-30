@@ -12,12 +12,13 @@ public struct TransferSessionSummary: Equatable, Identifiable {
     public let currentResource: String?
     public let error: String?
     public let albumName: String?
+    public let elapsedSeconds: Double?
 
     public init(identifier: String, status: String, completed: Int, total: Int,
                 bytes: Int64, totalBytes: Int64, currentResource: String? = nil,
-                error: String? = nil, albumName: String? = nil) {
+                error: String? = nil, albumName: String? = nil, elapsedSeconds: Double? = nil) {
         self.identifier = identifier; self.status = status; self.completed = completed; self.total = total
-        self.bytes = bytes; self.totalBytes = totalBytes; self.currentResource = currentResource; self.error = error; self.albumName = albumName
+        self.bytes = bytes; self.totalBytes = totalBytes; self.currentResource = currentResource; self.error = error; self.albumName = albumName; self.elapsedSeconds = elapsedSeconds
     }
 
     public var id: String { identifier }
@@ -38,14 +39,18 @@ public struct TransferSessionSummary: Equatable, Identifiable {
             let totalBytes: Int64?
             let currentResource: String?
             let error: String?
+            let elapsedSeconds: Double?
+            let seconds: Double?
         }
         let raw = try JSONDecoder().decode(Raw.self, from: data)
+        let elapsed = raw.elapsedSeconds ?? raw.seconds
         return TransferSessionSummary(identifier: identifier,
             status: raw.status ?? raw.state ?? "UNKNOWN",
             completed: raw.resourcesCompleted ?? raw.resourcesVerified ?? 0,
             total: raw.totalResources ?? 0,
             bytes: raw.bytesCompleted ?? raw.bytesVerified ?? 0,
             totalBytes: raw.totalBytes ?? 0,
-            currentResource: raw.currentResource, error: raw.error)
+            currentResource: raw.currentResource, error: raw.error,
+            elapsedSeconds: elapsed.flatMap { $0.isFinite && $0 >= 0 ? $0 : nil })
     }
 }

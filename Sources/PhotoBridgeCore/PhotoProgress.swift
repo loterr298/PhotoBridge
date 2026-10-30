@@ -54,9 +54,10 @@ public struct TransferDisplay: Codable, Equatable, Sendable {
     public let total: Int
     public let sessionID: String
     public let updatedAt: Double
-    public init(operationID: String, direction: String, phase: String, completed: Int, total: Int, sessionID: String, updatedAt: Double = Date().timeIntervalSince1970) {
+    public let elapsedSeconds: Double?
+    public init(operationID: String, direction: String, phase: String, completed: Int, total: Int, sessionID: String, updatedAt: Double = Date().timeIntervalSince1970, elapsedSeconds: Double? = nil) {
         self.operationID = operationID; self.direction = direction; self.phase = phase
-        self.completed = completed; self.total = total; self.sessionID = sessionID; self.updatedAt = updatedAt
+        self.completed = completed; self.total = total; self.sessionID = sessionID; self.updatedAt = updatedAt; self.elapsedSeconds = elapsedSeconds
     }
     public var finished: Bool {
         ["COMMITTED", "USB_VERIFIED", "PHOTO_LIBRARY_BYTES_AND_ORDER_VERIFIED", "PHOTO_LIBRARY_NON_TIME_DATA_AND_ORDER_VERIFIED_WITH_AUTHORIZED_EDIT_TIMESTAMPS"].contains(phase)
@@ -87,7 +88,8 @@ public struct TransferDisplay: Codable, Equatable, Sendable {
               value.kind == "PhotoBridgeTransferDisplay", UUID(uuidString: value.operationID) != nil,
               ["TO_MAC", "TO_IPHONE", "IMPORT"].contains(value.direction),
               value.completed >= 0, value.total >= value.completed, value.updatedAt.isFinite,
-              value.phase.count <= 128, value.sessionID.count <= 128 else { return nil }
+              value.phase.count <= 128, value.sessionID.count <= 128,
+              value.elapsedSeconds == nil || (value.elapsedSeconds?.isFinite == true && value.elapsedSeconds! >= 0) else { return nil }
         return value
     }
     public static func read(at url: URL) -> TransferDisplay? {
