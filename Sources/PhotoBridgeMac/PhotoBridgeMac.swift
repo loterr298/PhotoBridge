@@ -53,6 +53,7 @@ final class MacTransferModel: ObservableObject {
     @Published var progressPercentText = "—"
     @Published var speedText = ""
     @Published var etaText = ""
+    @Published var elapsedText = ""
     @Published var currentResource = ""
     @Published var recentBackups: [String] = []
     @Published var backupPreview: [BackupAssetPreview] = []
@@ -585,7 +586,7 @@ final class MacTransferModel: ObservableObject {
         guard !busy else { return }
         busy = true
         importProgressTask?.cancel(); importProgressTask = nil
-        progressCountText = ""; progressPercentText = "—"
+        progressCountText = ""; progressPercentText = "—"; elapsedText = ""
         lastDisplayedProgress = nil
         self.controlFile = controlFile
         if let controlFile { try? FileManager.default.removeItem(at: controlFile) }
@@ -683,6 +684,10 @@ final class MacTransferModel: ObservableObject {
         else { progressText = uploading ? "正在发送到 iPhone" : "正在保存到 Mac" }
         if json["phoneInForeground"] as? Bool == false { progressText = "请回到 iPhone 的 PhotoBridge，继续准备照片" }
         let bytes = ProgressNumber.nonnegativeInt64((json["bytesVerified"] as? NSNumber)?.doubleValue ?? 0) ?? 0
+        if let elapsed = json["elapsedSeconds"] as? NSNumber ?? json["seconds"] as? NSNumber,
+           let safeElapsed = ProgressNumber.nonnegativeInt64(elapsed.doubleValue.rounded()) {
+            elapsedText = "已用 \(formatDuration(Double(safeElapsed)))"
+        }
         if let number = json["bytesPerSecond"] as? NSNumber,
            let speed = ProgressNumber.nonnegativeInt64(number.doubleValue), speed > 0 {
             speedText = "\(formatBytes(speed))/s · \(formatBytes(bytes))"
@@ -717,6 +722,9 @@ final class MacTransferModel: ObservableObject {
                     self.progressCountText = progress.countText
                     self.progressPercentText = progress.percentText
                     self.progressIndeterminate = value.total == 0
+                    if let elapsed = value.elapsedSeconds, elapsed.isFinite, elapsed >= 0 {
+                        self.elapsedText = "已用 \(self.formatDuration(elapsed))"
+                    }
                     self.speedText = ""; self.etaText = ""; self.currentResource = ""
                     if value.finished { return }
                 }
@@ -939,6 +947,7 @@ private struct MacTransferScreen: View {
                 else { ProgressView(value: transfer.progressFraction).tint(.macBridgeBlue) }
                 HStack {
                     Text(transfer.speedText).font(.caption).foregroundStyle(.secondary)
+                    if !transfer.elapsedText.isEmpty { Text(transfer.elapsedText).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
                     Spacer()
                     Text(transfer.etaText).font(.caption).foregroundStyle(.secondary)
                     if transfer.busy { Button("暂停") { transfer.requestCancel() }.buttonStyle(MacSoftButtonStyle()) }
