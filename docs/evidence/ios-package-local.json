@@ -1,0 +1,16 @@
+{
+  "runID": 39080542370,
+  "commit": "775ce274e36893f44957de5fc4f0fc22c64acd5f",
+  "status": "PACKAGE_VALIDATION_PASS",
+  "artifactSHA256": "7215543e7a29deb8d543c5dc34cd2a47fc6e92da211d8c767acd50ef8b48166c",
+  "CFBundleShortVersionString": "0.1.0",
+  "CFBundleVersion": "1",
+  "bundleIdentifier": "com.photobridge.OrderProbe",
+  "architecture": "arm64",
+  "minimumOSVersion": "16.0",
+  "iPhoneSigned": false,
+  "deviceInstalled": false,
+  "ipaSHA256": "c7f7484c5a2eaf310cc1f823406a86e9fef969790c0f8da2790f183e37719f59",
+  "combinedZIP_SHA256": "8a173c579ce6b70d4970083b002570987f429bfd1d79ff58c2767c9474d5af69",
+  "combinedZIPBytes": 229953
+}

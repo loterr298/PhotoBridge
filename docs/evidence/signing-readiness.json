@@ -1,0 +1,12 @@
+{
+  "checkedOn": "2026-10-18",
+  "usbDeviceDetected": false,
+  "validLocalCodeSigningIdentities": 1,
+  "matchingUnexpiredProvisioningProfile": false,
+  "existingProfileExpired": true,
+  "existingProfileBundleMatches": false,
+  "accountTypeProvidedByUser": "free Apple ID",
+  "privateKeyExported": false,
+  "signingAttempted": false,
+  "deviceInstallation": "NOT_RUN"
+}

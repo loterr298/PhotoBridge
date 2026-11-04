@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 import time
 import uuid
-from album_restore import regular_path, validated_backup, revalidate_backup
+from album_restore import regular_path, validated_backup, revalidate_backup, prepare_import_backup
 from album_export import write_json
 from usb_probe import AFC
 from transfer_control import CancellationRequested, check_cancel
@@ -17,7 +17,7 @@ from backup_layout import upload_journals, upload_journal_name
 
 
 def upload(client, local, previous_journal=None, cancel_file=None, journal_id=None, progress=None):
-    local = Path(local)
+    local = prepare_import_backup(Path(local), progress=progress)
     identity = journal_id if journal_id is not None else str(uuid.uuid4()).upper()
     if str(uuid.UUID(identity)).upper() != identity: raise ValueError('Invalid upload journal identity')
     check_cancel(cancel_file)
@@ -46,7 +46,8 @@ def upload(client, local, previous_journal=None, cancel_file=None, journal_id=No
     start = time.monotonic()
     state = dict(totalResources=len(resources), totalBytes=total, state='UPLOADING', remote=remote, owner=owner, resourcesVerified=0, bytesVerified=0,
         reusedVerifiedResources=0, resumedPartialBytes=0, usbResourceBytesWritten=0,
-        usbVerificationBytesRead=0, photosImport='NOT_RUN', previousLocalJournalWritten=False)
+        usbVerificationBytesRead=0, verificationCompleted=0, verificationTotal=0,
+        photosImport='NOT_RUN', previousLocalJournalWritten=False)
     state.update(assetsVerified=0, totalAssets=len(manifest['assets']))
     asset_ends = set()
     end = 0
@@ -111,6 +112,9 @@ def upload(client, local, previous_journal=None, cancel_file=None, journal_id=No
             entries = [(r['storedRelativePath'], r['byteCount'], r['sha256'], None) for r in resources]
             entries += [('album-order.json', len(raw), digest, raw),
                 ('restore-request.json', len(request_raw), hashlib.sha256(request_raw).hexdigest(), request_raw)]
+            verification_total = sum(1 for _, _, _, data in entries if data is not None)
+            state.update(state='VERIFYING', status='VERIFYING', verificationCompleted=0,
+                         verificationTotal=verification_total)
             prepared = []
             for relative, size, sha, data in entries:
                 check_cancel(cancel_file)
@@ -136,6 +140,7 @@ def upload(client, local, previous_journal=None, cancel_file=None, journal_id=No
             if previous_journal is not None:
                 write_json(journal, state, exclusive=True)
                 journal_owned = True
+            report()
             for relative, size, sha, data, complete, partial, offset in prepared:
                 check_cancel(cancel_file)
                 unpublished()
@@ -165,10 +170,14 @@ def upload(client, local, previous_journal=None, cancel_file=None, journal_id=No
                 if data is None:
                     state['resourcesVerified'] += 1; state['bytesVerified'] += size
                     if state['resourcesVerified'] in asset_ends: state['assetsVerified'] += 1
-                state.update(snapshot(status='UPLOADING', started_monotonic=start, now_monotonic=time.monotonic(),
+                if data is not None:
+                    state['verificationCompleted'] += 1
+                transfer_status = 'VERIFYING' if data is not None else 'UPLOADING'
+                state.update(snapshot(status=transfer_status, started_monotonic=start, now_monotonic=time.monotonic(),
                     resources_verified=state['resourcesVerified'], total_resources=len(resources),
                     bytes_verified=state['bytesVerified'], total_bytes=total,
                     current_resource=resource_names.get(relative, '正在核对发送结果')))
+                state['state'] = transfer_status; state['status'] = transfer_status
                 report()
             state.update(state='USB_VERIFIED', status='USB_VERIFIED'); report()
             return dict(state, journal=str(journal))
@@ -186,13 +195,47 @@ def upload(client, local, previous_journal=None, cancel_file=None, journal_id=No
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--local', type=Path, required=True); parser.add_argument('--resume-journal', type=Path)
+    parser.add_argument('--auto-resume', action='store_true', help='Reuse the newest unfinished journal for this folder')
+    parser.add_argument('--progress-file', type=Path, help='Write a UI-only progress copy outside the photo folder')
     parser.add_argument('--cancel-file', type=Path)
     parser.add_argument('--journal-id', help='Uppercase UUID chosen by the Mac for direct progress reads')
     args = parser.parse_args(); client = AFC()
     try:
         client.vend('com.photobridge.OrderProbe')
         relay = ProgressRelay(client, args.journal_id or str(uuid.uuid4()).upper(), 'TO_IPHONE')
-        print(json.dumps(upload(client, args.local, args.resume_journal, args.cancel_file, args.journal_id, progress=relay), indent=2))
+
+        def report(state):
+            relay(state)
+            if args.progress_file:
+                args.progress_file.parent.mkdir(parents=True, exist_ok=True)
+                write_json(args.progress_file, state)
+
+        # Create the UI record before scanning or hashing a plain photo folder.
+        # Ordinary folders have no existing journal, so waiting for upload() to
+        # report would leave the Mac UI showing an indeterminate spinner for a
+        # long time on large folders.
+        report({'status': 'SCANNING', 'state': 'SCANNING', 'scannedAssets': 0,
+                'scanTotalAssets': 0, 'currentResource': None, 'assetsVerified': 0,
+                'totalAssets': 0, 'resourcesVerified': 0, 'totalResources': 0,
+                'bytesVerified': 0, 'totalBytes': 0})
+        staging = prepare_import_backup(args.local, progress=report)
+        journal = args.resume_journal
+        if args.auto_resume and journal is None:
+            directory = upload_journals(staging)
+            candidates = [p for p in directory.glob('*.json') if p.is_file() and not p.is_symlink()]
+            journal = max(candidates, key=lambda p: p.stat().st_mtime) if candidates else None
+        print(json.dumps(upload(client, staging, journal, args.cancel_file, args.journal_id, progress=report), indent=2))
     except CancellationRequested as error:
+        if 'report' in locals():
+            report({'status': 'STOPPED', 'state': 'STOPPED', 'error': str(error),
+                    'assetsVerified': 0, 'totalAssets': 0, 'resourcesVerified': 0,
+                    'totalResources': 0, 'bytesVerified': 0, 'totalBytes': 0})
         print(json.dumps({'state': 'STOPPED', 'error': str(error)})); sys.exit(3)
-    finally: client.close()
+    except Exception as error:
+        if 'report' in locals():
+            report({'status': 'FAILED', 'state': 'FAILED', 'error': str(error),
+                    'assetsVerified': 0, 'totalAssets': 0, 'resourcesVerified': 0,
+                    'totalResources': 0, 'bytesVerified': 0, 'totalBytes': 0})
+        print(json.dumps({'state': 'FAILED', 'error': str(error)})); sys.exit(1)
+    finally:
+        client.close()

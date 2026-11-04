@@ -78,6 +78,19 @@ class UploadContinuationChecks(unittest.TestCase):
             self.assertEqual(result['totalAssets'], 1)
             self.assertEqual(result['percent'], 100)
 
+    def test_final_control_files_report_a_separate_verification_progress(self):
+        with tempfile.TemporaryDirectory() as d:
+            source, phone, m, files, client, writes, offsets = self.setup_files(Path(d))
+            client.interrupted = False
+            reports = []
+            result = self.module.upload(client, source, progress=lambda value: reports.append(dict(value)))
+            self.assertEqual(result['state'], 'USB_VERIFIED')
+            stages = [(value.get('state'), value.get('verificationCompleted'), value.get('verificationTotal'))
+                      for value in reports if value.get('state') == 'VERIFYING']
+            self.assertTrue(stages)
+            self.assertEqual(stages[0][1:], (0, 2))
+            self.assertEqual(stages[-1][1:], (2, 2))
+
     def test_complete_files_are_not_rewritten_and_partial_uses_exact_offset(self):
         with tempfile.TemporaryDirectory() as d:
             source, phone, m, files, c, writes, offsets, journal = self.interrupted(Path(d))

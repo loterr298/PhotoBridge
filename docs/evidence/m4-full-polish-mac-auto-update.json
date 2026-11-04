@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-24T16:34:25+09:00",
+  "package": "/Users/l/Documents/ChatGPT/New project/PhotoBridge/build/PhotoBridge-0.3.11-FullPolish/PhotoBridgeMac-Intel-FullPolish.zip",
+  "packageSha256": "6bbb55257181d14a6adcc6f5396655438114641fcf712a928940ef012b164672",
+  "installedPath": "/Applications/PhotoBridgeMac.app",
+  "backupPath": "/Applications/PhotoBridgeMac.app.backup-20261024-163425",
+  "executable": "/Applications/PhotoBridgeMac.app/Contents/MacOS/PhotoBridgeMac: Mach-O 64-bit executable x86_64",
+  "bundleVersion": "0.3.8",
+  "buildVersion": "12",
+  "codesignStrict": true,
+  "launched": true,
+  "launchExecutable": "/Applications/PhotoBridgeMac.app/Contents/MacOS/PhotoBridgeMac"
+}

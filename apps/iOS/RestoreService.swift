@@ -272,6 +272,17 @@ private struct RestoreInboxRequest: Decodable {
         }
     }
 
+    /// Starts the same verified PhotoKit flow used by the Restore screen after
+    /// Mac finishes sending a session. The inbox remains a transport buffer;
+    /// every asset is still written one transaction at a time into a new
+    /// native Photos album and the recovery journal is the resume authority.
+    func automaticallyRestore(session: String, title: String) async {
+        guard !busy else { return }
+        await preflight(session: session, allowTimestampRewrite: false)
+        guard ready else { return }
+        await restore(title: title)
+    }
+
     func sharePreflightReportWithMac() {
         guard !busy, !sharedPreflightReport, let report = privatePreflightReport else { return }
         do {

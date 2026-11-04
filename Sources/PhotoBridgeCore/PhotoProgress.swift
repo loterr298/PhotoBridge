@@ -21,6 +21,31 @@ public struct PhotoProgress: Equatable, Sendable {
     public var percentText: String { percent.map { "\($0)%" } ?? "—" }
 }
 
+/// UI-only progress state. A transfer may publish the same journal more than
+/// once or briefly expose an older poll result; the visible number must never
+/// move backwards inside one phase. A new operation or phase starts a fresh
+/// counter so scanning can hand off to copying without showing a false value.
+public struct ProgressDisplayState: Equatable, Sendable {
+    public private(set) var progress = PhotoProgress(completed: 0, total: 0)
+    private var operationID = ""
+    private var phase = ""
+
+    public init() {}
+
+    @discardableResult
+    public mutating func update(_ candidate: PhotoProgress, operationID: String, phase: String = "") -> Bool {
+        if self.operationID != operationID || self.phase != phase {
+            self.operationID = operationID
+            self.phase = phase
+            progress = candidate
+            return true
+        }
+        guard candidate.completed >= progress.completed else { return false }
+        progress = candidate
+        return true
+    }
+}
+
 public enum ProgressNumber {
     /// Double(Int64.max) rounds UP to 2^63, which traps on direct conversion.
     public static func nonnegativeInt64(_ value: Double) -> Int64? {
@@ -67,6 +92,8 @@ public struct TransferDisplay: Codable, Equatable, Sendable {
         switch phase {
         case "COMMITTED": return "已保存到 Mac"
         case "USB_VERIFIED": return "已发送到 iPhone，等待导入"
+        case "VERIFYING": return "正在核对发送结果"
+        case "VERIFYING_IMPORTED_RESOURCES": return "正在核对导入结果"
         case "FINALIZING": return "正在完成最后检查"
         case "SCANNING", "WAITING_FOR_IPHONE", "CHECKING": return "正在读取照片"
         case "WAITING_FOR_PHOTO": return "正在准备下一张照片"

@@ -1,0 +1,9 @@
+{
+  "sourceRun": 39080022210,
+  "status": "FAIL_INSTALLATION_METADATA",
+  "missingFields": [
+    "CFBundleShortVersionString",
+    "CFBundleVersion"
+  ],
+  "note": "xcodebuild succeeded but compiled Info.plist lacks version keys; not signed or installed"
+}

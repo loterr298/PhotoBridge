@@ -1055,3 +1055,51 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 - 公开仓库 0.3.23 的云端门禁、Swift/Python 单元测试和 iOS 真机编译已执行成功。
 - GitHub macOS-15 模拟器用户流程在首次启动应用时出现 Xcode launch timeout；日志明确为模拟器运行环境超时，不能标记 UI 通过。
 - CI 已增加 `simctl bootstatus -b` 与 180 秒 destination timeout；模拟器步骤保留原始日志并允许继续生成 Mac 包，避免环境超时掩盖可交付产物。
+
+## M4.38 双端进度与断点继续（0.3.24/build28，2026-11-04）
+
+- 新增共享 `ProgressDisplayState`：同一任务同一阶段的旧轮询结果不会让已完成数量倒退；扫描切换到传输阶段会以新阶段重新计数，仍只显示真实 journal 数字。
+- Mac 端显示固定宽度的照片数、百分比、速度、用时和当前资源，数字更新带轻量数字过渡；iPhone 的 Mac 传输页、恢复页和任务历史同步显示数量与百分比。
+- Mac 端导出和 Mac→iPhone 发送失败、暂停或应用重启后会保留“继续上次导出/继续上次发送”按钮；方向和最近文件夹写入本地偏好，继续仍使用原有 manifest/hash/offset 校验，不覆盖旧文件。
+- 本地验证：Mac Swift 构建、CoreChecks、Python 105 项、交付门禁（XCTest 在本机命令行工具环境不可用，云端负责 XCTest）已执行；真实 USB 断线续传仍需设备证据。
+
+## M4.39 普通照片文件夹导入与原顺序（0.3.25/build29，2026-11-04）
+
+- Mac 导入现在接受普通照片/视频文件夹，不再要求文件夹本身是 PhotoBridge 导出的清单。预览和导入共用文件名升序规则，导入前在应用私有目录建立 SHA-256 清单和校验副本，原文件夹不写入任何日志、清单或隐藏文件。
+- 普通文件夹的每个媒体文件按 Mac 预览位置建立一个逻辑相册成员；iPhone 恢复使用这份清单的 ordinal 顺序创建新相册。原始文件字节、文件名和可读媒体内容不重编码。
+- 导出目录的用户可见平铺内容仍只显示照片文件；校验与恢复所需的内部清单保持隐藏并由现有安全校验保护。普通文件夹导入的内部副本放在 PhotoBridge Application Support，不混入用户目录。
+- 新增 3 项普通文件夹导入回归测试；本地 Python 测试总数 108 项通过。真实 iPhone PhotoKit 写入顺序仍需设备实测后才能标记完成。
+
+
+## M4.40 导入导出顺序、原文件名与稳定性审计（0.3.25/build29，2026-11-04）
+
+- 复核顺序链：iPhone 相簿成员的 `ordinal` 写入导出清单；Mac 预览、下载和上传均按清单顺序处理；普通 Mac 文件夹按文件名升序生成一次固定清单；iPhone 恢复按该清单逐项创建新相簿。没有用文件名推断 PhotoKit 相簿顺序。
+- 复核文件名：资源清单保留 PhotoKit 的 `originalFilename`，Mac 平铺视图使用同名可见文件；同名文件无法共存时仅追加确定性的 ` (2)`、` (3)` 后缀，原始名字仍保留在权威清单中。普通文件夹导入不会改名、重编码或向来源目录写入内部文件。
+- 定向顺序/名称/批量测试 33 项通过；完整 Python 回归 108 项通过。交付门禁 `build/order-name-delivery-gate.log` 通过：1,000 项合成传输、1,650 份资源、顺序/哈希/中断续传检查通过，3 次导出中断和 1 次上传中断均能安全恢复；iOS 语法解析通过。
+- 合成压力结果：导出 18.02 秒，含续传上传 4.20 秒，状态轮询 71 次，峰值 RSS 约 36 MB；结果只证明本地合成数据路径，真实 USB 吞吐、真实 50,000 张照片和真实 PhotoKit 写入顺序仍未测量，不能标记为真机通过。
+- 本轮旧压缩产物已按用户要求清理，不再以 ZIP 作为交付；当时的校验记录保留在日志中。
+
+
+## M4.41 普通文件夹实时扫描进度与 Mac 极简任务卡（0.3.26/build30，2026-11-04）
+
+- 修复普通照片文件夹导入时长时间显示“等待首个进度记录”的问题：Mac 任务启动即写入扫描状态，建立应用内部校验副本时按文件逐项更新 `scannedAssets/scanTotalAssets`，不要求来源文件夹存在 PhotoBridge 清单，也不向来源文件夹写入进度文件。
+- Mac 任务卡重新整理为更明显的大圆角布局：连接状态、当前动作、数量、百分比、进度条和暂停操作集中显示；连接提示改为面向用户的短句，保留两块独立的“保存到 Mac”和“发送到 iPhone”区域。
+- 新增普通文件夹扫描进度回归测试；完整 Python 回归 109 项通过，Mac release x86_64 构建、严格签名、CoreChecks 和 iOS Swift 语法解析通过。
+- 当前未压缩 Mac 应用已覆盖安装：`build/PhotoBridgeMac.app`、`/Applications/PhotoBridgeMac.app`，版本 0.3.26（build 30）。旧压缩交付物已清理，后续交付不再发送 ZIP。
+
+## M4.42 自动写入原生照片、核对阶段进度与断线继续（0.3.27/build31，2026-11-05）
+
+- 修复 Mac→iPhone 只显示“已发送 100%”但系统照片为空的问题：发送完成后 Mac 通过现有 USB 控制通道通知 iPhone，iPhone 自动执行原有预检、PhotoKit 新相册创建、逐张资源写入和回读校验；收件目录仍只是中转，不再要求用户手动点一次恢复才能开始。
+- 自动导入复用 `RestoreRecoveryStore` 的逐项事务和持久化标识，iPhone 断线、App 暂停或重新打开后仍可从已提交且已验证的照片继续，不重复创建已记录副本。Mac 端持续监听 `Control/restore-progress.json`，直到完成、失败或 30 分钟无响应。
+- Mac 发送末尾的 `album-order.json` 和 `restore-request.json` 校验单独显示为“正在核对发送结果”，进度为 `0/2、1/2、2/2`；不再把照片数量停在 100% 造成卡住错觉。
+- 发送成功后清空 Mac 的当前导入文件夹选择和预览，下次可以直接重新选择新的文件夹；原文件夹仍不写入任何进度文件。
+- 新增核对阶段和进度 relay 回归测试；完整 Python 回归 111 项通过，Mac release x86_64 构建、签名、CoreChecks 和 iOS Swift 语法解析通过。
+- 当前未压缩 Mac 应用已覆盖安装：`build/PhotoBridgeMac.app`、`/Applications/PhotoBridgeMac.app`，版本 0.3.27（build 31）。iOS 仍需用个人 Apple ID 签名安装后才能进行真实 Photos 验收；本地无法代替真机确认最终相册写入。
+
+## M4.43 自动导入状态可见与任务互斥（0.3.28/build32，2026-11-05）
+
+- 自动写入开始后，iPhone 自动切到“导入到 iPhone”页，直接显示共享 RestoreService 的导入进度；Mac 继续读取同一会话的核对进度。
+- 自动导入期间登记任务占用状态，避免 iPhone 同时接受新的导入或相簿导出请求；任务结束或失败后释放状态。
+- 完整 Python 回归 111 项通过；Mac release 构建、CoreChecks、iOS Swift 语法解析与 1,000 项合成中断续传门禁通过。SwiftPM XCTest 因当前命令行工具环境未提供 XCTest 被跳过；交付门禁其余项目通过。
+- 合成压力结果：1,000 项、1,650 份资源，3 次导出中断及 1 次上传中断恢复通过，峰值 RSS 约 36 MiB；真实 USB 吞吐和真机 PhotoKit 导入仍为 NOT_MEASURED / NOT_RUN。
+- Mac 未压缩应用已重新覆盖安装：`build/PhotoBridgeMac.app`、`/Applications/PhotoBridgeMac.app`，版本 0.3.28（build 32）。iPhone 需另行用个人 Apple ID 签名并安装新版才能启用本轮自动导入和手机端进度联动。

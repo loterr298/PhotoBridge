@@ -7,12 +7,18 @@ import PhotoBridgeCore
 /// Accepted requests are recorded before work and never replayed after relaunch.
 @MainActor
 final class MacControlService: ObservableObject {
+    struct AutomaticImportRequest: Equatable {
+        let sessionID: String
+        let title: String
+    }
     let exporter = OriginalExportService()
     @Published var active = false { didSet { updateIdleTimer() } }
     @Published var message = "在 Mac 上选择相册和保存位置即可开始"
     @Published var completed = 0
     @Published var total = 0
     @Published var macProgress: TransferDisplay?
+    @Published var automaticImportRequest: AutomaticImportRequest?
+    @Published private(set) var restoreInProgress = false
     @Published private(set) var connected = false
     var preparationProgress: PhotoProgress { PhotoProgress(completed: completed, total: total, finished: false) }
     var exportDisplay: TransferDisplay? {
@@ -27,6 +33,7 @@ final class MacControlService: ObservableObject {
     private var connection = PhoneConnection()
     private var activeRequestID: String?
     private var albumIdentifier = ""
+    private var macDisplayState = ProgressDisplayState()
     private var root: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Control", isDirectory: true)
@@ -67,7 +74,14 @@ final class MacControlService: ObservableObject {
                 if let url = self?.root.appendingPathComponent("transfer-progress.json") {
                     let value = await Task.detached(priority: .utility) { TransferDisplay.read(at: url) }.value
                     guard !Task.isCancelled else { return }
-                    if let value, self?.macProgress != value { self?.macProgress = value }
+                    if let value, let self {
+                        _ = self.macDisplayState.update(value.progress, operationID: value.operationID, phase: value.phase)
+                        let progress = self.macDisplayState.progress
+                        let display = TransferDisplay(operationID: value.operationID, direction: value.direction,
+                            phase: value.phase, completed: progress.completed, total: progress.total,
+                            sessionID: value.sessionID, updatedAt: value.updatedAt, elapsedSeconds: value.elapsedSeconds)
+                        if self.macProgress != display { self.macProgress = display }
+                    }
                 }
                 try? await Task.sleep(nanoseconds: 400_000_000)
             }
@@ -115,6 +129,15 @@ final class MacControlService: ObservableObject {
         publishJob()
     }
 
+    func takeAutomaticImportRequest() -> AutomaticImportRequest? {
+        defer { automaticImportRequest = nil }
+        return automaticImportRequest
+    }
+
+    func finishAutomaticImport() {
+        restoreInProgress = false
+    }
+
     private func updateIdleTimer() {
         PhoneActivity.shared.set("export", active: active)
         PhoneActivity.shared.setForeground(phoneInForeground)
@@ -123,8 +146,11 @@ final class MacControlService: ObservableObject {
     private func publishJob() {
         guard let id = activeRequestID else { return }
         if message != exporter.message { message = exporter.message }
-        let done = exporter.scanning ? exporter.scannedAssets : exporter.assetsCompleted
-        let count = exporter.scanning ? exporter.scanTotalAssets : exporter.totalAssets
+        let rawDone = exporter.scanning ? exporter.scannedAssets : exporter.assetsCompleted
+        let rawCount = exporter.scanning ? exporter.scanTotalAssets : exporter.totalAssets
+        _ = macDisplayState.update(PhotoProgress(completed: rawDone, total: rawCount), operationID: id, phase: exporter.scanning ? "SCANNING" : exporter.state)
+        let done = macDisplayState.progress.completed
+        let count = macDisplayState.progress.total
         if completed != done { completed = done }; if total != count { total = count }
         let value: [String: Any] = ["requestID": id, "albumIdentifier": albumIdentifier,
             "status": exporter.state, "sessionID": exporter.sessionName ?? "",
@@ -163,7 +189,7 @@ final class MacControlService: ObservableObject {
                 }
             }.value
         case "startExport":
-            guard !active && !exporter.busy, let identifier = request["albumIdentifier"] as? String,
+            guard !active && !exporter.busy && !restoreInProgress, let identifier = request["albumIdentifier"] as? String,
                   let collection = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [identifier], options: nil).firstObject else {
                 throw NSError(domain: "PhotoBridge", code: 3, userInfo: [NSLocalizedDescriptionKey: "正在处理照片或相册已不可访问"])
             }
@@ -171,6 +197,7 @@ final class MacControlService: ObservableObject {
             // silently repeats a previously accepted export.
             try write(["status": "ACCEPTED", "requestID": id], to: response)
             active = true; activeRequestID = id; albumIdentifier = identifier
+            macDisplayState = ProgressDisplayState()
             exporter.sessionName = nil; exporter.state = "SCANNING"; exporter.message = "正在读取相册…"
             exporter.resourcesCompleted = 0; exporter.totalResources = 0
             exporter.scannedAssets = 0; exporter.scanTotalAssets = 0
@@ -183,6 +210,20 @@ final class MacControlService: ObservableObject {
         case "stopExport":
             if request["targetRequestID"] as? String == activeRequestID { exporter.requestStop() }
             try write(["status": "OK"], to: response)
+        case "startImport":
+            guard let sessionID = request["sessionID"] as? String,
+                  UUID(uuidString: sessionID) != nil,
+                  let title = request["title"] as? String,
+                  !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  title.count <= 128 else {
+                throw NSError(domain: "PhotoBridge", code: 5, userInfo: [NSLocalizedDescriptionKey: "收到的相册信息无效"])
+            }
+            guard !active && !exporter.busy && !restoreInProgress else {
+                throw NSError(domain: "PhotoBridge", code: 6, userInfo: [NSLocalizedDescriptionKey: "iPhone 正在处理其他任务"])
+            }
+            try write(["status": "ACCEPTED", "sessionID": sessionID], to: response)
+            restoreInProgress = true
+            automaticImportRequest = AutomaticImportRequest(sessionID: sessionID, title: String(title.prefix(128)))
         default:
             throw NSError(domain: "PhotoBridge", code: 4, userInfo: [NSLocalizedDescriptionKey: "请更新两端 PhotoBridge 后重试"])
         }
@@ -247,10 +288,25 @@ struct PhotoCountView: View {
             Text(title).font(.headline)
             if progress.total > 0 {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(progress.countText).font(.title3.weight(.semibold)).frame(width: 150, alignment: .leading)
+                    if #available(iOS 17.0, *) {
+                        Text(progress.countText).font(.title3.weight(.semibold)).frame(width: 150, alignment: .leading)
+                            .contentTransition(.numericText())
+                            .animation(.easeOut(duration: 0.18), value: progress.completed)
+                    } else {
+                        Text(progress.countText).font(.title3.weight(.semibold)).frame(width: 150, alignment: .leading)
+                            .animation(.easeOut(duration: 0.18), value: progress.completed)
+                    }
                     Spacer()
-                    Text(progress.percentText).font(.title2.bold()).foregroundStyle(Color.bridgeBlue)
-                        .frame(width: 56, alignment: .trailing)
+                    if #available(iOS 17.0, *) {
+                        Text(progress.percentText).font(.title2.bold()).foregroundStyle(Color.bridgeBlue)
+                            .frame(width: 56, alignment: .trailing)
+                            .contentTransition(.numericText())
+                            .animation(.easeOut(duration: 0.18), value: progress.percent)
+                    } else {
+                        Text(progress.percentText).font(.title2.bold()).foregroundStyle(Color.bridgeBlue)
+                            .frame(width: 56, alignment: .trailing)
+                            .animation(.easeOut(duration: 0.18), value: progress.percent)
+                    }
                 }.monospacedDigit()
                 ProgressView(value: progress.fraction).tint(.bridgeBlue)
                 if let elapsedSeconds, elapsedSeconds.isFinite, elapsedSeconds >= 0 {

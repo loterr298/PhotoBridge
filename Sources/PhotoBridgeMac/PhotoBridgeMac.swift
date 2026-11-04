@@ -72,6 +72,7 @@ final class MacTransferModel: ObservableObject {
     @Published var savedAlbumName = "已保存的相册"
     @Published var loadingPreview = false
     @Published var previewError = ""
+    @Published var resumableDirection: String?
     private var previewTask: Task<(String, [BackupAssetPreview]), Error>?
     private var pendingExportTask: Task<Void, Never>?
     private var pendingUploadTask: Task<Void, Never>?
@@ -80,6 +81,8 @@ final class MacTransferModel: ObservableObject {
     private var connectionFreshness = ConnectionFreshness()
     private var importPreviewTask: Task<Void, Never>?
     private var lastDisplayedProgress: PhotoProgress?
+    private var displayProgress = ProgressDisplayState()
+    private var displayOperationID = ""
     private var connectionGeneration = UUID()
 
     private let bundleIdentifier = "com.photobridge.OrderProbe"
@@ -89,7 +92,16 @@ final class MacTransferModel: ObservableObject {
 
     init() {
         recentBackups = UserDefaults.standard.stringArray(forKey: "PhotoBridge.recentBackups") ?? []
+        resumableDirection = UserDefaults.standard.string(forKey: "PhotoBridge.resumableDirection")
         if let path = recentBackups.first, FileManager.default.fileExists(atPath: path) { savedFolder = URL(fileURLWithPath: path) }
+        if let path = UserDefaults.standard.string(forKey: "PhotoBridge.lastImportFolder"),
+           FileManager.default.fileExists(atPath: path) { importFolder = URL(fileURLWithPath: path) }
+    }
+
+    private func setResumableDirection(_ value: String?) {
+        resumableDirection = value
+        if let value { UserDefaults.standard.set(value, forKey: "PhotoBridge.resumableDirection") }
+        else { UserDefaults.standard.removeObject(forKey: "PhotoBridge.resumableDirection") }
     }
 
     func invalidateConnection() {
@@ -130,14 +142,14 @@ final class MacTransferModel: ObservableObject {
                     confirmedNonce = nonce
                     self.connectionFreshness.confirm(now: ProcessInfo.processInfo.systemUptime)
                     self.usbState = "已连接"
-                    self.connectionMessage = "USB 有线连接 · 请保持手机 App 在前台"
+                    self.connectionMessage = "已准备好，可以开始传照片"
                 } else {
                     confirmedNonce = nil
                     self.connectionFreshness.invalidate()
                     self.usbState = "等待连接"
                     self.connectionMessage = value?["status"] as? String == "PHONE_NOT_READY"
-                        ? "已找到 iPhone，请解锁并打开最新版 PhotoBridge。"
-                        : "用数据线连接，解锁手机并确认“信任此电脑”。"
+                        ? "请解锁 iPhone 并打开 PhotoBridge。"
+                        : "请连接数据线并打开 PhotoBridge。"
                 }
                 if ready && needsAlbums && !self.busy && !self.loadingAlbums {
                     needsAlbums = false
@@ -230,6 +242,7 @@ final class MacTransferModel: ObservableObject {
         rememberBackup(folder)
         savedFolder = folder
         busy = true; progressIndeterminate = true; progressFraction = 0
+        setResumableDirection("TO_MAC")
         progressIndeterminate = true
         progressText = "正在连接 iPhone…"; speedText = ""; etaText = ""; currentResource = ""
         userMessage = "保存位置：\(folder.path)"
@@ -254,6 +267,7 @@ final class MacTransferModel: ObservableObject {
                     guard let self else { return }
                     self.output = result.text
                     self.activeExportRequestID = nil; self.pendingExportTask = nil
+                    self.setResumableDirection(result.success ? nil : "TO_MAC")
                     self.userMessage = result.success ? "全部照片已保存到：\(folder.path)" : "导出没有完成。保存位置：\(folder.path)"
                     if !result.success {
                         self.stopPhoneExport(requestID)
@@ -266,6 +280,7 @@ final class MacTransferModel: ObservableObject {
             } catch {
                 busy = false; activeExportRequestID = nil; pendingExportTask = nil
                 stopPhoneExport(requestID)
+                setResumableDirection("TO_MAC")
                 userMessage = error is CancellationError ? "已暂停，原照片不受影响。" : "导出没有完成：\(error.localizedDescription)"
             }
         }
@@ -284,6 +299,7 @@ final class MacTransferModel: ObservableObject {
             return
         }
         selectedAlbumID = albumID
+        setResumableDirection("TO_MAC")
         busy = true; progressIndeterminate = true; progressText = "正在检查上次保存…"
         pendingExportTask = Task {
             do {
@@ -300,6 +316,7 @@ final class MacTransferModel: ObservableObject {
                                existingRequestID: plan["existingRequestID"] as? String)
             } catch {
                 busy = false; pendingExportTask = nil
+                setResumableDirection("TO_MAC")
                 userMessage = "暂时无法继续：\(error.localizedDescription)"
             }
         }
@@ -344,9 +361,11 @@ final class MacTransferModel: ObservableObject {
         guard let parent = chooseDirectory(title: "选择照片保存位置") else { return }
         let folder = parent.appendingPathComponent("PhotoBridge-\(String(selectedSession.prefix(8)))", isDirectory: true)
         rememberBackup(folder)
+        setResumableDirection("TO_MAC")
         userMessage = "正在把照片保存到你选择的文件夹…"
         runScript("album_export.py", arguments: ["download", "--remote", "Exports/\(selectedSession)", "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
+            self?.setResumableDirection(result.success ? nil : "TO_MAC")
             self?.userMessage = result.success ? "已保存到：\(folder.path)" : "保存没有完成，请重新连接 iPhone 后继续。"
             if result.success { self?.loadPreview(from: folder) }
         }
@@ -358,9 +377,11 @@ final class MacTransferModel: ObservableObject {
         guard let parent = chooseDirectory(title: "选择继续保存的位置") else { return }
         let folder = parent.appendingPathComponent("PhotoBridge-resume-\(String(selectedSession.prefix(8)))", isDirectory: true)
         rememberBackup(folder)
+        setResumableDirection("TO_MAC")
         userMessage = "正在继续保存…"
         runScript("album_resume.py", arguments: ["--remote", "Exports/\(selectedSession)", "--from-directory", previous.path, "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
+            self?.setResumableDirection(result.success ? nil : "TO_MAC")
             self?.userMessage = result.success ? "已保存到：\(folder.path)" : "继续保存没有完成，请重试。"
             if result.success { self?.loadPreview(from: folder) }
         }
@@ -373,12 +394,25 @@ final class MacTransferModel: ObservableObject {
             return
         }
         userMessage = "正在发送照片到 iPhone…"
+        setResumableDirection("TO_IPHONE")
         let identity = UUID().uuidString
         runScript("upload_resume.py", arguments: ["--local", directory.path, "--journal-id", identity],
                   progressFile: uploadProgressFile(in: directory, identity: identity), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
+            self?.setResumableDirection(result.success ? nil : "TO_IPHONE")
             self?.observePhoneImport(result)
-            self?.userMessage = result.success ? "照片已发送到 iPhone，请在 iPhone 点“恢复到新相册”。" : "发送没有完成，请重新连接 iPhone 后重试。"
+            guard let self else { return }
+            if result.success {
+                self.importFolder = nil
+                self.importPreview = []
+                UserDefaults.standard.removeObject(forKey: "PhotoBridge.lastImportFolder")
+                self.userMessage = "文件已发送，正在写入 iPhone 照片…"
+                if let session = Self.restoreSession(from: result.text) {
+                    Task { await self.startAutomaticImport(session: session, title: directory.lastPathComponent) }
+                }
+            } else {
+                self.userMessage = "发送没有完成，请重新连接 iPhone 后重试。"
+            }
         }
     }
 
@@ -386,6 +420,7 @@ final class MacTransferModel: ObservableObject {
         guard !busy else { return }
         guard let directory = chooseDirectory(title: "选择要发送到 iPhone 的照片") else { return }
         importFolder = directory
+        UserDefaults.standard.set(directory.path, forKey: "PhotoBridge.lastImportFolder")
         importPreview = []
         loadingImportPreview = true
         importPreviewTask?.cancel()
@@ -405,7 +440,12 @@ final class MacTransferModel: ObservableObject {
 
     func resumeUpload() {
         guard !busy && !loadingAlbums else { return }
-        guard let directory = chooseDirectory(title: "选择上次未完成的照片") else { return }
+        let directory: URL
+        if let importFolder { directory = importFolder }
+        else {
+            guard let chosen = chooseDirectory(title: "选择上次未完成的照片") else { return }
+            directory = chosen
+        }
         importFolder = directory
         importPreview = []
         loadingImportPreview = true
@@ -417,40 +457,33 @@ final class MacTransferModel: ObservableObject {
                 await MainActor.run { self?.loadingImportPreview = false }
             }
         }
-        let journalDirectory = uploadJournalDirectory(in: directory)
         busy = true; progressIndeterminate = true; progressText = "正在查找上次发送记录…"
         pendingUploadTask = Task {
-        let journal = await Task.detached(priority: .utility) { () -> URL? in
-            guard let journals = try? FileManager.default.contentsOfDirectory(at: journalDirectory, includingPropertiesForKeys: nil),
-              let journal = journals.filter({ $0.pathExtension == "json" && (journalDirectory != directory || $0.lastPathComponent.hasPrefix(".photobridge-upload-")) }).max(by: {
-                  let lhs = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-                  let rhs = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-                  return lhs < rhs
-              }) else { return nil }
-        guard let attributes = try? FileManager.default.attributesOfItem(atPath: journal.path),
-              attributes[.type] as? FileAttributeType == .typeRegular,
-              let size = attributes[.size] as? NSNumber, size.intValue <= 1024 * 1024,
-              let journalData = try? Data(contentsOf: journal),
-              let state = try? JSONSerialization.jsonObject(with: journalData) as? [String: Any], state["owner"] != nil else { return nil }
-            return journal
-        }.value
-        guard !Task.isCancelled else {
-            busy = false; pendingUploadTask = nil; userMessage = "已暂停，原照片不受影响。"; return
-        }
-        pendingUploadTask = nil
-        busy = false
-        guard let journal else {
-            userMessage = "找不到可继续的发送记录，请重新选择文件夹发送。已收到的文件会保留。"
-            return
-        }
-        userMessage = "正在继续发送照片到 iPhone…"
-        let identity = UUID().uuidString
-        runScript("upload_resume.py", arguments: ["--local", directory.path, "--resume-journal", journal.path, "--journal-id", identity],
-                  progressFile: uploadProgressFile(in: directory, identity: identity), controlFile: makeControlFile()) { [weak self] result in
-            self?.output = result.text
-            self?.observePhoneImport(result)
-            self?.userMessage = result.success ? "照片已发送到 iPhone，请在 iPhone 点“恢复到新相册”。" : "继续发送没有完成，请重试。"
-        }
+            guard !Task.isCancelled else {
+                busy = false; pendingUploadTask = nil; userMessage = "已暂停，原照片不受影响。"; return
+            }
+            pendingUploadTask = nil; busy = false
+            userMessage = "正在继续发送照片到 iPhone…"
+            setResumableDirection("TO_IPHONE")
+            let identity = UUID().uuidString
+            runScript("upload_resume.py", arguments: ["--local", directory.path, "--auto-resume", "--journal-id", identity],
+                      progressFile: uploadProgressFile(in: directory, identity: identity), controlFile: makeControlFile()) { [weak self] result in
+                self?.output = result.text
+                self?.setResumableDirection(result.success ? nil : "TO_IPHONE")
+                self?.observePhoneImport(result)
+                guard let self else { return }
+                if result.success {
+                    self.importFolder = nil
+                    self.importPreview = []
+                    UserDefaults.standard.removeObject(forKey: "PhotoBridge.lastImportFolder")
+                    self.userMessage = "文件已发送，正在写入 iPhone 照片…"
+                    if let session = Self.restoreSession(from: result.text) {
+                        Task { await self.startAutomaticImport(session: session, title: directory.lastPathComponent) }
+                    }
+                } else {
+                    self.userMessage = "继续发送没有完成，请重试。"
+                }
+            }
         }
     }
 
@@ -487,8 +520,17 @@ final class MacTransferModel: ObservableObject {
             ? folder : folder.appendingPathComponent("restore-uploads", isDirectory: true)
     }
     private func uploadProgressFile(in folder: URL, identity: String) -> URL {
-        let directory = uploadJournalDirectory(in: folder)
-        return directory.appendingPathComponent((directory == folder ? ".photobridge-upload-" : "") + identity + ".json")
+        let knownBackup = FileManager.default.fileExists(atPath: folder.appendingPathComponent(".photobridge-layout.json").path)
+            || (FileManager.default.fileExists(atPath: folder.appendingPathComponent("album-order.json").path)
+                && FileManager.default.fileExists(atPath: folder.appendingPathComponent("transfer-manifest.json").path))
+        if knownBackup {
+            let directory = uploadJournalDirectory(in: folder)
+            return directory.appendingPathComponent((directory == folder ? ".photobridge-upload-" : "") + identity + ".json")
+        }
+        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("PhotoBridge/Progress", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory.appendingPathComponent("upload-\(identity).json")
     }
 
     func viewSavedAlbum() {
@@ -537,6 +579,21 @@ final class MacTransferModel: ObservableObject {
                     primaryFilename: url.lastPathComponent, mediaURL: url)
             }
             return (title, photos)
+        }
+        let genericExtensions: Set<String> = ["jpg", "jpeg", "heic", "heif", "png", "dng", "raw", "cr2", "nef", "arw", "tif", "tiff", "gif", "webp", "mov", "mp4", "m4v"]
+        let genericFiles = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey], options: .skipsHiddenFiles)
+            .filter { url in
+                let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+                return values?.isRegularFile == true && values?.isSymbolicLink != true && genericExtensions.contains(url.pathExtension.lowercased())
+            }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        let hasManifest = FileManager.default.fileExists(atPath: metadataURL(in: folder, name: "album-order.json").path)
+        let hasRecords = FileManager.default.fileExists(atPath: folder.appendingPathComponent("asset-records").path)
+        if !hasManifest && !hasRecords {
+            let photos = genericFiles.enumerated().map { index, url in
+                BackupAssetPreview(id: index, ordinal: index + 1, primaryFilename: url.lastPathComponent, mediaURL: url)
+            }
+            return (folder.lastPathComponent.isEmpty ? "Mac 照片" : folder.lastPathComponent, photos)
         }
         let assets: [[String: Any]]
         if let data = try? Data(contentsOf: metadataURL(in: folder, name: "album-order.json")),
@@ -588,6 +645,8 @@ final class MacTransferModel: ObservableObject {
         importProgressTask?.cancel(); importProgressTask = nil
         progressCountText = ""; progressPercentText = "—"; elapsedText = ""
         lastDisplayedProgress = nil
+        displayProgress = ProgressDisplayState()
+        displayOperationID = progressFile?.path ?? UUID().uuidString
         self.controlFile = controlFile
         if let controlFile { try? FileManager.default.removeItem(at: controlFile) }
         progressFraction = 0
@@ -603,6 +662,7 @@ final class MacTransferModel: ObservableObject {
                 do {
                     var commandArguments = arguments
                     if let controlFile { commandArguments += ["--cancel-file", controlFile.path] }
+                    if name == "upload_resume.py", let progressFile { commandArguments += ["--progress-file", progressFile.path] }
                     return try Self.executeScript(name, arguments: commandArguments, cancelFile: controlFile)
                 } catch {
                     return ScriptResult(success: false, text: "未完成：\(error.localizedDescription)")
@@ -660,26 +720,25 @@ final class MacTransferModel: ObservableObject {
         let state = json["status"] as? String ?? json["state"] as? String ?? ""
         let uploading = (json["remote"] as? String ?? "").hasPrefix("RestoreInbox/")
         let assets = count("assetsVerified"), total = count("totalAssets")
-        let scanning = total == 0
-        let done = scanning ? count("scannedAssets") : assets
-        let expected = scanning ? count("scanTotalAssets") : total
+        let verifying = state == "VERIFYING"
+        let scanning = total == 0 && !verifying
+        let done = verifying ? count("verificationCompleted") : (scanning ? count("scannedAssets") : assets)
+        let expected = verifying ? count("verificationTotal") : (scanning ? count("scanTotalAssets") : total)
         let candidate = PhotoProgress(completed: done, total: expected,
             finished: ["COMMITTED", "USB_VERIFIED"].contains(state))
-        let progress: PhotoProgress
-        if let last = lastDisplayedProgress, last.total == candidate.total, candidate.completed < last.completed {
-            progress = last
-        } else {
-            progress = candidate
-        }
+        let displayPhase = scanning ? "SCANNING" : state
+        _ = displayProgress.update(candidate, operationID: displayOperationID, phase: displayPhase)
+        let progress = displayProgress.progress
         lastDisplayedProgress = progress
         progressIndeterminate = expected == 0
         progressFraction = progress.fraction
-        progressCountText = expected > 0 ? progress.countText : "正在读取总张数…"
+        progressCountText = expected > 0 ? progress.countText : (scanning ? "已扫描 (done) 张" : "正在读取照片…")
         progressPercentText = progress.percentText
-        if scanning { progressText = "正在读取照片" }
+        if verifying { progressText = "正在核对发送结果" }
+        else if scanning { progressText = "正在扫描照片" }
         else if state == "FINALIZING" { progressText = "正在完成最后检查" }
         else if state == "COMMITTED" { progressText = "已保存到 Mac" }
-        else if state == "USB_VERIFIED" { progressText = "已发送到 iPhone，等待导入" }
+        else if state == "USB_VERIFIED" { progressText = "已发送到 iPhone，正在准备导入" }
         else if ["STOPPED", "FAILED"].contains(state) { progressText = "尚未完成，进度已保留" }
         else { progressText = uploading ? "正在发送到 iPhone" : "正在保存到 Mac" }
         if json["phoneInForeground"] as? Bool == false { progressText = "请回到 iPhone 的 PhotoBridge，继续准备照片" }
@@ -706,17 +765,18 @@ final class MacTransferModel: ObservableObject {
               let session = remote.split(separator: "/").last.map(String.init), UUID(uuidString: session) != nil else { return }
         importProgressTask?.cancel()
         importProgressTask = Task { [weak self] in
+            var missedReads = 0
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
-                guard !Task.isCancelled, let self, !self.busy else { return }
+                guard !Task.isCancelled, let self else { return }
                 let result = try? await self.executeScriptAsync("mac_control.py", arguments: ["read", "--bundle", self.bundleIdentifier, "--path", "Control/restore-progress.json"])
                 guard !Task.isCancelled else { return }
                 if let result, result.success, let raw = result.text.data(using: .utf8),
                    let value = TransferDisplay.decode(raw), value.direction == "IMPORT", value.sessionID == session {
+                    missedReads = 0
                     self.progressText = value.label
-                    let candidate = value.progress
-                    let progress = (self.lastDisplayedProgress?.total == candidate.total && candidate.completed < (self.lastDisplayedProgress?.completed ?? 0))
-                        ? self.lastDisplayedProgress! : candidate
+                    _ = self.displayProgress.update(value.progress, operationID: "IMPORT:\(session)", phase: value.phase)
+                    let progress = self.displayProgress.progress
                     self.lastDisplayedProgress = progress
                     self.progressFraction = progress.fraction
                     self.progressCountText = progress.countText
@@ -727,8 +787,31 @@ final class MacTransferModel: ObservableObject {
                     }
                     self.speedText = ""; self.etaText = ""; self.currentResource = ""
                     if value.finished { return }
+                } else {
+                    missedReads += 1
+                    if missedReads >= 1_200 { return } // 30 minutes without a phone progress record.
                 }
             }
+        }
+    }
+
+    private static func restoreSession(from text: String) -> String? {
+        guard let data = text.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let remote = json["remote"] as? String,
+              remote.hasPrefix("RestoreInbox/"),
+              let session = remote.split(separator: "/").last.map(String.init),
+              UUID(uuidString: session) != nil else { return nil }
+        return session
+    }
+
+    private func startAutomaticImport(session: String, title: String) async {
+        let requestID = UUID().uuidString
+        do {
+            _ = try await sendControl(["id": requestID, "kind": "startImport",
+                                       "sessionID": session, "title": title], requestID: requestID)
+        } catch {
+            userMessage = "文件已发送，但 iPhone 未能自动写入照片；请打开 iPhone 的导入页面继续。"
         }
     }
 
@@ -777,6 +860,7 @@ extension Color {
     static let macBridgeInk = Color(nsColor: .labelColor)
     static let macBridgeMuted = Color(nsColor: .secondaryLabelColor)
     static let macBridgeButtonFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.21, green: 0.28, blue: 0.32, alpha: 1) : NSColor(red: 0.87, green: 0.91, blue: 0.93, alpha: 1) })
+    static let macBridgeProgressFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.18, blue: 0.22, alpha: 1) : NSColor(red: 0.985, green: 0.992, blue: 0.998, alpha: 1) })
 }
 
 struct MacSoftButtonStyle: ButtonStyle {
@@ -795,18 +879,23 @@ struct MacSoftButtonStyle: ButtonStyle {
 
 private struct MacCard<Content: View>: View {
     let content: Content
-    init(@ViewBuilder content: () -> Content) { self.content = content() }
+    let emphasis: Bool
+    init(emphasis: Bool = false, @ViewBuilder content: () -> Content) {
+        self.emphasis = emphasis
+        self.content = content()
+    }
     var body: some View {
         content.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .shadow(color: .black.opacity(0.035), radius: 10, y: 4)
+            .background(emphasis ? Color.macBridgeProgressFill : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(emphasis ? Color.macBridgeBlue.opacity(0.14) : Color.clear, lineWidth: 1))
+            .shadow(color: .black.opacity(emphasis ? 0.07 : 0.035), radius: emphasis ? 14 : 10, y: emphasis ? 6 : 4)
     }
 }
 
 private struct MacTransferScreen: View {
     @ObservedObject var transfer: MacTransferModel
     @State private var exportOptions = false
-    @State private var importOptions = false
     private var connected: Bool { transfer.usbState == "已连接" }
     private var working: Bool { transfer.busy || transfer.loadingAlbums }
     var body: some View {
@@ -814,8 +903,18 @@ private struct MacTransferScreen: View {
             Color.macBridgeSky.ignoresSafeArea()
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("照片传输").font(.system(size: 28, weight: .semibold)).foregroundStyle(Color.macBridgeInk)
+                    HStack(alignment: .center, spacing: 14) {
+                        ZStack {
+                            Circle().fill(Color.macBridgeButtonFill)
+                            Image(systemName: "photo.on.rectangle.angled")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(Color.macBridgeBlue)
+                        }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("照片传输").font(.system(size: 28, weight: .semibold)).foregroundStyle(Color.macBridgeInk)
+                            Text("在 iPhone 和 Mac 之间保存照片")
+                                .font(.subheadline).foregroundStyle(Color.macBridgeMuted)
+                        }
                         Spacer()
                         Menu {
                             Button("打开相册文件夹…") { transfer.chooseSavedAlbum() }
@@ -829,7 +928,7 @@ private struct MacTransferScreen: View {
                         Image(systemName: "iphone").font(.title2).foregroundStyle(Color.macBridgeBlue)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(connected ? "iPhone 已连接" : "正在等待 iPhone").font(.headline)
-                            Text(transfer.connectionMessage)
+                            Text(connected ? "保持 PhotoBridge 打开即可" : transfer.connectionMessage)
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
                         Spacer()
@@ -866,7 +965,9 @@ private struct MacTransferScreen: View {
     }
     private var exportControls: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("导出到 Mac").font(.title2.weight(.semibold))
+            Text("保存到 Mac").font(.title2.weight(.semibold))
+            Text("把 iPhone 相册保存到 Mac")
+                .font(.subheadline).foregroundStyle(Color.macBridgeMuted)
             if !transfer.albums.isEmpty {
                 Picker("相册", selection: $transfer.selectedAlbumID) {
                     ForEach(transfer.albums) { Text("\($0.name) · \($0.count.formatted()) 张").tag($0.id) }
@@ -894,12 +995,16 @@ private struct MacTransferScreen: View {
                     Text(connected && transfer.selectedAlbumID.isEmpty ? "读取相册" : "选择保存位置并导出")
                 }.frame(maxWidth: .infinity)
             }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working || !connected)
+            if transfer.resumableDirection == "TO_MAC" {
+                Button("继续上次导出") { transfer.continueMacExport() }
+                    .buttonStyle(MacSoftButtonStyle())
+                    .disabled(working || !connected)
+            }
             DisclosureGroup("更多选项", isExpanded: $exportOptions) {
                 VStack(alignment: .leading, spacing: 16) {
                     Toggle("需要时从 iCloud 获取原图", isOn: $transfer.allowCloudDownload).disabled(working)
                     HStack(spacing: 12) {
                         Button("刷新相册") { transfer.refreshAlbums() }.disabled(working || !connected)
-                        Button("继续未完成的导出") { transfer.continueMacExport() }.disabled(working || transfer.albums.isEmpty)
                     }.buttonStyle(MacSoftButtonStyle())
                 }.padding(.top, 14)
             }.font(.subheadline).tint(.macBridgeBlue)
@@ -907,9 +1012,10 @@ private struct MacTransferScreen: View {
     }
     private var importControls: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("导入到 iPhone").font(.title2.weight(.semibold))
-            Text("选择 PhotoBridge 保存的完整相册文件夹。发送后，在 iPhone 确认导入到新相册。")
-                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Text("发送到 iPhone").font(.title2.weight(.semibold))
+            Text("把 Mac 文件夹中的照片按当前顺序发送到 iPhone")
+                .font(.subheadline).foregroundStyle(Color.macBridgeMuted)
+                .fixedSize(horizontal: false, vertical: true)
             if let folder = transfer.importFolder {
                 HStack {
                     Image(systemName: "folder.fill").foregroundStyle(Color.macBridgeBlue)
@@ -926,23 +1032,48 @@ private struct MacTransferScreen: View {
                 Label(transfer.importFolder == nil ? "选择文件夹" : "发送这个文件夹", systemImage: "arrow.up.to.line")
                     .frame(maxWidth: .infinity)
             }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working || !connected)
-            DisclosureGroup("继续上次任务", isExpanded: $importOptions) {
-                Button("选择未完成的发送") { transfer.resumeUpload() }
-                    .buttonStyle(MacSoftButtonStyle()).disabled(working || !connected).padding(.top, 12)
-            }.font(.subheadline).tint(.macBridgeBlue)
+            if transfer.resumableDirection == "TO_IPHONE" {
+                Button("继续上次发送") { transfer.resumeUpload() }
+                    .buttonStyle(MacSoftButtonStyle())
+                    .disabled(working || !connected)
+            }
+            if transfer.resumableDirection != "TO_IPHONE" {
+                Text("照片顺序和文件名会保持不变")
+                    .font(.caption).foregroundStyle(Color.macBridgeMuted)
+            }
         }
     }
     private var progress: some View {
-        MacCard {
+        MacCard(emphasis: true) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Text(transfer.progressText).font(.headline)
+                    HStack(spacing: 8) {
+                        Circle().fill(transfer.progressIndeterminate ? Color.macBridgeBlue : Color.macConnectedInk)
+                            .frame(width: 8, height: 8)
+                        Text(transfer.progressText).font(.headline)
+                    }
                     Spacer()
-                    Text(transfer.progressPercentText).font(.title2.weight(.semibold)).foregroundStyle(Color.macBridgeBlue)
-                        .frame(width: 60, alignment: .trailing).monospacedDigit()
+                    if #available(macOS 14.0, *) {
+                        Text(transfer.progressPercentText).font(.title2.weight(.semibold)).foregroundStyle(Color.macBridgeBlue)
+                            .frame(width: 60, alignment: .trailing).monospacedDigit()
+                            .contentTransition(.numericText())
+                            .animation(.easeOut(duration: 0.18), value: transfer.progressPercentText)
+                    } else {
+                        Text(transfer.progressPercentText).font(.title2.weight(.semibold)).foregroundStyle(Color.macBridgeBlue)
+                            .frame(width: 60, alignment: .trailing).monospacedDigit()
+                            .animation(.easeOut(duration: 0.18), value: transfer.progressPercentText)
+                    }
                 }
-                Text(transfer.progressCountText).font(.title3).monospacedDigit()
-                    .frame(width: 190, alignment: .leading)
+                if #available(macOS 14.0, *) {
+                    Text(transfer.progressCountText).font(.title3).monospacedDigit()
+                        .frame(width: 190, alignment: .leading)
+                        .contentTransition(.numericText())
+                        .animation(.easeOut(duration: 0.18), value: transfer.progressCountText)
+                } else {
+                    Text(transfer.progressCountText).font(.title3).monospacedDigit()
+                        .frame(width: 190, alignment: .leading)
+                        .animation(.easeOut(duration: 0.18), value: transfer.progressCountText)
+                }
                 if transfer.progressIndeterminate { ProgressView().controlSize(.small) }
                 else { ProgressView(value: transfer.progressFraction).tint(.macBridgeBlue) }
                 HStack {
@@ -954,6 +1085,14 @@ private struct MacTransferScreen: View {
                 }
                 if !transfer.currentResource.isEmpty {
                     Text(transfer.currentResource).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+                if !transfer.busy, let direction = transfer.resumableDirection {
+                    Button(direction == "TO_IPHONE" ? "继续发送上次任务" : "继续上次导出") {
+                        if direction == "TO_IPHONE" { transfer.resumeUpload() }
+                        else { transfer.continueMacExport() }
+                    }
+                    .buttonStyle(MacSoftButtonStyle(primary: true))
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }

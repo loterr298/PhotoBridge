@@ -60,6 +60,20 @@ class TransferProgressChecks(unittest.TestCase):
         self.assertEqual(writes[-1]['completed'], 50_000)
         self.assertEqual(writes[-1]['phase'], 'COMMITTED')
 
+    def test_relay_shows_control_file_verification_as_its_own_stage(self):
+        import json
+        from transfer_progress import ProgressRelay
+        writes = []
+        class Client:
+            def mkdir(self, path): pass
+            def replace_progress(self, path, raw): writes.append(json.loads(raw))
+        relay = ProgressRelay(Client(), '12345678-1234-4234-8234-123456789abc', 'TO_IPHONE')
+        relay(dict(status='VERIFYING', verificationCompleted=1, verificationTotal=2,
+                   assetsVerified=50, totalAssets=50))
+        self.assertEqual(writes[-1]['phase'], 'VERIFYING')
+        self.assertEqual(writes[-1]['completed'], 1)
+        self.assertEqual(writes[-1]['total'], 2)
+
     def test_nonfinite_observations_never_escape_as_json_numbers(self):
         import json
         from transfer_progress import snapshot

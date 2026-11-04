@@ -17,3 +17,8 @@
 5. Run a real USB controlled receiver interruption, close/reopen AFC, resume from the actual partial offset and independently verify all output hashes. Report it as controlled interruption, not physical cable loss. Cloud build updated Intel tooling; existing phone 0.3.0 remains usable.
 
 Primary protocol API: https://libimobiledevice.org/docs/libimobiledevice/latest/afc_8h.html (afc_file_seek). External library remains separately installed, not bundled.
+
+
+## Execution result
+
+Implemented, reviewed and committed in 85ad536. Five continuation tests plus shared suites pass (41 CoreChecks / 27 Python after policy/diagnostic additions). Reproduced and fixed nested-destination/symlink-alias issue before acceptance. Real USB controlled receiver interruption closed/reopened AFC and resumed at 3,024,889 bytes; cached1 complete file, all6 hashes and both FS times verified, old bytes/mtime/birthtime unchanged. Physical cable loss remains NOT_RUN. Cloud #14 compiled and packaged the exact reviewed scripts; Intel companion installed after backup. No phone update is required for Mac download continuation itself; 0.3.1 phone update is required for the separately authorized edit-timestamp policy.

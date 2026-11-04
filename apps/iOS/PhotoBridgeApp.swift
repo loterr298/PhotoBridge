@@ -7,9 +7,11 @@ struct PhotoBridgeApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var library = LibraryProbe()
     @StateObject private var macControl = MacControlService()
+    @StateObject private var restore = RestoreService()
+    @State private var selectedTab = 0
     var body: some Scene {
         WindowGroup {
-            TabView {
+            TabView(selection: $selectedTab) {
                 MacExportCompanionView().tabItem { Label("导出到 Mac", systemImage: "arrow.down.to.line.compact") }.tag(0)
                 RestoreView().tabItem { Label("导入到 iPhone", systemImage: "arrow.up.to.line.compact") }.tag(1)
                 PhotoInfoView().tabItem { Label("照片信息", systemImage: "slider.horizontal.3") }.tag(2)
@@ -17,9 +19,29 @@ struct PhotoBridgeApp: App {
             .tint(.bridgeBlue)
             .environmentObject(library)
             .environmentObject(macControl)
-            .task { macControl.start(); macControl.setForeground(scenePhase == .active) }
+            .environmentObject(restore)
+            .task {
+                macControl.start()
+                macControl.setForeground(scenePhase == .active)
+                if let request = macControl.takeAutomaticImportRequest() {
+                    await runAutomaticImport(request)
+                }
+            }
+            .onChange(of: macControl.automaticImportRequest) { _, request in
+                guard let request else { return }
+                macControl.automaticImportRequest = nil
+                selectedTab = 1
+                Task { await runAutomaticImport(request) }
+            }
             .onChange(of: scenePhase) { macControl.setForeground($0 == .active) }
         }
+    }
+
+    @MainActor
+    private func runAutomaticImport(_ request: MacControlService.AutomaticImportRequest) async {
+        selectedTab = 1
+        await restore.automaticallyRestore(session: request.sessionID, title: request.title)
+        macControl.finishAutomaticImport()
     }
 }
 

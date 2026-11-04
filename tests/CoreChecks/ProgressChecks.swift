@@ -20,6 +20,15 @@ func runProgressChecks() throws {
     let latest = LatestPhotoCount()
     for count in 0...50_000 { latest.update(completed: count, total: 50_000) }
     try require(latest.read().completed == 50_000, "50001 updates retain one latest exact count")
+
+    var display = ProgressDisplayState()
+    try require(display.update(PhotoProgress(completed: 1, total: 100), operationID: "one"), "first progress sample is accepted")
+    try require(!display.update(PhotoProgress(completed: 0, total: 100), operationID: "one"), "stale lower sample is rejected")
+    try require(display.progress.completed == 1 && display.progress.total == 100, "stale lower sample cannot move displayed count backwards")
+    try require(display.update(PhotoProgress(completed: 1, total: 100), operationID: "two"), "new operation resets progress identity")
+    try require(display.progress.completed == 1 && display.progress.total == 100, "new operation starts from its own count")
+    try require(display.update(PhotoProgress(completed: 2, total: 120), operationID: "two"), "growing scan total is accepted")
+    try require(display.progress.completed == 2 && display.progress.total == 120, "growing totals remain truthful")
 }
 
 func runTransferDisplayChecks() throws {

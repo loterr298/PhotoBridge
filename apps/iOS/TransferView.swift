@@ -146,9 +146,36 @@ struct TransferSessionCard: View {
                 if let albumName = summary.albumName, !albumName.isEmpty { Text(albumName).font(.headline) }
                 if summary.totalBytes > 0 {
                     ProgressView(value: summary.fraction).tint(.bridgeBlue)
-                    HStack { Text("\(summary.completed)/\(summary.total) 项").frame(width: 74, alignment: .leading); Spacer(); Text("\(ByteCountFormatter.string(fromByteCount: summary.bytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file))") }
+                    let progress = PhotoProgress(completed: summary.completed, total: summary.total,
+                        finished: ["STAGED", "VERIFIED", "COMMITTED"].contains(summary.status))
+                    HStack {
+                        if #available(iOS 17.0, *) {
+                            Text(progress.countText).frame(width: 132, alignment: .leading).contentTransition(.numericText())
+                            Text(progress.percentText).frame(width: 48, alignment: .trailing).contentTransition(.numericText())
+                        } else {
+                            Text(progress.countText).frame(width: 132, alignment: .leading)
+                            Text(progress.percentText).frame(width: 48, alignment: .trailing)
+                        }
+                        Spacer()
+                        Text("\(ByteCountFormatter.string(fromByteCount: summary.bytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file))")
+                    }
+                    .animation(.easeOut(duration: 0.18), value: progress.completed)
                         .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                } else { Text("已保存 \(summary.completed) 项").font(.caption.monospacedDigit()).frame(width: 110, alignment: .leading).foregroundStyle(.secondary) }
+                } else {
+                    let progress = PhotoProgress(completed: summary.completed, total: summary.total,
+                        finished: ["STAGED", "VERIFIED", "COMMITTED"].contains(summary.status))
+                    HStack {
+                        if #available(iOS 17.0, *) {
+                            Text(progress.countText).frame(width: 132, alignment: .leading).contentTransition(.numericText())
+                            Text(progress.percentText).frame(width: 48, alignment: .trailing).contentTransition(.numericText())
+                        } else {
+                            Text(progress.countText).frame(width: 132, alignment: .leading)
+                            Text(progress.percentText).frame(width: 48, alignment: .trailing)
+                        }
+                    }
+                    .animation(.easeOut(duration: 0.18), value: progress.completed)
+                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
                 if let elapsed = summary.elapsedSeconds {
                     Text("已用 \(elapsedText(elapsed))").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 }

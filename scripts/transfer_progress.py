@@ -54,8 +54,12 @@ class ProgressRelay:
         if bucket == self.last_phase and now - self.last_time < .25:
             return
         self.last_time, self.last_phase = now, bucket
-        total = state.get('totalAssets', 0)
-        done = state.get('assetsVerified', 0)
+        if phase == 'VERIFYING':
+            done = state.get('verificationCompleted', 0)
+            total = state.get('verificationTotal', 0)
+        else:
+            total = state.get('totalAssets', 0)
+            done = state.get('assetsVerified', 0)
         if total == 0:
             done, total = state.get('scannedAssets', 0), state.get('scanTotalAssets', 0)
         value = dict(kind='PhotoBridgeTransferDisplay', operationID=self.operation_id,

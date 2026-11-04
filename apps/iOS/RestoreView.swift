@@ -5,7 +5,7 @@ import UIKit
 
 struct RestoreView: View {
     @EnvironmentObject private var control: MacControlService
-    @StateObject private var service = RestoreService()
+    @EnvironmentObject private var service: RestoreService
     @State private var session = ""
     @State private var title = "PhotoBridge 相册"
     @State private var showOptions = false
