@@ -32,8 +32,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: 0.3.36
-        CURRENT_PROJECT_VERSION: 40
+        MARKETING_VERSION: 0.3.37
+        CURRENT_PROJECT_VERSION: 41
   PhotoBridgeUITests:
     type: bundle.ui-testing
     platform: iOS
