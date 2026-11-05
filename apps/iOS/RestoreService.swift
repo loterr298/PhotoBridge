@@ -167,6 +167,24 @@ private struct RestoreInboxRequest: Decodable {
         try cancellation.check()
         return (raw, requestRaw, candidate, resources, totalBytes, request.sourceManifestSHA256)
     }
+
+    nonisolated private func waitForResource(_ resource: ExportResource, in directory: URL,
+                                             cancellation: OperationCancellation) throws {
+        let url = directory.appendingPathComponent(resource.storedRelativePath)
+        let deadline = Date().addingTimeInterval(30 * 60)
+        while Date() < deadline {
+            try cancellation.check()
+            if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+               (attributes[.type] as? FileAttributeType) == .typeRegular,
+               (attributes[.size] as? NSNumber)?.intValue == resource.byteCount,
+               !FileManager.default.fileExists(atPath: url.path + ".part") {
+                try RestoreSafety.verifyResource(resource, in: directory, checkCancellation: cancellation.check)
+                return
+            }
+            Thread.sleep(forTimeInterval: 0.25)
+        }
+        throw ExportError.invalidManifest("等待照片资源超时：(resource.originalFilename)")
+    }
     func preflight(session: String, allowTimestampRewrite: Bool, simulateNoSpace: Bool = false) async {
         guard !busy else { return }
         invalidate(); busy = true; operationStartedAt = Date().timeIntervalSince1970; stopRequested = false; completed = 0; totalAssets = 0; checked = 0; phase = "CHECKING"; verifiedFinished = false
@@ -553,7 +571,7 @@ private struct RestoreInboxRequest: Decodable {
                 if source.ordinal > state.assetIDs.count {
                     message = "正在恢复第 \(source.ordinal)/\(manifest.assets.count) 张照片"
                     try await Task.detached(priority: .utility) {
-                        for resource in source.resources { try RestoreSafety.verifyResource(resource, in: directory, checkCancellation: cancellation.check) }
+                        for resource in source.resources { try self.waitForResource(resource, in: directory, cancellation: cancellation) }
                     }.value
                     try await unchangedInputs()
                     let (collection, fetch, _) = try await observed(try await replay(active))

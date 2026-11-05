@@ -16,7 +16,7 @@ from transfer_progress import snapshot, ProgressRelay
 from backup_layout import upload_journals, upload_journal_name
 
 
-def upload(client, local, previous_journal=None, cancel_file=None, journal_id=None, progress=None):
+def upload(client, local, previous_journal=None, cancel_file=None, journal_id=None, progress=None, stream_import=False):
     local = prepare_import_backup(Path(local), progress=progress)
     identity = journal_id if journal_id is not None else str(uuid.uuid4()).upper()
     if str(uuid.UUID(identity)).upper() != identity: raise ValueError('Invalid upload journal identity')
@@ -78,8 +78,8 @@ def upload(client, local, previous_journal=None, cancel_file=None, journal_id=No
 
     def unpublished():
         names = client.list(remote)
-        if 'restore-request.json' in names or 'restore-started.json' in names:
-            raise ValueError('Published or attempted Photos session cannot be continued')
+        if 'restore-started.json' in names or (not stream_import and 'restore-request.json' in names):
+            raise ValueError('Photos session has already started and cannot be continued')
 
     def check(relative, source, size, sha, prefix=False):
         count = 0; h = hashlib.sha256()
@@ -109,6 +109,13 @@ def upload(client, local, previous_journal=None, cancel_file=None, journal_id=No
                 state='USB_VERIFIED', sourceManifestSHA256=digest, assetCount=len(manifest['assets']),
                 resourceCount=len(resources), byteCount=total, photosImport='NOT_RUN', albumName=manifest['sourceOrder']['albumName'])
             request_raw = json.dumps(request, indent=2).encode()
+            # Publish the immutable manifest and request before media bytes.
+            # The phone can begin the same ordered recovery transaction and
+            # wait for each resource's final file while Mac keeps uploading.
+            if stream_import and 'album-order.json' not in names(remote):
+                client.write_new(remote + '/album-order.json', io.BytesIO(raw))
+            if stream_import and 'restore-request.json' not in names(remote):
+                client.write_new(remote + '/restore-request.json', io.BytesIO(request_raw))
             entries = [(r['storedRelativePath'], r['byteCount'], r['sha256'], None) for r in resources]
             entries += [('album-order.json', len(raw), digest, raw),
                 ('restore-request.json', len(request_raw), hashlib.sha256(request_raw).hexdigest(), request_raw)]
@@ -199,6 +206,7 @@ if __name__ == '__main__':
     parser.add_argument('--progress-file', type=Path, help='Write a UI-only progress copy outside the photo folder')
     parser.add_argument('--cancel-file', type=Path)
     parser.add_argument('--journal-id', help='Uppercase UUID chosen by the Mac for direct progress reads')
+    parser.add_argument('--stream-import', action='store_true', help='Publish the immutable manifest before media bytes')
     args = parser.parse_args(); client = AFC()
     try:
         client.vend('com.photobridge.OrderProbe')
@@ -224,7 +232,8 @@ if __name__ == '__main__':
             directory = upload_journals(staging)
             candidates = [p for p in directory.glob('*.json') if p.is_file() and not p.is_symlink()]
             journal = max(candidates, key=lambda p: p.stat().st_mtime) if candidates else None
-        print(json.dumps(upload(client, staging, journal, args.cancel_file, args.journal_id, progress=report), indent=2))
+        print(json.dumps(upload(client, staging, journal, args.cancel_file, args.journal_id, progress=report,
+                               stream_import=args.stream_import), indent=2))
     except CancellationRequested as error:
         if 'report' in locals():
             report({'status': 'STOPPED', 'state': 'STOPPED', 'error': str(error),

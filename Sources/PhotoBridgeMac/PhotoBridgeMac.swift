@@ -88,6 +88,7 @@ final class MacTransferModel: ObservableObject {
     private let bundleIdentifier = "com.photobridge.OrderProbe"
     private var progressTask: Task<Void, Never>?
     private var importProgressTask: Task<Void, Never>?
+    private var automaticImportSessions = Set<String>()
     private var controlFile: URL?
 
     init() {
@@ -396,8 +397,10 @@ final class MacTransferModel: ObservableObject {
         userMessage = "正在发送照片到 iPhone…"
         setResumableDirection("TO_IPHONE")
         let identity = UUID().uuidString
-        runScript("upload_resume.py", arguments: ["--local", directory.path, "--journal-id", identity],
-                  progressFile: uploadProgressFile(in: directory, identity: identity), controlFile: makeControlFile()) { [weak self] result in
+        let progressFile = uploadProgressFile(in: directory, identity: identity)
+        watchUploadSession(progressFile, title: directory.lastPathComponent)
+        runScript("upload_resume.py", arguments: ["--local", directory.path, "--journal-id", identity, "--stream-import"],
+                  progressFile: progressFile, controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
             self?.setResumableDirection(result.success ? nil : "TO_IPHONE")
             self?.observePhoneImport(result)
@@ -808,12 +811,29 @@ final class MacTransferModel: ObservableObject {
     }
 
     private func startAutomaticImport(session: String, title: String) async {
+        guard automaticImportSessions.insert(session).inserted else { return }
         let requestID = UUID().uuidString
         do {
             _ = try await sendControl(["id": requestID, "kind": "startImport",
                                        "sessionID": session, "title": title], requestID: requestID)
         } catch {
             userMessage = "文件已发送，但 iPhone 未能自动写入照片；请打开 iPhone 的导入页面继续。"
+        }
+    }
+
+    private func watchUploadSession(_ progressFile: URL, title: String) {
+        Task { [weak self] in
+            for _ in 0..<1_800 {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard let self, let data = try? Data(contentsOf: progressFile),
+                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let remote = json["remote"] as? String,
+                      remote.hasPrefix("RestoreInbox/"),
+                      let session = remote.split(separator: "/").last.map(String.init),
+                      UUID(uuidString: session) != nil else { continue }
+                await self.startAutomaticImport(session: session, title: title)
+                return
+            }
         }
     }
 
