@@ -824,8 +824,8 @@ final class MacTransferModel: ObservableObject {
         return session
     }
 
-    private func startAutomaticImport(session: String, title: String) async {
-        guard automaticImportSessions.insert(session).inserted else { return }
+    private func startAutomaticImport(session: String, title: String) async -> Bool {
+        guard !automaticImportSessions.contains(session) else { return true }
         progressText = "正在按顺序导入 iPhone 照片"
         progressFraction = 0.5
         progressPercentText = "50%"
@@ -834,8 +834,11 @@ final class MacTransferModel: ObservableObject {
         do {
             _ = try await sendControl(["id": requestID, "kind": "startImport",
                                        "sessionID": session, "title": title], requestID: requestID)
+            automaticImportSessions.insert(session)
+            return true
         } catch {
             userMessage = "文件已发送，但 iPhone 未能自动写入照片；请打开 iPhone 的导入页面继续。"
+            return false
         }
     }
 
@@ -849,8 +852,7 @@ final class MacTransferModel: ObservableObject {
                       remote.hasPrefix("RestoreInbox/"),
                       let session = remote.split(separator: "/").last.map(String.init),
                       UUID(uuidString: session) != nil else { continue }
-                await self.startAutomaticImport(session: session, title: title)
-                return
+                if await self.startAutomaticImport(session: session, title: title) { return }
             }
         }
     }
