@@ -1145,3 +1145,8 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 - iPhone 自动导入会等待流式清单和请求文件出现后再开始预检，避免 Mac 刚建立会话时过早结束。
 - 资源仍按原 ordinal 顺序逐项等待最终文件、大小和 SHA-256，再提交到同一个系统相册。
 - 111 项 Python 回归和 iOS Swift 语法解析通过。
+
+
+## M4.50 流式会话继续上传修正（0.3.35/build39，2026-11-05）
+
+- 流式上传允许同一活动会话在 iPhone 开始写入后继续发送剩余资源。普通续传仍拒绝已开始的 Photos 会话。

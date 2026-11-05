@@ -78,7 +78,7 @@ def upload(client, local, previous_journal=None, cancel_file=None, journal_id=No
 
     def unpublished():
         names = client.list(remote)
-        if 'restore-started.json' in names or (not stream_import and 'restore-request.json' in names):
+        if ('restore-started.json' in names and not stream_import) or (not stream_import and 'restore-request.json' in names):
             raise ValueError('Photos session has already started and cannot be continued')
 
     def check(relative, source, size, sha, prefix=False):
