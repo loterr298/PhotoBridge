@@ -737,9 +737,11 @@ final class MacTransferModel: ObservableObject {
         lastDisplayedProgress = progress
         progressIndeterminate = expected == 0
         let scanComplete = scanning && expected > 0 && done == expected
+        let preparingFirst = !verifying && done == 0 && expected > 0 && (json["bytesVerified"] as? NSNumber)?.int64Value == 0
+        progressIndeterminate = preparingFirst || expected == 0
         progressFraction = verifying ? 0.5 : (scanComplete ? 1 : progress.fraction)
-        progressCountText = verifying ? "已发送，正在写入 iPhone 照片" : (expected > 0 ? progress.countText : (scanning ? "已扫描 (done) 张" : "正在读取照片…"))
-        progressPercentText = verifying ? "50%" : (scanComplete ? "100%" : progress.percentText)
+        progressCountText = verifying ? "已发送，正在写入 iPhone 照片" : (preparingFirst ? "正在准备第一张照片…" : (expected > 0 ? progress.countText : (scanning ? "已扫描 (done) 张" : "正在读取照片…")))
+        progressPercentText = verifying ? "50%" : (preparingFirst ? "—" : (scanComplete ? "100%" : progress.percentText))
         if verifying { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "正在核对照片" }
         else if scanComplete { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "扫描完成，正在完成最后检查" }
         else if scanning { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "正在扫描照片" }
