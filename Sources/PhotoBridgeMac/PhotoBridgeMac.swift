@@ -896,6 +896,8 @@ private struct MacCard<Content: View>: View {
 private struct MacTransferScreen: View {
     @ObservedObject var transfer: MacTransferModel
     @State private var exportOptions = false
+    @State private var thumbnailRatio: ThumbnailRatio = .square
+    @State private var thumbnailDensity: ThumbnailDensity = .compact
     private var connected: Bool { transfer.usbState == "已连接" }
     private var working: Bool { transfer.busy || transfer.loadingAlbums }
     var body: some View {
@@ -1025,7 +1027,21 @@ private struct MacTransferScreen: View {
                     Button("更换") { transfer.chooseImportFolder() }.buttonStyle(MacSoftButtonStyle())
                 }
                 FolderThumbnailGrid(photos: transfer.importPreview, loading: transfer.loadingImportPreview,
-                                    emptyText: "这个文件夹里还没有可预览的照片")
+                                    emptyText: "这个文件夹里还没有可预览的照片",
+                                    ratio: thumbnailRatio, density: thumbnailDensity)
+                if !transfer.importPreview.isEmpty {
+                    HStack(spacing: 10) {
+                        Picker("缩略图比例", selection: $thumbnailRatio) {
+                            ForEach(ThumbnailRatio.allCases) { Text($0.rawValue).tag($0) }
+                        }.pickerStyle(.menu)
+                        Picker("每页显示", selection: $thumbnailDensity) {
+                            ForEach(ThumbnailDensity.allCases) { Text($0.rawValue).tag($0) }
+                        }.pickerStyle(.menu)
+                        Spacer()
+                        Text("预览 (transfer.importPreview.count.formatted()) 张")
+                            .font(.caption.monospacedDigit()).foregroundStyle(Color.macBridgeMuted)
+                    }
+                }
             }
             Button {
                 if transfer.importFolder == nil { transfer.chooseImportFolder() } else { transfer.uploadBackup() }

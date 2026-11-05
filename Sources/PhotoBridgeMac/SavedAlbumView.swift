@@ -14,6 +14,7 @@ private enum AlbumThumbnailCache {
 
 struct SavedPhotoThumbnail: View {
     let photo: BackupAssetPreview
+    var ratio: ThumbnailRatio = .square
     @State private var image: NSImage?
     @State private var request: QLThumbnailGenerator.Request?
     @State private var loading = true
@@ -26,7 +27,8 @@ struct SavedPhotoThumbnail: View {
                     else if loading { ProgressView().controlSize(.small) }
                     else { Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary) }
                 }
-                .frame(height: 156).frame(maxWidth: .infinity).clipped().clipShape(RoundedRectangle(cornerRadius: 12))
+                .aspectRatio(ratio.value, contentMode: .fit)
+                .frame(maxWidth: .infinity).clipped().clipShape(RoundedRectangle(cornerRadius: 12))
                 Text(String(format: "%06d", photo.ordinal)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 Text(photo.primaryFilename).font(.caption).foregroundStyle(.primary).lineLimit(1)
             }
@@ -62,10 +64,32 @@ struct SavedPhotoThumbnail: View {
     }
 }
 
+enum ThumbnailRatio: String, CaseIterable, Identifiable {
+    case square = "方形"
+    case portrait = "竖向"
+    case landscape = "横向"
+    var id: String { rawValue }
+    var value: CGFloat {
+        switch self { case .square: return 1; case .portrait: return 0.78; case .landscape: return 1.42 }
+    }
+}
+
+enum ThumbnailDensity: String, CaseIterable, Identifiable {
+    case compact = "更多"
+    case standard = "标准"
+    case spacious = "大图"
+    var id: String { rawValue }
+    var minimum: CGFloat {
+        switch self { case .compact: return 76; case .standard: return 108; case .spacious: return 144 }
+    }
+}
+
 struct FolderThumbnailGrid: View {
     let photos: [BackupAssetPreview]
     let loading: Bool
     let emptyText: String
+    var ratio: ThumbnailRatio = .square
+    var density: ThumbnailDensity = .compact
     var body: some View {
         if loading {
             ProgressView("正在读取缩略图…").frame(maxWidth: .infinity, minHeight: 120)
@@ -74,9 +98,9 @@ struct FolderThumbnailGrid: View {
                 .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
         } else {
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 92, maximum: 132), spacing: 10)], spacing: 12) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: density.minimum, maximum: 180), spacing: 8)], spacing: 10) {
                     ForEach(photos) { photo in
-                        SavedPhotoThumbnail(photo: photo)
+                        SavedPhotoThumbnail(photo: photo, ratio: ratio)
                     }
                 }
             }
