@@ -296,6 +296,12 @@ private struct RestoreInboxRequest: Decodable {
     /// native Photos album and the recovery journal is the resume authority.
     func automaticallyRestore(session: String, title: String) async {
         guard !busy else { return }
+        let directory = inbox.appendingPathComponent(session)
+        for _ in 0..<1_800 {
+            if FileManager.default.fileExists(atPath: directory.appendingPathComponent("album-order.json").path),
+               FileManager.default.fileExists(atPath: directory.appendingPathComponent("restore-request.json").path) { break }
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+        }
         await preflight(session: session, allowTimestampRewrite: false)
         guard ready else { return }
         await restore(title: title)

@@ -1138,3 +1138,10 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 - Mac 通过进度文件发现收件会话后立即通知 iPhone，不再等待整个上传脚本结束。Mac 继续显示发送进度，iPhone 共享恢复进度。
 - 默认续传模式仍保留原发布边界，避免旧会话和普通恢复被流式协议改变。
 - 111 项 Python 回归、Mac release 构建和 iOS Swift 语法解析通过。真实 USB 和真机 PhotoKit 流式写入仍需设备实测。
+
+
+## M4.49 流式自动导入等待边界（0.3.34/build38，2026-11-05）
+
+- iPhone 自动导入会等待流式清单和请求文件出现后再开始预检，避免 Mac 刚建立会话时过早结束。
+- 资源仍按原 ordinal 顺序逐项等待最终文件、大小和 SHA-256，再提交到同一个系统相册。
+- 111 项 Python 回归和 iOS Swift 语法解析通过。
