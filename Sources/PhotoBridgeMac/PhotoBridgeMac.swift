@@ -731,10 +731,12 @@ final class MacTransferModel: ObservableObject {
         let progress = displayProgress.progress
         lastDisplayedProgress = progress
         progressIndeterminate = expected == 0
-        progressFraction = progress.fraction
+        let scanComplete = scanning && expected > 0 && done == expected
+        progressFraction = scanComplete ? 1 : progress.fraction
         progressCountText = expected > 0 ? progress.countText : (scanning ? "已扫描 (done) 张" : "正在读取照片…")
-        progressPercentText = progress.percentText
+        progressPercentText = scanComplete ? "100%" : progress.percentText
         if verifying { progressText = "正在核对发送结果" }
+        else if scanComplete { progressText = "扫描完成，正在完成最后检查" }
         else if scanning { progressText = "正在扫描照片" }
         else if state == "FINALIZING" { progressText = "正在完成最后检查" }
         else if state == "COMMITTED" { progressText = "已保存到 Mac" }
@@ -897,7 +899,6 @@ private struct MacTransferScreen: View {
     @ObservedObject var transfer: MacTransferModel
     @State private var exportOptions = false
     @State private var thumbnailRatio: ThumbnailRatio = .square
-    @State private var thumbnailDensity: ThumbnailDensity = .compact
     private var connected: Bool { transfer.usbState == "已连接" }
     private var working: Bool { transfer.busy || transfer.loadingAlbums }
     var body: some View {
@@ -1028,19 +1029,10 @@ private struct MacTransferScreen: View {
                 }
                 FolderThumbnailGrid(photos: transfer.importPreview, loading: transfer.loadingImportPreview,
                                     emptyText: "这个文件夹里还没有可预览的照片",
-                                    ratio: thumbnailRatio, density: thumbnailDensity)
+                                    ratio: thumbnailRatio)
                 if !transfer.importPreview.isEmpty {
-                    HStack(spacing: 10) {
-                        Picker("缩略图比例", selection: $thumbnailRatio) {
-                            ForEach(ThumbnailRatio.allCases) { Text($0.rawValue).tag($0) }
-                        }.pickerStyle(.menu)
-                        Picker("每页显示", selection: $thumbnailDensity) {
-                            ForEach(ThumbnailDensity.allCases) { Text($0.rawValue).tag($0) }
-                        }.pickerStyle(.menu)
-                        Spacer()
-                        Text("预览 (transfer.importPreview.count.formatted()) 张")
-                            .font(.caption.monospacedDigit()).foregroundStyle(Color.macBridgeMuted)
-                    }
+                    Text("文件夹内共 \(transfer.importPreview.count.formatted()) 张照片")
+                        .font(.caption.monospacedDigit()).foregroundStyle(Color.macBridgeMuted)
                 }
             }
             Button {

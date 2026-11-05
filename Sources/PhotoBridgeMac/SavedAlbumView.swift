@@ -74,22 +74,11 @@ enum ThumbnailRatio: String, CaseIterable, Identifiable {
     }
 }
 
-enum ThumbnailDensity: String, CaseIterable, Identifiable {
-    case compact = "更多"
-    case standard = "标准"
-    case spacious = "大图"
-    var id: String { rawValue }
-    var minimum: CGFloat {
-        switch self { case .compact: return 76; case .standard: return 108; case .spacious: return 144 }
-    }
-}
-
 struct FolderThumbnailGrid: View {
     let photos: [BackupAssetPreview]
     let loading: Bool
     let emptyText: String
     var ratio: ThumbnailRatio = .square
-    var density: ThumbnailDensity = .compact
     var body: some View {
         if loading {
             ProgressView("正在读取缩略图…").frame(maxWidth: .infinity, minHeight: 120)
@@ -97,14 +86,15 @@ struct FolderThumbnailGrid: View {
             Text(emptyText).font(.subheadline).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
         } else {
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: density.minimum, maximum: 180), spacing: 8)], spacing: 10) {
+            ScrollView(.vertical) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 10) {
                     ForEach(photos) { photo in
                         SavedPhotoThumbnail(photo: photo, ratio: ratio)
                     }
                 }
             }
-            .frame(maxHeight: 300)
+            .scrollIndicators(.hidden)
+            .frame(maxHeight: 320)
         }
     }
 }
