@@ -27,7 +27,7 @@ struct PhotoBridgeApp: App {
                     await runAutomaticImport(request)
                 }
             }
-            .onChange(of: macControl.automaticImportRequest) { _, request in
+            .onChange(of: macControl.automaticImportRequest) { request in
                 guard let request else { return }
                 macControl.automaticImportRequest = nil
                 selectedTab = 1
