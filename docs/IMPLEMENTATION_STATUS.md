@@ -1182,3 +1182,9 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 - 收件目录只保留传输中间文件，不作为用户完成结果。
 - 用户界面隐藏扫描、发送核对、恢复预检等内部阶段，只显示已写入系统相册的总进度和剩余时间。
 - 旧版本 0.3.x 和 2.0.0 不作为本轮验收包。
+
+
+## M6.1 V3 完成边界修正（3.0.1/build2，2026-11-06）
+
+- Mac 不再在 USB 文件发送完成时清除可继续状态。只有 iPhone PhotoKit 写入和回读完成后才显示完成并清除续传状态。
+- 新增 `docs/PRODUCT_REQUIREMENTS_V3.md`，明确单按钮导入、原生照片写入、总进度和真机验收边界。

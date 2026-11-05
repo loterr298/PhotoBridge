@@ -411,7 +411,7 @@ final class MacTransferModel: ObservableObject {
         runScript("upload_resume.py", arguments: ["--local", directory.path, "--journal-id", identity, "--stream-import"],
                   progressFile: progressFile, controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
-            self?.setResumableDirection(result.success ? nil : "TO_IPHONE")
+            self?.setResumableDirection("TO_IPHONE")
             self?.observePhoneImport(result)
             guard let self else { return }
             if result.success {
@@ -481,7 +481,7 @@ final class MacTransferModel: ObservableObject {
             runScript("upload_resume.py", arguments: ["--local", directory.path, "--auto-resume", "--journal-id", identity],
                       progressFile: uploadProgressFile(in: directory, identity: identity), controlFile: makeControlFile()) { [weak self] result in
                 self?.output = result.text
-                self?.setResumableDirection(result.success ? nil : "TO_IPHONE")
+                self?.setResumableDirection("TO_IPHONE")
                 self?.observePhoneImport(result)
                 guard let self else { return }
                 if result.success {
@@ -805,7 +805,11 @@ final class MacTransferModel: ObservableObject {
                     self.speedText = ""
                     self.etaText = combined > 0 && combined < 1 ? "约剩 \(self.formatDuration(elapsed * (1 / combined - 1)))" : ""
                     self.currentResource = ""
-                    if value.finished { return }
+                    if value.finished {
+                        self.setResumableDirection(nil)
+                        self.userMessage = "照片已全部写入 iPhone 系统相册"
+                        return
+                    }
                 } else {
                     missedReads += 1
                     if missedReads >= 1_200 { return } // 30 minutes without a phone progress record.
