@@ -71,6 +71,19 @@ def prepare_import_backup(local, progress=None):
         raise ValueError('导入位置必须是普通文件夹')
     if ((local / 'album-order.json').is_file() and (local / 'transfer-manifest.json').is_file()) or (local / '.photobridge-layout.json').is_file():
         return local
+    staging = _generic_staging_root(local)
+    if staging.exists():
+        try:
+            cached = validated_backup(staging)
+            if progress:
+                progress({'status': 'STAGING_REUSED', 'state': 'STAGING_REUSED',
+                          'scannedAssets': len(cached[1]['assets']), 'scanTotalAssets': len(cached[1]['assets']),
+                          'currentResource': None, 'assetsVerified': 0,
+                          'totalAssets': len(cached[1]['assets']), 'resourcesVerified': 0,
+                          'totalResources': len(cached[2]), 'bytesVerified': 0, 'totalBytes': cached[4]})
+            return staging
+        except Exception:
+            pass
     files = _generic_media_files(local)
     if progress:
         progress({'status': 'SCANNING', 'state': 'SCANNING', 'scannedAssets': 0,
@@ -100,13 +113,8 @@ def prepare_import_backup(local, progress=None):
                       'scanTotalAssets': len(files), 'currentResource': path.name,
                       'assetsVerified': 0, 'totalAssets': 0, 'resourcesVerified': 0,
                       'totalResources': 0, 'bytesVerified': 0, 'totalBytes': 0})
-    staging = _generic_staging_root(local)
     if staging.exists():
-        try:
-            validated_backup(staging)
-            return staging
-        except Exception:
-            shutil.rmtree(staging)
+        shutil.rmtree(staging)
     staging.mkdir(mode=0o700, parents=True, exist_ok=False)
     session = str(uuid.UUID(bytes=hashlib.sha256(fingerprint.digest()).digest()[:16]))
     captured_at = records[0][6]
