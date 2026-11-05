@@ -119,6 +119,7 @@ final class MacTransferModel: ObservableObject {
         connectionTask = Task { [weak self] in
             var confirmedNonce: String?
             var needsAlbums = false
+            var failedHeartbeats = 0
             while !Task.isCancelled {
                 guard let self else { return }
                 if !self.connectionFreshness.isConnected(now: ProcessInfo.processInfo.systemUptime) { self.usbState = "等待连接" }
@@ -140,12 +141,18 @@ final class MacTransferModel: ObservableObject {
                 let value = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
                 let ready = result?.success == true && value?["status"] as? String == "CONNECTED" && value?["nonce"] as? String == nonce
                 if ready {
+                    failedHeartbeats = 0
                     if self.usbState != "已连接" { needsAlbums = true }
                     confirmedNonce = nonce
                     self.connectionFreshness.confirm(now: ProcessInfo.processInfo.systemUptime)
                     self.usbState = "已连接"
                     self.connectionMessage = "已准备好，可以开始传照片"
                 } else {
+                    failedHeartbeats += 1
+                    if failedHeartbeats < 3 {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        continue
+                    }
                     confirmedNonce = nil
                     self.connectionFreshness.invalidate()
                     self.usbState = "等待连接"
@@ -656,7 +663,8 @@ final class MacTransferModel: ObservableObject {
         if let controlFile { try? FileManager.default.removeItem(at: controlFile) }
         progressFraction = 0
         progressIndeterminate = true
-        progressText = "等待首个进度记录…"
+        progressText = "正在准备照片…"
+        progressCountText = "准备完成后立即开始导入"
         speedText = ""
         etaText = ""
         currentResource = ""
