@@ -23,9 +23,7 @@ struct PhotoBridgeApp: App {
             .task {
                 macControl.start()
                 macControl.setForeground(scenePhase == .active)
-                if let request = macControl.takeAutomaticImportRequest() {
-                    await runAutomaticImport(request)
-                }
+                await monitorAutomaticImports()
             }
             .onChange(of: macControl.automaticImportRequest) { request in
                 guard let request else { return }
@@ -42,6 +40,16 @@ struct PhotoBridgeApp: App {
         selectedTab = 1
         await restore.automaticallyRestore(session: request.sessionID, title: request.title)
         macControl.finishAutomaticImport()
+    }
+
+    @MainActor
+    private func monitorAutomaticImports() async {
+        while !Task.isCancelled {
+            if let request = macControl.takeAutomaticImportRequest() {
+                await runAutomaticImport(request)
+            }
+            try? await Task.sleep(nanoseconds: 500_000_000)
+        }
     }
 }
 
