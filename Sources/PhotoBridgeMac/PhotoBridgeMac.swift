@@ -740,12 +740,12 @@ final class MacTransferModel: ObservableObject {
         progressFraction = scanComplete ? 1 : progress.fraction
         progressCountText = expected > 0 ? progress.countText : (scanning ? "已扫描 (done) 张" : "正在读取照片…")
         progressPercentText = scanComplete ? "100%" : progress.percentText
-        if verifying { progressText = "正在核对发送结果" }
-        else if scanComplete { progressText = "扫描完成，正在完成最后检查" }
-        else if scanning { progressText = "正在扫描照片" }
+        if verifying { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "正在核对照片" }
+        else if scanComplete { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "扫描完成，正在完成最后检查" }
+        else if scanning { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "正在扫描照片" }
         else if state == "FINALIZING" { progressText = "正在完成最后检查" }
         else if state == "COMMITTED" { progressText = "已保存到 Mac" }
-        else if state == "USB_VERIFIED" { progressText = "已发送到 iPhone，正在准备导入" }
+        else if state == "USB_VERIFIED" { progressText = "正在按顺序导入 iPhone 照片" }
         else if ["STOPPED", "FAILED"].contains(state) { progressText = "尚未完成，进度已保留" }
         else { progressText = uploading ? "正在发送到 iPhone" : "正在保存到 Mac" }
         if json["phoneInForeground"] as? Bool == false { progressText = "请回到 iPhone 的 PhotoBridge，继续准备照片" }
@@ -781,7 +781,7 @@ final class MacTransferModel: ObservableObject {
                 if let result, result.success, let raw = result.text.data(using: .utf8),
                    let value = TransferDisplay.decode(raw), value.direction == "IMPORT", value.sessionID == session {
                     missedReads = 0
-                    self.progressText = value.label
+                    self.progressText = value.finished ? "已按顺序导入 iPhone 照片" : "正在按顺序导入 iPhone 照片"
                     _ = self.displayProgress.update(value.progress, operationID: "IMPORT:\(session)", phase: value.phase)
                     let progress = self.displayProgress.progress
                     self.lastDisplayedProgress = progress
@@ -816,7 +816,7 @@ final class MacTransferModel: ObservableObject {
 
     private func startAutomaticImport(session: String, title: String) async {
         guard automaticImportSessions.insert(session).inserted else { return }
-        progressText = "正在写入 iPhone 照片"
+        progressText = "正在按顺序导入 iPhone 照片"
         progressFraction = 0.5
         progressPercentText = "50%"
         etaText = "正在计算剩余时间…"
