@@ -1173,3 +1173,12 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 - 扫描、发送、校验和 PhotoKit 写入作为一个连续任务显示，内部阶段不再作为用户步骤出现。
 - Mac 和 iPhone 采用浅绿色主色，保存到 Mac 和导入到 iPhone 使用不同区域颜色。
 - 新版本号改为 2.0.0/build1，避免与旧版 0.3.x 混装。
+
+
+## M6.0 PhotoBridge V3 实时原生相册导入（3.0.0/build1，2026-11-06）
+
+- V3 验收目标只有一个用户动作：导入到 iPhone。
+- Mac 发送第一张资源后，iPhone 自动调用 PhotoKit 写入系统照片，再继续下一张。
+- 收件目录只保留传输中间文件，不作为用户完成结果。
+- 用户界面隐藏扫描、发送核对、恢复预检等内部阶段，只显示已写入系统相册的总进度和剩余时间。
+- 旧版本 0.3.x 和 2.0.0 不作为本轮验收包。
