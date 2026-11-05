@@ -89,6 +89,7 @@ final class MacTransferModel: ObservableObject {
     private var progressTask: Task<Void, Never>?
     private var importProgressTask: Task<Void, Never>?
     private var automaticImportSessions = Set<String>()
+    private var overallStartedAt: Date?
     private var controlFile: URL?
 
     init() {
@@ -395,6 +396,7 @@ final class MacTransferModel: ObservableObject {
             return
         }
         userMessage = "正在发送照片到 iPhone…"
+        overallStartedAt = Date()
         setResumableDirection("TO_IPHONE")
         let identity = UUID().uuidString
         let progressFile = uploadProgressFile(in: directory, identity: identity)
@@ -783,14 +785,16 @@ final class MacTransferModel: ObservableObject {
                     _ = self.displayProgress.update(value.progress, operationID: "IMPORT:\(session)", phase: value.phase)
                     let progress = self.displayProgress.progress
                     self.lastDisplayedProgress = progress
-                    self.progressFraction = progress.fraction
-                    self.progressCountText = progress.countText
-                    self.progressPercentText = progress.percentText
+                    let combined = value.finished ? 1 : 0.5 + progress.fraction * 0.5
+                    self.progressFraction = combined
+                    self.progressCountText = "\(value.completed.formatted()) / \(value.total.formatted()) 张已写入"
+                    self.progressPercentText = value.finished ? "100%" : "\(Int(combined * 100))%"
                     self.progressIndeterminate = value.total == 0
-                    if let elapsed = value.elapsedSeconds, elapsed.isFinite, elapsed >= 0 {
-                        self.elapsedText = "已用 \(self.formatDuration(elapsed))"
-                    }
-                    self.speedText = ""; self.etaText = ""; self.currentResource = ""
+                    let elapsed = self.overallStartedAt.map { Date().timeIntervalSince($0) } ?? value.elapsedSeconds ?? 0
+                    self.elapsedText = "已用 \(self.formatDuration(max(0, elapsed)))"
+                    self.speedText = ""
+                    self.etaText = combined > 0 && combined < 1 ? "约剩 \(self.formatDuration(elapsed * (1 / combined - 1)))" : ""
+                    self.currentResource = ""
                     if value.finished { return }
                 } else {
                     missedReads += 1
@@ -812,6 +816,10 @@ final class MacTransferModel: ObservableObject {
 
     private func startAutomaticImport(session: String, title: String) async {
         guard automaticImportSessions.insert(session).inserted else { return }
+        progressText = "正在写入 iPhone 照片"
+        progressFraction = 0.5
+        progressPercentText = "50%"
+        etaText = "正在计算剩余时间…"
         let requestID = UUID().uuidString
         do {
             _ = try await sendControl(["id": requestID, "kind": "startImport",
