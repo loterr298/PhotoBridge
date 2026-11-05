@@ -1165,3 +1165,11 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 - Mac 总进度隐藏内部“核对发送结果”资源状态，只显示统一的按顺序导入 iPhone 照片任务。
 - iPhone 自动导入请求持续监听，收到后执行 PhotoKit 原生相册写入。
 - 本轮交付仍要求安装双端 0.3.37 后重新发送，旧收件目录不自动迁移。
+
+
+## M5.0 PhotoBridge V2 单流程导入（2.0.0/build1，2026-11-06）
+
+- V2 用户入口统一为“导入到 iPhone”，按 Mac 当前顺序逐张写入系统照片。
+- 扫描、发送、校验和 PhotoKit 写入作为一个连续任务显示，内部阶段不再作为用户步骤出现。
+- Mac 和 iPhone 采用浅绿色主色，保存到 Mac 和导入到 iPhone 使用不同区域颜色。
+- 新版本号改为 2.0.0/build1，避免与旧版 0.3.x 混装。

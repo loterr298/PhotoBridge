@@ -2,13 +2,13 @@ import SwiftUI
 import UIKit
 
 extension Color {
-    static let bridgeBlue = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.65, green: 0.76, blue: 0.82, alpha: 1) : UIColor(red: 0.28, green: 0.39, blue: 0.46, alpha: 1) })
+    static let bridgeBlue = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.62, green: 0.86, blue: 0.68, alpha: 1) : UIColor(red: 0.18, green: 0.48, blue: 0.29, alpha: 1) })
     static let bridgeSky = Color(uiColor: .systemGroupedBackground)
     static let connectedFill = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : UIColor(red: 0.79, green: 0.94, blue: 0.83, alpha: 1) })
     static let connectedInk = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.69, green: 0.94, blue: 0.76, alpha: 1) : UIColor(red: 0.10, green: 0.35, blue: 0.19, alpha: 1) })
     static let bridgeInk = Color(uiColor: .label)
     static let bridgeMuted = Color(uiColor: .secondaryLabel)
-    static let bridgeButtonFill = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.21, green: 0.28, blue: 0.32, alpha: 1) : UIColor(red: 0.87, green: 0.91, blue: 0.93, alpha: 1) })
+    static let bridgeButtonFill = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.16, green: 0.30, blue: 0.20, alpha: 1) : UIColor(red: 0.84, green: 0.95, blue: 0.87, alpha: 1) })
 }
 
 struct BridgeBackground: View {

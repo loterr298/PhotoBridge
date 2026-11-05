@@ -887,11 +887,11 @@ final class MacTransferModel: ObservableObject {
 extension Color {
     static let macConnectedFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : NSColor(red: 0.79, green: 0.94, blue: 0.83, alpha: 1) })
     static let macConnectedInk = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.69, green: 0.94, blue: 0.76, alpha: 1) : NSColor(red: 0.10, green: 0.35, blue: 0.19, alpha: 1) })
-    static let macBridgeBlue = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.65, green: 0.76, blue: 0.82, alpha: 1) : NSColor(red: 0.28, green: 0.39, blue: 0.46, alpha: 1) })
-    static let macBridgeSky = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .windowBackgroundColor : NSColor(red: 0.965, green: 0.972, blue: 0.976, alpha: 1) })
+    static let macBridgeBlue = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.62, green: 0.86, blue: 0.68, alpha: 1) : NSColor(red: 0.18, green: 0.48, blue: 0.29, alpha: 1) })
+    static let macBridgeSky = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .windowBackgroundColor : NSColor(red: 0.94, green: 0.98, blue: 0.95, alpha: 1) })
     static let macBridgeInk = Color(nsColor: .labelColor)
     static let macBridgeMuted = Color(nsColor: .secondaryLabelColor)
-    static let macBridgeButtonFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.21, green: 0.28, blue: 0.32, alpha: 1) : NSColor(red: 0.87, green: 0.91, blue: 0.93, alpha: 1) })
+    static let macBridgeButtonFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.16, green: 0.30, blue: 0.20, alpha: 1) : NSColor(red: 0.84, green: 0.95, blue: 0.87, alpha: 1) })
     static let macBridgeProgressFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.18, blue: 0.22, alpha: 1) : NSColor(red: 0.985, green: 0.992, blue: 0.998, alpha: 1) })
 }
 
@@ -1046,8 +1046,8 @@ private struct MacTransferScreen: View {
     }
     private var importControls: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("发送到 iPhone").font(.title2.weight(.semibold))
-            Text("把 Mac 文件夹中的照片按当前顺序发送到 iPhone")
+            Text("导入到 iPhone").font(.title2.weight(.semibold))
+            Text("按 Mac 当前顺序逐张写入 iPhone 系统照片")
                 .font(.subheadline).foregroundStyle(Color.macBridgeMuted)
                 .fixedSize(horizontal: false, vertical: true)
             if let folder = transfer.importFolder {
@@ -1068,7 +1068,7 @@ private struct MacTransferScreen: View {
             Button {
                 if transfer.importFolder == nil { transfer.chooseImportFolder() } else { transfer.uploadBackup() }
             } label: {
-                Label(transfer.importFolder == nil ? "选择文件夹" : "发送这个文件夹", systemImage: "arrow.up.to.line")
+                Label(transfer.importFolder == nil ? "选择文件夹" : "开始导入到 iPhone", systemImage: "arrow.up.to.line")
                     .frame(maxWidth: .infinity)
             }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working || !connected)
             if transfer.resumableDirection == "TO_IPHONE" {
