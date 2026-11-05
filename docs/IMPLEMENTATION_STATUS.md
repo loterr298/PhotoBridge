@@ -1103,3 +1103,9 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 - 完整 Python 回归 111 项通过；Mac release 构建、CoreChecks、iOS Swift 语法解析与 1,000 项合成中断续传门禁通过。SwiftPM XCTest 因当前命令行工具环境未提供 XCTest 被跳过；交付门禁其余项目通过。
 - 合成压力结果：1,000 项、1,650 份资源，3 次导出中断及 1 次上传中断恢复通过，峰值 RSS 约 36 MiB；真实 USB 吞吐和真机 PhotoKit 导入仍为 NOT_MEASURED / NOT_RUN。
 - Mac 未压缩应用已重新覆盖安装：`build/PhotoBridgeMac.app`、`/Applications/PhotoBridgeMac.app`，版本 0.3.28（build 32）。iPhone 需另行用个人 Apple ID 签名并安装新版才能启用本轮自动导入和手机端进度联动。
+
+
+## M4.44 Mac 界面图标布局修正（0.3.29/build33，2026-11-05）
+
+- 修复 Mac 首页标题区域的图标容器无尺寸约束导致的巨大圆形背景。界面恢复为紧凑的 52×52 圆角方形图标容器。
+- App 图标资源继续由系统负责桌面圆角裁切，界面内不再复用圆形背景表现。

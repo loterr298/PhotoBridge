@@ -905,11 +905,12 @@ private struct MacTransferScreen: View {
                 VStack(alignment: .leading, spacing: 24) {
                     HStack(alignment: .center, spacing: 14) {
                         ZStack {
-                            Circle().fill(Color.macBridgeButtonFill)
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.macBridgeButtonFill)
                             Image(systemName: "photo.on.rectangle.angled")
                                 .font(.title3.weight(.semibold))
                                 .foregroundStyle(Color.macBridgeBlue)
-                        }
+                        }.frame(width: 52, height: 52)
                         VStack(alignment: .leading, spacing: 3) {
                             Text("照片传输").font(.system(size: 28, weight: .semibold)).foregroundStyle(Color.macBridgeInk)
                             Text("在 iPhone 和 Mac 之间保存照片")
