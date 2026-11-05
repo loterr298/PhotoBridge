@@ -737,9 +737,9 @@ final class MacTransferModel: ObservableObject {
         lastDisplayedProgress = progress
         progressIndeterminate = expected == 0
         let scanComplete = scanning && expected > 0 && done == expected
-        progressFraction = scanComplete ? 1 : progress.fraction
-        progressCountText = expected > 0 ? progress.countText : (scanning ? "已扫描 (done) 张" : "正在读取照片…")
-        progressPercentText = scanComplete ? "100%" : progress.percentText
+        progressFraction = verifying ? 0.5 : (scanComplete ? 1 : progress.fraction)
+        progressCountText = verifying ? "已发送，正在写入 iPhone 照片" : (expected > 0 ? progress.countText : (scanning ? "已扫描 (done) 张" : "正在读取照片…"))
+        progressPercentText = verifying ? "50%" : (scanComplete ? "100%" : progress.percentText)
         if verifying { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "正在核对照片" }
         else if scanComplete { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "扫描完成，正在完成最后检查" }
         else if scanning { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "正在扫描照片" }
@@ -762,7 +762,7 @@ final class MacTransferModel: ObservableObject {
            let seconds = ProgressNumber.nonnegativeInt64(eta.doubleValue.rounded()), seconds < 31_536_000 {
             etaText = "约剩 \(formatDuration(Double(seconds)))"
         } else { etaText = "" }
-        currentResource = json["currentResource"] as? String ?? ""
+        currentResource = verifying ? "" : (json["currentResource"] as? String ?? "")
     }
 
     private func observePhoneImport(_ result: ScriptResult) {
