@@ -757,7 +757,7 @@ final class MacTransferModel: ObservableObject {
         else if state == "COMMITTED" { progressText = "已保存到 Mac" }
         else if state == "USB_VERIFIED" { progressText = "正在按顺序导入 iPhone 照片" }
         else if ["STOPPED", "FAILED"].contains(state) { progressText = "尚未完成，进度已保留" }
-        else { progressText = uploading ? "正在发送到 iPhone" : "正在保存到 Mac" }
+        else { progressText = uploading ? "正在导入 iPhone 照片" : "正在保存到 Mac" }
         if json["phoneInForeground"] as? Bool == false { progressText = "请回到 iPhone 的 PhotoBridge，继续准备照片" }
         let bytes = ProgressNumber.nonnegativeInt64((json["bytesVerified"] as? NSNumber)?.doubleValue ?? 0) ?? 0
         if let elapsed = json["elapsedSeconds"] as? NSNumber ?? json["seconds"] as? NSNumber,
