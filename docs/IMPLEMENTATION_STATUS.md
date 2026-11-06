@@ -6,6 +6,8 @@
 - 已完成：导入结束后重新读取目标相簿，按新建资产标识核对相对顺序。顺序不一致会失败，不显示完成。
 - 已完成：Mac 等待 iPhone 的 `COMMITTED` 状态，发送完成和照片库完成分开显示，异常等待有超时出口。
 - 本地验证：iOS 语法检查、CoreChecks、Intel Mac release 构建、Python 113 项测试通过。
+- 云编译证据：GitHub Actions run `42250222649`（commit `bb77470`）成功，iOS unsigned build、模拟器 UI、Intel Mac build 和 113 项 Python 测试均通过。
+- 云产物 SHA-256：iOS `19e6948cee4ed5439d92d55bc0dd15adb1e1969ecd4d1c30d0b46cb3b23be55c`；Intel Mac `7e276de255993276c994572d3dc0bd1f133a0d296ad827daa958bc2d125de041`。
 
 ## V4.3 完成态回传与 99% 超时保护（2026-11-07）
 
