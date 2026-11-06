@@ -1195,3 +1195,9 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 - 用户界面不再显示“正在核对发送结果”资源文本，也不显示旧的“继续发送上次任务”按钮。
 - 进度卡只显示导入 iPhone 系统照片的主任务。
 - 版本号提升为 3.1.0，避免继续打开旧 Mac App。
+
+
+## M6.3 绿色圆角新图标与版本区分（3.2.0/build3，2026-11-06）
+
+- 新增浅绿色圆角方形照片图标，接入 iPhone AppIcon 和 Mac PhotoBridge.icns。
+- 版本号提升为 3.2.0，便于区分 V3.1。
