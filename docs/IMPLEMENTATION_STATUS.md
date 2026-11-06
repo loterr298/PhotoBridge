@@ -1188,3 +1188,10 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 
 - Mac 不再在 USB 文件发送完成时清除可继续状态。只有 iPhone PhotoKit 写入和回读完成后才显示完成并清除续传状态。
 - 新增 `docs/PRODUCT_REQUIREMENTS_V3.md`，明确单按钮导入、原生照片写入、总进度和真机验收边界。
+
+
+## M6.2 取消旧核对控件并明确 V3.1 版本（3.1.0/build2，2026-11-06）
+
+- 用户界面不再显示“正在核对发送结果”资源文本，也不显示旧的“继续发送上次任务”按钮。
+- 进度卡只显示导入 iPhone 系统照片的主任务。
+- 版本号提升为 3.1.0，避免继续打开旧 Mac App。

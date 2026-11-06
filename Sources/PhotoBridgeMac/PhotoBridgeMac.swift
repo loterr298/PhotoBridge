@@ -1136,10 +1136,10 @@ private struct MacTransferScreen: View {
                     Text(transfer.etaText).font(.caption).foregroundStyle(.secondary)
                     if transfer.busy { Button("暂停") { transfer.requestCancel() }.buttonStyle(MacSoftButtonStyle()) }
                 }
-                if !transfer.currentResource.isEmpty {
+                if !transfer.currentResource.isEmpty && !transfer.progressText.contains("导入 iPhone") {
                     Text(transfer.currentResource).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
-                if !transfer.busy, let direction = transfer.resumableDirection {
+                if !transfer.busy, let direction = transfer.resumableDirection, !transfer.progressText.contains("导入 iPhone") {
                     Button(direction == "TO_IPHONE" ? "继续发送上次任务" : "继续上次导出") {
                         if direction == "TO_IPHONE" { transfer.resumeUpload() }
                         else { transfer.continueMacExport() }
