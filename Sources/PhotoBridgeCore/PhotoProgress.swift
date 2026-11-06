@@ -152,3 +152,18 @@ public struct DirectImportProgress: Equatable, Sendable {
         PhotoProgress(completed: completed, total: total, finished: phase == "COMMITTED")
     }
 }
+
+/// PhotoKit transaction sizing for the direct importer. Each range is
+/// contiguous and ordered, so batching can reduce database commits without
+/// changing the album order.
+public enum DirectImportBatching {
+    public static let maxBatchSize = 64
+
+    public static func ranges(total: Int, batchSize: Int = maxBatchSize) -> [Range<Int>] {
+        guard total > 0 else { return [] }
+        let size = max(1, batchSize)
+        return stride(from: 0, to: total, by: size).map { start in
+            start..<min(total, start + size)
+        }
+    }
+}

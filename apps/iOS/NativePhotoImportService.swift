@@ -8,6 +8,14 @@ import PhotoBridgeCore
 /// the native Photos album.
 @MainActor
 final class NativePhotoImportService: ObservableObject {
+    private struct PendingItem {
+        let ordinal: Int
+        let relativePath: String
+        let filename: String
+        let uniformTypeIdentifier: String
+        let resourceType: PHAssetResourceType
+    }
+
     @Published private(set) var directProgress: DirectImportProgress?
     var onProgress: ((DirectImportProgress) -> Void)?
     private var album: PHAssetCollection?
@@ -46,23 +54,19 @@ final class NativePhotoImportService: ObservableObject {
             let root = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("DirectInbox", isDirectory: true)
                 .appendingPathComponent(session, isDirectory: true)
-            for ordinal in 1...total {
+            for range in DirectImportBatching.ranges(total: total) {
                 try Task.checkCancellation()
-                let marker = root.appendingPathComponent(String(format: "%06d/item.json", ordinal))
-                let value = try await waitForMarker(at: marker)
-                guard value["sessionID"] as? String == session,
-                      value["ordinal"] as? Int == ordinal,
-                      let relativePath = value["relativePath"] as? String,
-                      let filename = value["filename"] as? String else {
-                    throw NSError(domain: "PhotoBridge.DirectImport", code: 9,
-                                  userInfo: [NSLocalizedDescriptionKey: "收到的照片顺序信息无效"])
+                var items: [PendingItem] = []
+                items.reserveCapacity(range.count)
+                for ordinal in range.map({ $0 + 1 }) {
+                    let marker = root.appendingPathComponent(String(format: "%06d/item.json", ordinal))
+                    let value = try await waitForMarker(at: marker)
+                    items.append(try pendingItem(from: value, session: session, ordinal: ordinal))
                 }
-                let uti = UTType(filenameExtension: URL(fileURLWithPath: filename).pathExtension)?.identifier ?? "public.data"
-                let resourceType = ["mov", "mp4", "m4v"].contains(URL(fileURLWithPath: filename).pathExtension.lowercased()) ? 2 : 1
-                try await importItem(session: session, ordinal: ordinal, title: albumTitle,
-                                     relativePath: relativePath, filename: filename,
-                                     uniformTypeIdentifier: uti, resourceType: resourceType)
-                publish(DirectImportProgress(sessionID: session, completed: ordinal, total: total, phase: "IMPORTING"))
+                try await importBatch(items)
+                for ordinal in items.map(\.ordinal) {
+                    publish(DirectImportProgress(sessionID: session, completed: ordinal, total: total, phase: "IMPORTING"))
+                }
             }
             publish(DirectImportProgress(sessionID: session, completed: total, total: total, phase: "COMMITTED"))
         } catch is CancellationError {
@@ -91,6 +95,63 @@ final class NativePhotoImportService: ObservableObject {
             try await Task.sleep(nanoseconds: 200_000_000)
         }
         throw CancellationError()
+    }
+
+    private func pendingItem(from value: [String: Any], session: String, ordinal: Int) throws -> PendingItem {
+        guard value["sessionID"] as? String == session,
+              value["ordinal"] as? Int == ordinal,
+              let relativePath = value["relativePath"] as? String,
+              let filename = value["filename"] as? String,
+              !relativePath.contains(".."), !relativePath.hasPrefix("/") else {
+            throw NSError(domain: "PhotoBridge.DirectImport", code: 9,
+                          userInfo: [NSLocalizedDescriptionKey: "收到的照片顺序信息无效"])
+        }
+        let pathExtension = URL(fileURLWithPath: filename).pathExtension
+        let uti = UTType(filenameExtension: pathExtension)?.identifier ?? "public.data"
+        let isVideo = ["mov", "mp4", "m4v"].contains(pathExtension.lowercased())
+        return PendingItem(ordinal: ordinal, relativePath: relativePath, filename: filename,
+                           uniformTypeIdentifier: uti, resourceType: isVideo ? .video : .photo)
+    }
+
+    private func importBatch(_ items: [PendingItem]) async throws {
+        guard let album else {
+            throw NSError(domain: "PhotoBridge.DirectImport", code: 3,
+                          userInfo: [NSLocalizedDescriptionKey: "无法创建系统相册"])
+        }
+        let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        var prepared: [(PendingItem, URL)] = []
+        prepared.reserveCapacity(items.count)
+        for item in items {
+            let file = directory.appendingPathComponent(item.relativePath)
+            let attributes = try FileManager.default.attributesOfItem(atPath: file.path)
+            guard attributes[.type] as? FileAttributeType == .typeRegular else {
+                throw NSError(domain: "PhotoBridge.DirectImport", code: 4,
+                              userInfo: [NSLocalizedDescriptionKey: "收件文件不可用"])
+            }
+            prepared.append((item, file))
+        }
+        try await withCheckedThrowingContinuation { continuation in
+            PHPhotoLibrary.shared().performChanges({
+                guard let albumRequest = PHAssetCollectionChangeRequest(for: album) else { return }
+                var placeholders: [PHObjectPlaceholder] = []
+                placeholders.reserveCapacity(prepared.count)
+                for (item, file) in prepared {
+                    let request = PHAssetCreationRequest.forAsset()
+                    let options = PHAssetResourceCreationOptions()
+                    options.shouldMoveFile = false
+                    options.originalFilename = item.filename
+                    options.uniformTypeIdentifier = item.uniformTypeIdentifier
+                    request.addResource(with: item.resourceType, fileURL: file, options: options)
+                    if let placeholder = request.placeholderForCreatedAsset {
+                        placeholders.append(placeholder)
+                    }
+                }
+                albumRequest.addAssets(placeholders as NSArray)
+            }, completionHandler: { success, error in
+                if success { continuation.resume() }
+                else { continuation.resume(throwing: error ?? NSError(domain: "PhotoBridge.DirectImport", code: 5, userInfo: [NSLocalizedDescriptionKey: "照片写入失败"])) }
+            })
+        }
     }
 
     func importItem(session: String, ordinal: Int, title: String, relativePath: String,

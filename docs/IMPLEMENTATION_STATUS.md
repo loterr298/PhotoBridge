@@ -1,5 +1,12 @@
 # 实施状态记录
 
+## V4.2 批量 PhotoKit 提交提速（2026-11-06）
+
+- 已完成：直写导入按连续 ordinal 分成 64 张一批，在单次 PhotoKit 事务中创建资源并按原顺序加入目标相簿。
+- 已完成：每批事务完成后逐项推进当前任务计数，保留真实完成边界，不再为每张照片单独提交数据库事务。
+- 本地验证：`swiftc -parse apps/iOS/*.swift`、`swift run CoreChecks`、`swift build -c release --arch x86_64 --product PhotoBridgeMac`、Python 113 项测试通过。
+- 设备待验证：本轮未用真实 iPhone 重新测吞吐，实际速度仍受机型、线材、照片类型和 PhotoKit 状态影响。
+
 ## V4.1 直写速度与实时进度（2026-11-06）
 
 - 已完成：Mac → iPhone 直写路径改为单次 AFC/House Arrest 会话，按 Mac 端生成的显式文件顺序清单连续发送，避免每张照片重复 USB 握手。

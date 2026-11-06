@@ -36,6 +36,10 @@ func runProgressChecks() throws {
     try require(direct.isActive, "direct import is active while PhotoKit is writing")
     let done = DirectImportProgress(sessionID: "current", completed: 6_304, total: 6_304, phase: "COMMITTED")
     try require(done.progress.finished, "direct import marks completion only after PhotoKit writes finish")
+
+    let batches = DirectImportBatching.ranges(total: 130)
+    try require(batches.map { Array($0) } == [Array(0..<64), Array(64..<128), Array(128..<130)],
+                "direct import batches preserve every ordinal")
 }
 
 func runTransferDisplayChecks() throws {
