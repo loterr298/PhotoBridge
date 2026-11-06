@@ -1,5 +1,12 @@
 # 实施状态记录
 
+## V4.4 传输速度与导入顺序核验（2026-11-07）
+
+- 已完成：PhotoKit 事务批次保持 128 张，减少数据库提交次数并继续使用连续 ordinal。
+- 已完成：导入结束后重新读取目标相簿，按新建资产标识核对相对顺序。顺序不一致会失败，不显示完成。
+- 已完成：Mac 等待 iPhone 的 `COMMITTED` 状态，发送完成和照片库完成分开显示，异常等待有超时出口。
+- 本地验证：iOS 语法检查、CoreChecks、Intel Mac release 构建、Python 113 项测试通过。
+
 ## V4.3 完成态回传与 99% 超时保护（2026-11-07）
 
 - 已完成：iPhone 将当前直写 session 的 PhotoKit 状态写入 `Control/direct-import-progress.json`，Mac 等待 `COMMITTED` 后才显示 100%。

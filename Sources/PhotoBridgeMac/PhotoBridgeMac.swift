@@ -981,7 +981,7 @@ final class MacTransferModel: ObservableObject {
                     self.progressFraction = progress.fraction
                     self.progressCountText = "\(value.completed.formatted()) / \(total.formatted()) 张已写入 iPhone"
                     self.progressPercentText = progress.percentText
-                    self.progressText = value.finished ? "已完成写入 iPhone 系统相册" : "正在写入 iPhone 系统相册"
+                    self.progressText = value.finished ? "已完成写入 iPhone 系统相册" : value.phase == "VERIFYING" ? "正在确认相册顺序" : "正在写入 iPhone 系统相册"
                     let elapsed = self.overallStartedAt.map { Date().timeIntervalSince($0) } ?? value.elapsedSeconds ?? 0
                     self.elapsedText = "已用 \(self.formatDuration(max(0, elapsed)))"
                     self.currentResource = ""

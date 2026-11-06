@@ -54,6 +54,8 @@ final class NativePhotoImportService: ObservableObject {
             let root = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("DirectInbox", isDirectory: true)
                 .appendingPathComponent(session, isDirectory: true)
+            var createdIdentifiers: [String] = []
+            createdIdentifiers.reserveCapacity(total)
             for range in DirectImportBatching.ranges(total: total) {
                 try Task.checkCancellation()
                 var items: [PendingItem] = []
@@ -63,11 +65,13 @@ final class NativePhotoImportService: ObservableObject {
                     let value = try await waitForMarker(at: marker)
                     items.append(try pendingItem(from: value, session: session, ordinal: ordinal))
                 }
-                try await importBatch(items)
+                createdIdentifiers.append(contentsOf: try await importBatch(items))
                 for ordinal in items.map(\.ordinal) {
                     publish(DirectImportProgress(sessionID: session, completed: ordinal, total: total, phase: "IMPORTING"))
                 }
             }
+            publish(DirectImportProgress(sessionID: session, completed: total, total: total, phase: "VERIFYING"))
+            try verifyAlbumOrder(expectedIdentifiers: createdIdentifiers)
             publish(DirectImportProgress(sessionID: session, completed: total, total: total, phase: "COMMITTED"))
         } catch is CancellationError {
             return
@@ -113,7 +117,7 @@ final class NativePhotoImportService: ObservableObject {
                            uniformTypeIdentifier: uti, resourceType: isVideo ? .video : .photo)
     }
 
-    private func importBatch(_ items: [PendingItem]) async throws {
+    private func importBatch(_ items: [PendingItem]) async throws -> [String] {
         guard let album else {
             throw NSError(domain: "PhotoBridge.DirectImport", code: 3,
                           userInfo: [NSLocalizedDescriptionKey: "无法创建系统相册"])
@@ -130,6 +134,7 @@ final class NativePhotoImportService: ObservableObject {
             }
             prepared.append((item, file))
         }
+        var identifiers: [String] = []
         try await withCheckedThrowingContinuation { continuation in
             PHPhotoLibrary.shared().performChanges({
                 guard let albumRequest = PHAssetCollectionChangeRequest(for: album) else { return }
@@ -144,6 +149,7 @@ final class NativePhotoImportService: ObservableObject {
                     request.addResource(with: item.resourceType, fileURL: file, options: options)
                     if let placeholder = request.placeholderForCreatedAsset {
                         placeholders.append(placeholder)
+                        identifiers.append(placeholder.localIdentifier)
                     }
                 }
                 albumRequest.addAssets(placeholders as NSArray)
@@ -152,6 +158,23 @@ final class NativePhotoImportService: ObservableObject {
                 else { continuation.resume(throwing: error ?? NSError(domain: "PhotoBridge.DirectImport", code: 5, userInfo: [NSLocalizedDescriptionKey: "照片写入失败"])) }
             })
         }
+        return identifiers
+    }
+
+    private func verifyAlbumOrder(expectedIdentifiers: [String]) throws {
+        guard let album, DirectOrderVerification.matches(expected: expectedIdentifiers,
+                                                         actual: Self.identifiers(in: album)) else {
+            throw NSError(domain: "PhotoBridge.DirectImport", code: 10,
+                          userInfo: [NSLocalizedDescriptionKey: "导入后的相册顺序核验失败"])
+        }
+    }
+
+    private static func identifiers(in album: PHAssetCollection) -> [String] {
+        let assets = PHAsset.fetchAssets(in: album, options: nil)
+        var identifiers: [String] = []
+        identifiers.reserveCapacity(assets.count)
+        assets.enumerateObjects { asset, _, _ in identifiers.append(asset.localIdentifier) }
+        return identifiers
     }
 
     func importItem(session: String, ordinal: Int, title: String, relativePath: String,

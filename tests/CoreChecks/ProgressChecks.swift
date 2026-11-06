@@ -40,6 +40,13 @@ func runProgressChecks() throws {
     let batches = DirectImportBatching.ranges(total: 258)
     try require(batches.map { Array($0) } == [Array(0..<128), Array(128..<256), Array(256..<258)],
                 "direct import batches preserve every ordinal")
+
+    try require(DirectOrderVerification.matches(expected: ["a", "b", "c"], actual: ["x", "a", "b", "c", "y"]),
+                "direct import accepts the expected order inside an existing album")
+    try require(!DirectOrderVerification.matches(expected: ["a", "b", "c"], actual: ["x", "a", "c", "b"]),
+                "direct import rejects an order mismatch")
+    try require(!DirectOrderVerification.matches(expected: ["a", "b", "b"], actual: ["a", "b", "b"]),
+                "direct import rejects duplicate identifiers")
 }
 
 func runTransferDisplayChecks() throws {

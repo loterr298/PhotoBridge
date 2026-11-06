@@ -147,7 +147,7 @@ public struct DirectImportProgress: Equatable, Sendable {
         self.elapsedSeconds = max(0, elapsedSeconds.isFinite ? elapsedSeconds : 0)
     }
 
-    public var isActive: Bool { phase == "IMPORTING" }
+    public var isActive: Bool { phase == "IMPORTING" || phase == "VERIFYING" }
     public var progress: PhotoProgress {
         PhotoProgress(completed: completed, total: total, finished: phase == "COMMITTED")
     }
@@ -165,5 +165,16 @@ public enum DirectImportBatching {
         return stride(from: 0, to: total, by: size).map { start in
             start..<min(total, start + size)
         }
+    }
+}
+
+public enum DirectOrderVerification {
+    public static func matches(expected: [String], actual: [String]) -> Bool {
+        guard !expected.isEmpty, Set(expected).count == expected.count else { return false }
+        var expectedIndex = 0
+        for identifier in actual where expectedIndex < expected.count {
+            if identifier == expected[expectedIndex] { expectedIndex += 1 }
+        }
+        return expectedIndex == expected.count
     }
 }
