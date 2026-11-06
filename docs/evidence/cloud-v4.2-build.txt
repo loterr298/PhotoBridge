@@ -1,0 +1,8 @@
+PhotoBridge V4.2 batch PhotoKit build evidence
+Run: https://github.com/loterr298/PhotoBridge/actions/runs/42236740568
+Commit: 2d77ba27324013a56a216885ea17ea4d2eefcc95
+Result: success
+Tests: 113 Python tests, CoreChecks, simulator UI passed
+iOS IPA SHA-256: 5fa5081416eb8619f5d267dcf925217e2913e6e3b2596e97c0fe40e877594d7c
+Intel Mac ZIP SHA-256: e1d84693b404ccaca9ae0d08fd7f5b87eec341a9c377a158c7c6cf02785ae4b2
+Real iPhone throughput: not measured in this run

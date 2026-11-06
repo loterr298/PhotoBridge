@@ -6,6 +6,8 @@
 - 已完成：每批事务完成后逐项推进当前任务计数，保留真实完成边界，不再为每张照片单独提交数据库事务。
 - 本地验证：`swiftc -parse apps/iOS/*.swift`、`swift run CoreChecks`、`swift build -c release --arch x86_64 --product PhotoBridgeMac`、Python 113 项测试通过。
 - 设备待验证：本轮未用真实 iPhone 重新测吞吐，实际速度仍受机型、线材、照片类型和 PhotoKit 状态影响。
+- 云编译证据：GitHub Actions run `42236740568`（commit `2d77ba2`）成功，iOS unsigned build、模拟器 UI、Intel Mac build 和 113 项 Python 测试均通过。
+- 云产物 SHA-256：iOS `5fa5081416eb8619f5d267dcf925217e2913e6e3b2596e97c0fe40e877594d7c`；Intel Mac `e1d84693b404ccaca9ae0d08fd7f5b87eec341a9c377a158c7c6cf02785ae4b2`。
 
 ## V4.1 直写速度与实时进度（2026-11-06）
 
