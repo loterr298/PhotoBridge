@@ -35,6 +35,22 @@ struct RestoreView: View {
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
                         PhoneConnectionStatus(connected: control.connected)
+                        BridgeCard {
+                            HStack(spacing: 12) {
+                                Image(systemName: service.photoPermission == .authorized ? "checkmark.circle.fill" : "photo.badge.exclamationmark")
+                                    .foregroundStyle(service.photoPermission == .authorized ? Color.connectedInk : .orange)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(service.photoPermissionTitle).font(.subheadline.weight(.semibold))
+                                    Text(service.photoPermission == .authorized ? "导入会直接保存到系统照片" : "需要允许访问全部照片，才能写入原生相册")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if service.photoPermission != .authorized {
+                                    Button("允许") { Task { _ = await service.requestPhotoPermission() } }
+                                        .buttonStyle(BridgeButtonStyle(primary: true))
+                                }
+                            }
+                        }
                         if let display = control.macProgress, display.direction == "TO_IPHONE", !service.busy, !finished, (session.isEmpty || display.sessionID == session) {
                             BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress, elapsedSeconds: display.elapsedSeconds) }
                         }

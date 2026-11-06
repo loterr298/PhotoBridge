@@ -41,6 +41,7 @@ private struct RestoreInboxRequest: Decodable {
     var displayProgress: PhotoProgress { PhotoProgress(completed: phase == "CHECKING" ? checked : completed, total: totalAssets, finished: verifiedFinished || (ready && phase == "CHECKING")) }
     @Published var totalAssets = 0
     @Published var authorizedTimestampDifferences = 0
+    @Published private(set) var photoPermission = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     private var selected: URL?
     private var manifest: AlbumExportManifest?
     private var manifestData: Data?
@@ -52,6 +53,22 @@ private struct RestoreInboxRequest: Decodable {
     private var cancellation = OperationCancellation()
     private var inbox: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("RestoreInbox")
+    }
+
+    var photoPermissionTitle: String {
+        switch photoPermission {
+        case .authorized: return "照片权限：全部照片"
+        case .limited: return "照片权限：仅部分照片"
+        case .denied, .restricted: return "照片权限：未允许"
+        case .notDetermined: return "照片权限：尚未选择"
+        @unknown default: return "照片权限：未知"
+        }
+    }
+
+    func requestPhotoPermission() async -> Bool {
+        let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+        photoPermission = status
+        return status == .authorized
     }
 
     func refresh() async {
@@ -296,6 +313,14 @@ private struct RestoreInboxRequest: Decodable {
     /// native Photos album and the recovery journal is the resume authority.
     func automaticallyRestore(session: String, title: String) async {
         guard !busy else { return }
+        photoPermission = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        if photoPermission == .notDetermined {
+            _ = await requestPhotoPermission()
+        }
+        guard photoPermission == .authorized else {
+            message = "请在系统设置中允许 PhotoBridge 访问全部照片"
+            return
+        }
         let directory = inbox.appendingPathComponent(session)
         for _ in 0..<1_800 {
             if FileManager.default.fileExists(atPath: directory.appendingPathComponent("album-order.json").path),
