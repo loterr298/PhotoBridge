@@ -51,18 +51,31 @@ struct RestoreView: View {
                                 }
                             }
                         }
-                        if let display = control.macProgress, display.direction == "TO_IPHONE", !service.busy, !finished, (session.isEmpty || display.sessionID == session) {
-                            BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress, elapsedSeconds: display.elapsedSeconds) }
-                        }
-                        if finished {
+                        if let direct = control.directProgress {
                             BridgeCard {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    PhotoCountView(title: "导入完成", progress: service.displayProgress)
-                                    Text("在系统照片中查看新相册。").font(.subheadline).foregroundStyle(.secondary)
-                                    Button("查找其他照片") { Task { await refresh() } }.buttonStyle(BridgeButtonStyle())
+                                VStack(alignment: .leading, spacing: 12) {
+                                    let title = direct.phase == "COMMITTED" ? "已导入到 iPhone 照片" : direct.phase == "FAILED" ? "导入没有完成" : "正在导入 iPhone 照片"
+                                    PhotoCountView(title: title, progress: direct.progress, elapsedSeconds: direct.elapsedSeconds)
+                                    if direct.phase == "COMMITTED" {
+                                        Text("照片已写入系统照片，并按文件夹顺序保存。").font(.subheadline).foregroundStyle(.secondary)
+                                    } else if direct.phase == "FAILED" {
+                                        Text("请保持数据线连接并重新开始，已写入的照片会保留。").font(.subheadline).foregroundStyle(.secondary)
+                                    }
                                 }
                             }
                         } else {
+                            if let display = control.macProgress, display.direction == "TO_IPHONE", !service.busy, !finished, (session.isEmpty || display.sessionID == session) {
+                                BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress, elapsedSeconds: display.elapsedSeconds) }
+                            }
+                            if finished {
+                                BridgeCard {
+                                    VStack(alignment: .leading, spacing: 16) {
+                                        PhotoCountView(title: "导入完成", progress: service.displayProgress)
+                                        Text("在系统照片中查看新相册。").font(.subheadline).foregroundStyle(.secondary)
+                                        Button("查找其他照片") { Task { await refresh() } }.buttonStyle(BridgeButtonStyle())
+                                    }
+                                }
+                            } else {
                             BridgeCard {
                                 VStack(alignment: .leading, spacing: 20) {
                                     if service.sessions.isEmpty {
@@ -113,6 +126,7 @@ struct RestoreView: View {
                                 }.frame(maxWidth: .infinity, alignment: .leading)
                             }
                             if !service.message.isEmpty { Text(friendlyMessage).font(.subheadline).foregroundStyle(.secondary).textSelection(.enabled) }
+                            }
                         }
                         Text("保留相册顺序，原照片不会删除。").font(.subheadline).foregroundStyle(.secondary)
                     }.padding(24).frame(maxWidth: 580, alignment: .leading).frame(maxWidth: .infinity)

@@ -29,6 +29,13 @@ func runProgressChecks() throws {
     try require(display.progress.completed == 1 && display.progress.total == 100, "new operation starts from its own count")
     try require(display.update(PhotoProgress(completed: 2, total: 120), operationID: "two"), "growing scan total is accepted")
     try require(display.progress.completed == 2 && display.progress.total == 120, "growing totals remain truthful")
+
+    let direct = DirectImportProgress(sessionID: "current", completed: 18, total: 6_304, phase: "IMPORTING")
+    try require(direct.progress.completed == 18 && direct.progress.total == 6_304,
+                "direct import owns the live iPhone counter")
+    try require(direct.isActive, "direct import is active while PhotoKit is writing")
+    let done = DirectImportProgress(sessionID: "current", completed: 6_304, total: 6_304, phase: "COMMITTED")
+    try require(done.progress.finished, "direct import marks completion only after PhotoKit writes finish")
 }
 
 func runTransferDisplayChecks() throws {

@@ -127,3 +127,28 @@ public struct TransferDisplay: Codable, Equatable, Sendable {
         return decode(data)
     }
 }
+
+/// Live state for the direct Mac-to-Photos pipeline. This is separate from
+/// persisted restore journals so an old interrupted job cannot overwrite the
+/// current import counter on the iPhone.
+public struct DirectImportProgress: Equatable, Sendable {
+    public let sessionID: String
+    public let completed: Int
+    public let total: Int
+    public let phase: String
+    public let elapsedSeconds: Double
+
+    public init(sessionID: String, completed: Int, total: Int, phase: String,
+                elapsedSeconds: Double = 0) {
+        self.sessionID = sessionID
+        self.total = max(0, total)
+        self.completed = min(max(0, completed), self.total)
+        self.phase = phase
+        self.elapsedSeconds = max(0, elapsedSeconds.isFinite ? elapsedSeconds : 0)
+    }
+
+    public var isActive: Bool { phase == "IMPORTING" }
+    public var progress: PhotoProgress {
+        PhotoProgress(completed: completed, total: total, finished: phase == "COMMITTED")
+    }
+}

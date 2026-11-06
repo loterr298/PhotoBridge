@@ -18,6 +18,7 @@ final class MacControlService: ObservableObject {
     @Published var completed = 0
     @Published var total = 0
     @Published var macProgress: TransferDisplay?
+    @Published private(set) var directProgress: DirectImportProgress?
     @Published var automaticImportRequest: AutomaticImportRequest?
     @Published private(set) var restoreInProgress = false
     @Published private(set) var connected = false
@@ -38,6 +39,12 @@ final class MacControlService: ObservableObject {
     private var root: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Control", isDirectory: true)
+    }
+
+    init() {
+        directImporter.onProgress = { [weak self] value in
+            self?.directProgress = value
+        }
     }
 
     func start() {
@@ -72,10 +79,11 @@ final class MacControlService: ObservableObject {
             await Task.detached(priority: .utility) { Self.recoverJobs(in: controlRoot) }.value
             while !Task.isCancelled {
                 await self?.pollOnce()
-                if let url = self?.root.appendingPathComponent("transfer-progress.json") {
+                if let self, !self.directProgressIsActive {
+                    let url = self.root.appendingPathComponent("transfer-progress.json")
                     let value = await Task.detached(priority: .utility) { TransferDisplay.read(at: url) }.value
                     guard !Task.isCancelled else { return }
-                    if let value, let self {
+                    if let value {
                         _ = self.macDisplayState.update(value.progress, operationID: value.operationID, phase: value.phase)
                         let progress = self.macDisplayState.progress
                         let display = TransferDisplay(operationID: value.operationID, direction: value.direction,
@@ -88,6 +96,8 @@ final class MacControlService: ObservableObject {
             }
         }
     }
+
+    private var directProgressIsActive: Bool { directProgress?.isActive == true }
 
     private func write(_ value: [String: Any], to url: URL) throws {
         // Foundation atomic replacement keeps the previous JSON readable until
@@ -241,6 +251,23 @@ final class MacControlService: ObservableObject {
                                                 relativePath: relativePath, filename: filename,
                                                 uniformTypeIdentifier: uti, resourceType: resourceType)
             try write(["status": "IMPORTED", "sessionID": sessionID, "ordinal": ordinal], to: response)
+        case "directStartSession":
+            guard let sessionID = request["sessionID"] as? String,
+                  UUID(uuidString: sessionID) != nil,
+                  let title = request["title"] as? String,
+                  !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  let total = request["total"] as? Int,
+                  total > 0, total <= 100_000 else {
+                throw NSError(domain: "PhotoBridge", code: 8, userInfo: [NSLocalizedDescriptionKey: "导入任务信息无效"])
+            }
+            // A new direct session deliberately supersedes an old restore
+            // journal. The live counter below is the only progress shown.
+            restoreInProgress = false
+            automaticImportRequest = nil
+            macProgress = nil
+            directProgress = DirectImportProgress(sessionID: sessionID, completed: 0, total: total, phase: "IMPORTING")
+            directImporter.startSession(session: sessionID, title: String(title.prefix(128)), total: total)
+            try write(["status": "ACCEPTED", "sessionID": sessionID, "total": total], to: response)
         default:
             throw NSError(domain: "PhotoBridge", code: 4, userInfo: [NSLocalizedDescriptionKey: "请更新两端 PhotoBridge 后重试"])
         }

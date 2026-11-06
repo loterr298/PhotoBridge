@@ -429,9 +429,9 @@ final class MacTransferModel: ObservableObject {
         }
     }
 
-    /// V4 direct path. One file is sent, one PhotoKit transaction is
-    /// acknowledged, then the next file starts. The legacy inbox uploader is
-    /// intentionally bypassed by the user-facing V4 button.
+    /// V4 direct path. One USB/House Arrest session streams all ordered files
+    /// while the iPhone watcher commits each marker to PhotoKit immediately.
+    /// The legacy inbox uploader and end-of-job verification are bypassed.
     func directImportFolder() {
         guard !busy, let directory = importFolder else { chooseImportFolder(); return }
         let supported = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles]))?.filter { url in
@@ -445,34 +445,33 @@ final class MacTransferModel: ObservableObject {
         progressCountText = "0 / \(supported.count.formatted()) 张已写入 iPhone"
         progressText = "正在导入 iPhone 照片"; elapsedText = ""; etaText = "正在计算剩余时间…"
         let session = UUID().uuidString
+        let progressFile = directProgressFile(session: session)
+        let orderFile = directOrderFile(session: session)
+        try? FileManager.default.createDirectory(at: orderFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        if let data = try? JSONSerialization.data(withJSONObject: supported.map(\.lastPathComponent), options: [.sortedKeys]) {
+            try? data.write(to: orderFile, options: .atomic)
+        }
         Task { [weak self] in
             guard let self else { return }
             do {
-                for (index, file) in supported.enumerated() {
-                    let prepared = try await self.executeScriptAsync("direct_item.py", arguments: ["--local", file.path, "--session", session, "--ordinal", String(index + 1)])
-                    guard prepared.success, let data = prepared.text.data(using: .utf8),
-                          let item = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                          let relative = item["relativePath"] as? String else { throw NSError(domain: "PhotoBridge.DirectImport", code: 1, userInfo: [NSLocalizedDescriptionKey: prepared.text]) }
-                    let ext = file.pathExtension.lowercased()
-                    let uti = UTType(filenameExtension: ext)?.identifier ?? "public.data"
-                    let resourceType = ["mov", "mp4", "m4v"].contains(ext) ? 2 : 1
-                    let requestID = UUID().uuidString
-                    try await self.sendControl(["id": requestID, "kind": "directImportItem", "sessionID": session,
-                                                "ordinal": index + 1, "title": directory.lastPathComponent,
-                                                "relativePath": relative, "filename": file.lastPathComponent,
-                                                "uniformTypeIdentifier": uti, "resourceType": resourceType], requestID: requestID)
-                    _ = try await self.waitForControlResponse(id: requestID)
-                    let done = index + 1; let total = supported.count
-                    self.progressFraction = Double(done) / Double(total); self.progressPercentText = "\(done * 100 / total)%"
-                    self.progressCountText = "\(done.formatted()) / \(total.formatted()) 张已写入 iPhone"
-                    let elapsed = self.overallStartedAt.map { Date().timeIntervalSince($0) } ?? 0
-                    self.elapsedText = "已用 \(self.formatDuration(elapsed))"
-                    self.etaText = done < total ? "约剩 \(self.formatDuration(elapsed * Double(total - done) / Double(done)))" : ""
-                    self.currentResource = ""
+                let requestID = UUID().uuidString
+                try await self.sendControl(["id": requestID, "kind": "directStartSession", "sessionID": session,
+                                            "title": directory.lastPathComponent, "total": supported.count], requestID: requestID)
+                _ = try await self.waitForControlResponse(id: requestID)
+                // runScript owns the streaming job state and requires an idle
+                // model before it starts its bounded subprocess.
+                self.busy = false
+                self.runScript("direct_batch.py", arguments: ["--local", directory.path, "--session", session,
+                    "--order-file", orderFile.path], progressFile: progressFile, controlFile: self.makeControlFile()) { [weak self] result in
+                    guard let self else { return }
+                    self.busy = false
+                    self.setResumableDirection(result.success ? nil : "TO_IPHONE")
+                    self.userMessage = result.success ? "照片已实时写入 iPhone 系统相册。" : "导入已暂停，已写入的照片会保留，可重新开始。"
+                    try? FileManager.default.removeItem(at: orderFile)
                 }
-                self.busy = false; self.setResumableDirection(nil); self.userMessage = "照片已全部写入 iPhone 系统相册。"
             } catch {
-                self.busy = false; self.setResumableDirection("TO_IPHONE"); self.userMessage = "导入在第一个未完成项目处暂停：\(error.localizedDescription)"
+                self.busy = false; self.setResumableDirection("TO_IPHONE"); self.userMessage = "导入没有开始：\(error.localizedDescription)"
+                try? FileManager.default.removeItem(at: orderFile)
             }
         }
     }
@@ -592,6 +591,20 @@ final class MacTransferModel: ObservableObject {
             .appendingPathComponent("PhotoBridge/Progress", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory.appendingPathComponent("upload-\(identity).json")
+    }
+
+    private func directProgressFile(session: String) -> URL {
+        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("PhotoBridge/DirectProgress", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory.appendingPathComponent("\(session).json")
+    }
+
+    private func directOrderFile(session: String) -> URL {
+        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("PhotoBridge/DirectProgress", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory.appendingPathComponent("\(session).order.json")
     }
 
     func viewSavedAlbum() {
@@ -724,7 +737,9 @@ final class MacTransferModel: ObservableObject {
                 do {
                     var commandArguments = arguments
                     if let controlFile { commandArguments += ["--cancel-file", controlFile.path] }
-                    if name == "upload_resume.py", let progressFile { commandArguments += ["--progress-file", progressFile.path] }
+                    if ["upload_resume.py", "direct_batch.py"].contains(name), let progressFile {
+                        commandArguments += ["--progress-file", progressFile.path]
+                    }
                     return try Self.executeScript(name, arguments: commandArguments, cancelFile: controlFile)
                 } catch {
                     return ScriptResult(success: false, text: "未完成：\(error.localizedDescription)")
@@ -780,6 +795,36 @@ final class MacTransferModel: ObservableObject {
             return Int(safe)
         }
         let state = json["status"] as? String ?? json["state"] as? String ?? ""
+        let direct = json["direction"] as? String == "TO_IPHONE" && json["kind"] as? String == "PhotoBridgeTransferDisplay"
+        if direct {
+            let done = count("completed")
+            let expected = count("total")
+            let finished = state == "COMMITTED" && expected > 0 && done == expected
+            let candidate = PhotoProgress(completed: done, total: expected, finished: finished)
+            _ = displayProgress.update(candidate, operationID: displayOperationID, phase: state)
+            let progress = displayProgress.progress
+            lastDisplayedProgress = progress
+            progressIndeterminate = expected == 0
+            progressFraction = progress.fraction
+            progressCountText = expected > 0 ? "\(done.formatted()) / \(expected.formatted()) 张已发送" : "正在连接 iPhone…"
+            progressPercentText = progress.percentText
+            progressText = finished ? "已实时写入 iPhone 系统相册" : "正在发送并写入 iPhone 照片"
+            let bytes = ProgressNumber.nonnegativeInt64((json["bytesCompleted"] as? NSNumber)?.doubleValue ?? 0) ?? 0
+            if let elapsed = json["elapsedSeconds"] as? NSNumber,
+               let safeElapsed = ProgressNumber.nonnegativeInt64(elapsed.doubleValue.rounded()) {
+                elapsedText = "已用 \(formatDuration(Double(safeElapsed)))"
+            }
+            if let number = json["bytesPerSecond"] as? NSNumber,
+               let speed = ProgressNumber.nonnegativeInt64(number.doubleValue), speed > 0 {
+                speedText = "\(formatBytes(speed))/s · \(formatBytes(bytes))"
+            } else { speedText = bytes > 0 ? formatBytes(bytes) : "" }
+            if let eta = json["etaSeconds"] as? NSNumber,
+               let seconds = ProgressNumber.nonnegativeInt64(eta.doubleValue.rounded()), seconds < 31_536_000 {
+                etaText = "约剩 \(formatDuration(Double(seconds)))"
+            } else { etaText = "" }
+            currentResource = json["currentResource"] as? String ?? ""
+            return
+        }
         let uploading = (json["remote"] as? String ?? "").hasPrefix("RestoreInbox/") || resumableDirection == "TO_IPHONE"
         let assets = count("assetsVerified"), total = count("totalAssets")
         let verifying = state == "VERIFYING"
