@@ -1,0 +1,8 @@
+PhotoBridge V4.3 live completion and timeout build evidence
+Run: https://github.com/loterr298/PhotoBridge/actions/runs/42245680992
+Commit: b0d97fc47900ae9b53a42c498c12193bc48af8fa
+Result: success
+Tests: 113 Python tests, CoreChecks, simulator UI passed
+iOS IPA SHA-256: f822ad178804aa615d6c3fccff37bc0bb7110c2588f97434bb379fc885edf516
+Intel Mac ZIP SHA-256: 701bc9034e624a46e45389a1b23e7725babe3e4fd95f33a2a1baea8c9cd53995
+Real iPhone throughput: not measured in this run

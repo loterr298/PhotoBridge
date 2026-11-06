@@ -6,6 +6,8 @@
 - 已完成：发送完成但手机尚未完成 PhotoKit 写入时，界面显示“正在写入 iPhone 系统相册”，不再把已发送数量当作最终完成。
 - 已完成：手机长时间没有回传时自动结束等待并保留进度，避免无限卡在 99%。
 - 本地验证：iOS 语法检查、CoreChecks、Intel Mac release 构建、Python 113 项测试通过。
+- 云编译证据：GitHub Actions run `42245680992`（commit `b0d97fc`）成功，iOS unsigned build、模拟器 UI、Intel Mac build 和 113 项 Python 测试均通过。
+- 云产物 SHA-256：iOS `f822ad178804aa615d6c3fccff37bc0bb7110c2588f97434bb379fc885edf516`；Intel Mac `701bc9034e624a46e45389a1b23e7725babe3e4fd95f33a2a1baea8c9cd53995`。
 
 ## V4.2 批量 PhotoKit 提交提速（2026-11-06）
 
