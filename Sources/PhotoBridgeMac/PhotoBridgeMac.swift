@@ -748,11 +748,11 @@ final class MacTransferModel: ObservableObject {
         let preparingFirst = !verifying && done == 0 && expected > 0 && (json["bytesVerified"] as? NSNumber)?.int64Value == 0
         progressIndeterminate = preparingFirst || expected == 0
         progressFraction = verifying ? 0.5 : (scanComplete ? 1 : progress.fraction)
-        progressCountText = verifying ? "已发送，正在写入 iPhone 照片" : (preparingFirst ? "正在准备第一张照片…" : (expected > 0 ? progress.countText : (scanning ? "已扫描 (done) 张" : "正在读取照片…")))
+        progressCountText = verifying ? "已发送，正在写入 iPhone 照片" : (preparingFirst ? "正在准备第一张照片…" : (scanning && uploading ? "已准备 \(done.formatted()) / \(expected.formatted()) 张" : (expected > 0 ? progress.countText : (scanning ? "已准备 (done) 张" : "正在读取照片…"))))
         progressPercentText = verifying ? "50%" : (preparingFirst ? "—" : (scanComplete ? "100%" : progress.percentText))
         if verifying { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "正在核对照片" }
         else if scanComplete { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "扫描完成，正在完成最后检查" }
-        else if scanning { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "正在扫描照片" }
+        else if scanning { progressText = uploading ? "正在准备照片" : "正在读取照片" }
         else if state == "FINALIZING" { progressText = "正在完成最后检查" }
         else if state == "COMMITTED" { progressText = "已保存到 Mac" }
         else if state == "USB_VERIFIED" { progressText = "正在按顺序导入 iPhone 照片" }
