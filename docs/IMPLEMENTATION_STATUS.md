@@ -1201,3 +1201,12 @@ Final gate correction: the synthetic 1,000-asset flat export check now expects o
 
 - 新增浅绿色圆角方形照片图标，接入 iPhone AppIcon 和 Mac PhotoBridge.icns。
 - 版本号提升为 3.2.0，便于区分 V3.1。
+
+
+## M7.0 PhotoBridge V4 直写原生照片协议（4.0.0/build1，2026-11-06）
+
+- 新增独立 direct_item.py 逐项传输协议。Mac 每次只发送一个文件，等待 iPhone PhotoKit 回应后再发送下一项。
+- 新增 NativePhotoImportService，每个 directImportItem 请求都在 PhotoKit performChanges 成功后才返回 IMPORTED。
+- V4 导入按钮绕过旧 upload_resume.py 收件区流程，直接走逐项 USB + PhotoKit。
+- 原文件夹顺序由 Mac filename order 固定，单项确认后才推进下一 ordinal。
+- 本地 Mac release 和 iOS Swift 语法解析通过，云端正在编译。真实设备写入仍需真机验收。

@@ -4,6 +4,7 @@ import Foundation
 import ImageCaptureCore
 import SwiftUI
 import QuickLookThumbnailing
+import UniformTypeIdentifiers
 
 struct BackupAssetPreview: Identifiable {
     let id: Int
@@ -424,6 +425,54 @@ final class MacTransferModel: ObservableObject {
                 }
             } else {
                 self.userMessage = "发送没有完成，请重新连接 iPhone 后重试。"
+            }
+        }
+    }
+
+    /// V4 direct path. One file is sent, one PhotoKit transaction is
+    /// acknowledged, then the next file starts. The legacy inbox uploader is
+    /// intentionally bypassed by the user-facing V4 button.
+    func directImportFolder() {
+        guard !busy, let directory = importFolder else { chooseImportFolder(); return }
+        let supported = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles]))?.filter { url in
+            guard (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { return false }
+            let ext = url.pathExtension.lowercased()
+            return ["jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "dng", "gif", "mov", "mp4", "m4v"].contains(ext)
+        }.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending } ?? []
+        guard !supported.isEmpty else { userMessage = "文件夹里没有可导入的照片或视频。"; return }
+        busy = true; setResumableDirection("TO_IPHONE"); overallStartedAt = Date()
+        progressIndeterminate = false; progressFraction = 0; progressPercentText = "0%"
+        progressCountText = "0 / \(supported.count.formatted()) 张已写入 iPhone"
+        progressText = "正在导入 iPhone 照片"; elapsedText = ""; etaText = "正在计算剩余时间…"
+        let session = UUID().uuidString
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                for (index, file) in supported.enumerated() {
+                    let prepared = try await self.executeScriptAsync("direct_item.py", arguments: ["--local", file.path, "--session", session, "--ordinal", String(index + 1)])
+                    guard prepared.success, let data = prepared.text.data(using: .utf8),
+                          let item = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                          let relative = item["relativePath"] as? String else { throw NSError(domain: "PhotoBridge.DirectImport", code: 1, userInfo: [NSLocalizedDescriptionKey: prepared.text]) }
+                    let ext = file.pathExtension.lowercased()
+                    let uti = UTType(filenameExtension: ext)?.identifier ?? "public.data"
+                    let resourceType = ["mov", "mp4", "m4v"].contains(ext) ? 2 : 1
+                    let requestID = UUID().uuidString
+                    try await self.sendControl(["id": requestID, "kind": "directImportItem", "sessionID": session,
+                                                "ordinal": index + 1, "title": directory.lastPathComponent,
+                                                "relativePath": relative, "filename": file.lastPathComponent,
+                                                "uniformTypeIdentifier": uti, "resourceType": resourceType], requestID: requestID)
+                    _ = try await self.waitForControlResponse(id: requestID)
+                    let done = index + 1; let total = supported.count
+                    self.progressFraction = Double(done) / Double(total); self.progressPercentText = "\(done * 100 / total)%"
+                    self.progressCountText = "\(done.formatted()) / \(total.formatted()) 张已写入 iPhone"
+                    let elapsed = self.overallStartedAt.map { Date().timeIntervalSince($0) } ?? 0
+                    self.elapsedText = "已用 \(self.formatDuration(elapsed))"
+                    self.etaText = done < total ? "约剩 \(self.formatDuration(elapsed * Double(total - done) / Double(done)))" : ""
+                    self.currentResource = ""
+                }
+                self.busy = false; self.setResumableDirection(nil); self.userMessage = "照片已全部写入 iPhone 系统相册。"
+            } catch {
+                self.busy = false; self.setResumableDirection("TO_IPHONE"); self.userMessage = "导入在第一个未完成项目处暂停：\(error.localizedDescription)"
             }
         }
     }
@@ -1080,7 +1129,7 @@ private struct MacTransferScreen: View {
                 }
             }
             Button {
-                if transfer.importFolder == nil { transfer.chooseImportFolder() } else { transfer.uploadBackup() }
+                if transfer.importFolder == nil { transfer.chooseImportFolder() } else { transfer.directImportFolder() }
             } label: {
                 Label(transfer.importFolder == nil ? "选择文件夹" : "开始导入到 iPhone", systemImage: "arrow.up.to.line")
                     .frame(maxWidth: .infinity)

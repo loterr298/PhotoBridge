@@ -12,6 +12,7 @@ final class MacControlService: ObservableObject {
         let title: String
     }
     let exporter = OriginalExportService()
+    let directImporter = NativePhotoImportService()
     @Published var active = false { didSet { updateIdleTimer() } }
     @Published var message = "在 Mac 上选择相册和保存位置即可开始"
     @Published var completed = 0
@@ -224,6 +225,22 @@ final class MacControlService: ObservableObject {
             try write(["status": "ACCEPTED", "sessionID": sessionID], to: response)
             restoreInProgress = true
             automaticImportRequest = AutomaticImportRequest(sessionID: sessionID, title: String(title.prefix(128)))
+        case "directImportItem":
+            guard !active && !exporter.busy,
+                  let sessionID = request["sessionID"] as? String,
+                  UUID(uuidString: sessionID) != nil,
+                  let ordinal = request["ordinal"] as? Int,
+                  let title = request["title"] as? String,
+                  let relativePath = request["relativePath"] as? String,
+                  let filename = request["filename"] as? String,
+                  let uti = request["uniformTypeIdentifier"] as? String,
+                  let resourceType = request["resourceType"] as? Int else {
+                throw NSError(domain: "PhotoBridge", code: 7, userInfo: [NSLocalizedDescriptionKey: "导入项目无效或手机正在处理其他任务"])
+            }
+            try await directImporter.importItem(session: sessionID, ordinal: ordinal, title: String(title.prefix(128)),
+                                                relativePath: relativePath, filename: filename,
+                                                uniformTypeIdentifier: uti, resourceType: resourceType)
+            try write(["status": "IMPORTED", "sessionID": sessionID, "ordinal": ordinal], to: response)
         default:
             throw NSError(domain: "PhotoBridge", code: 4, userInfo: [NSLocalizedDescriptionKey: "请更新两端 PhotoBridge 后重试"])
         }
