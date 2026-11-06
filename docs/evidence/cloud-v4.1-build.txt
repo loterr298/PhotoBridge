@@ -1,0 +1,10 @@
+PhotoBridge V4.1 cloud build evidence
+Run: https://github.com/loterr298/PhotoBridge/actions/runs/42230981854
+Commit: d46b05e68d1645c98b508b3eb938e471dff55600
+Result: success
+Runner: macOS 15.8.2 arm64, Xcode 16.4, iOS SDK 18.5
+Simulator UI: passed
+Python tests: 113 passed
+iOS IPA SHA-256: 4a63d85fd7d56d34302a5e388693a54dacf0df9cbd02ca7005638b55678577b6
+Intel Mac ZIP SHA-256: 2ea0ac345e6b03118ac791bbe2a48b9cf582d55de9a041a182350904608d455a
+Real iPhone PhotoKit and USB throughput: not measured in this run

@@ -9,6 +9,8 @@
 - 本地验证：`python3 -m unittest discover -s tests -v` 通过 113 项；`swift run CoreChecks` 通过；Intel macOS `PhotoBridgeMac` release 构建通过；iOS 源码语法检查通过。
 - 设备待验证：尚未在本轮重新用真实 iPhone 测量吞吐或完成大批量导入。云包可验证编译和代码路径，不能替代真机实测。
 - 已知边界：PhotoKit 仍按单张事务提交以保持实时可见和顺序安全。若设备实测仍慢，下一轮仅在不改变顺序的前提下评估小批量事务和资源预取。
+- 云编译证据：GitHub Actions run `42230981854`（commit `d46b05e`）成功；runner 使用 Xcode 16.4、iOS SDK 18.5；模拟器 UI 流程通过，真机 PhotoKit/USB 吞吐仍未宣称通过。
+- 云产物 SHA-256：iOS `4a63d85fd7d56d34302a5e388693a54dacf0df9cbd02ca7005638b55678577b6`；Intel Mac `2ea0ac345e6b03118ac791bbe2a48b9cf582d55de9a041a182350904608d455a`。
 
 ## 当前交付快照（2026-10-23）
 
