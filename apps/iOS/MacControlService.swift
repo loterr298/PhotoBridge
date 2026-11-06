@@ -43,7 +43,7 @@ final class MacControlService: ObservableObject {
 
     init() {
         directImporter.onProgress = { [weak self] value in
-            self?.directProgress = value
+            self?.publishDirectProgress(value)
         }
     }
 
@@ -98,6 +98,17 @@ final class MacControlService: ObservableObject {
     }
 
     private var directProgressIsActive: Bool { directProgress?.isActive == true }
+
+    private func publishDirectProgress(_ value: DirectImportProgress) {
+        directProgress = value
+        let display = TransferDisplay(operationID: value.sessionID, direction: "IMPORT",
+                                       phase: value.phase, completed: value.progress.completed,
+                                       total: value.progress.total, sessionID: value.sessionID,
+                                       elapsedSeconds: value.elapsedSeconds)
+        if let data = try? JSONEncoder().encode(display) {
+            try? data.write(to: root.appendingPathComponent("direct-import-progress.json"), options: .atomic)
+        }
+    }
 
     private func write(_ value: [String: Any], to url: URL) throws {
         // Foundation atomic replacement keeps the previous JSON readable until
@@ -265,7 +276,7 @@ final class MacControlService: ObservableObject {
             restoreInProgress = false
             automaticImportRequest = nil
             macProgress = nil
-            directProgress = DirectImportProgress(sessionID: sessionID, completed: 0, total: total, phase: "IMPORTING")
+            publishDirectProgress(DirectImportProgress(sessionID: sessionID, completed: 0, total: total, phase: "IMPORTING"))
             directImporter.startSession(session: sessionID, title: String(title.prefix(128)), total: total)
             try write(["status": "ACCEPTED", "sessionID": sessionID, "total": total], to: response)
         default:

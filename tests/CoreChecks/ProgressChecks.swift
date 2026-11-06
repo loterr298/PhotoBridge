@@ -37,8 +37,8 @@ func runProgressChecks() throws {
     let done = DirectImportProgress(sessionID: "current", completed: 6_304, total: 6_304, phase: "COMMITTED")
     try require(done.progress.finished, "direct import marks completion only after PhotoKit writes finish")
 
-    let batches = DirectImportBatching.ranges(total: 130)
-    try require(batches.map { Array($0) } == [Array(0..<64), Array(64..<128), Array(128..<130)],
+    let batches = DirectImportBatching.ranges(total: 258)
+    try require(batches.map { Array($0) } == [Array(0..<128), Array(128..<256), Array(256..<258)],
                 "direct import batches preserve every ordinal")
 }
 

@@ -1,8 +1,15 @@
 # 实施状态记录
 
+## V4.3 完成态回传与 99% 超时保护（2026-11-07）
+
+- 已完成：iPhone 将当前直写 session 的 PhotoKit 状态写入 `Control/direct-import-progress.json`，Mac 等待 `COMMITTED` 后才显示 100%。
+- 已完成：发送完成但手机尚未完成 PhotoKit 写入时，界面显示“正在写入 iPhone 系统相册”，不再把已发送数量当作最终完成。
+- 已完成：手机长时间没有回传时自动结束等待并保留进度，避免无限卡在 99%。
+- 本地验证：iOS 语法检查、CoreChecks、Intel Mac release 构建、Python 113 项测试通过。
+
 ## V4.2 批量 PhotoKit 提交提速（2026-11-06）
 
-- 已完成：直写导入按连续 ordinal 分成 64 张一批，在单次 PhotoKit 事务中创建资源并按原顺序加入目标相簿。
+- 已完成：直写导入按连续 ordinal 分成 128 张一批，在单次 PhotoKit 事务中创建资源并按原顺序加入目标相簿，减少事务提交次数。
 - 已完成：每批事务完成后逐项推进当前任务计数，保留真实完成边界，不再为每张照片单独提交数据库事务。
 - 本地验证：`swiftc -parse apps/iOS/*.swift`、`swift run CoreChecks`、`swift build -c release --arch x86_64 --product PhotoBridgeMac`、Python 113 项测试通过。
 - 设备待验证：本轮未用真实 iPhone 重新测吞吐，实际速度仍受机型、线材、照片类型和 PhotoKit 状态影响。

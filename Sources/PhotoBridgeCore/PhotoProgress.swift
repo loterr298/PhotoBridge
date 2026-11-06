@@ -157,7 +157,7 @@ public struct DirectImportProgress: Equatable, Sendable {
 /// contiguous and ordered, so batching can reduce database commits without
 /// changing the album order.
 public enum DirectImportBatching {
-    public static let maxBatchSize = 64
+    public static let maxBatchSize = 128
 
     public static func ranges(total: Int, batchSize: Int = maxBatchSize) -> [Range<Int>] {
         guard total > 0 else { return [] }

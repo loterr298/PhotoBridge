@@ -464,9 +464,15 @@ final class MacTransferModel: ObservableObject {
                 self.runScript("direct_batch.py", arguments: ["--local", directory.path, "--session", session,
                     "--order-file", orderFile.path], progressFile: progressFile, controlFile: self.makeControlFile()) { [weak self] result in
                     guard let self else { return }
-                    self.busy = false
-                    self.setResumableDirection(result.success ? nil : "TO_IPHONE")
-                    self.userMessage = result.success ? "照片已实时写入 iPhone 系统相册。" : "导入已暂停，已写入的照片会保留，可重新开始。"
+                    if result.success {
+                        self.busy = true
+                        self.progressText = "正在等待 iPhone 完成写入"
+                        self.watchDirectImport(session: session, total: supported.count)
+                    } else {
+                        self.busy = false
+                        self.setResumableDirection("TO_IPHONE")
+                        self.userMessage = "导入已暂停，已写入的照片会保留，可重新开始。"
+                    }
                     try? FileManager.default.removeItem(at: orderFile)
                 }
             } catch {
@@ -951,6 +957,57 @@ final class MacTransferModel: ObservableObject {
                       let session = remote.split(separator: "/").last.map(String.init),
                       UUID(uuidString: session) != nil else { continue }
                 if await self.startAutomaticImport(session: session, title: title) { return }
+            }
+        }
+    }
+
+    private func watchDirectImport(session: String, total: Int) {
+        importProgressTask?.cancel()
+        importProgressTask = Task { [weak self] in
+            var missedReads = 0
+            for _ in 0..<1_800 {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                guard !Task.isCancelled, let self else { return }
+                let result = try? await self.executeScriptAsync("mac_control.py", arguments: [
+                    "read", "--bundle", self.bundleIdentifier, "--path", "Control/direct-import-progress.json"
+                ])
+                guard !Task.isCancelled else { return }
+                if let result, result.success, let raw = result.text.data(using: .utf8),
+                   let value = TransferDisplay.decode(raw), value.direction == "IMPORT", value.sessionID == session {
+                    missedReads = 0
+                    _ = self.displayProgress.update(value.progress, operationID: "DIRECT:\(session)", phase: value.phase)
+                    let progress = self.displayProgress.progress
+                    self.lastDisplayedProgress = progress
+                    self.progressFraction = progress.fraction
+                    self.progressCountText = "\(value.completed.formatted()) / \(total.formatted()) 张已写入 iPhone"
+                    self.progressPercentText = progress.percentText
+                    self.progressText = value.finished ? "已完成写入 iPhone 系统相册" : "正在写入 iPhone 系统相册"
+                    let elapsed = self.overallStartedAt.map { Date().timeIntervalSince($0) } ?? value.elapsedSeconds ?? 0
+                    self.elapsedText = "已用 \(self.formatDuration(max(0, elapsed)))"
+                    self.currentResource = ""
+                    self.speedText = ""
+                    self.etaText = value.finished ? "" : "正在等待手机写入…"
+                    if value.finished {
+                        self.busy = false
+                        self.setResumableDirection(nil)
+                        self.userMessage = "照片已全部写入 iPhone 系统相册。"
+                        return
+                    }
+                    if value.phase == "FAILED" {
+                        self.busy = false
+                        self.setResumableDirection("TO_IPHONE")
+                        self.userMessage = "iPhone 写入没有完成，已写入的照片会保留。"
+                        return
+                    }
+                } else {
+                    missedReads += 1
+                    if missedReads >= 120 {
+                        self.busy = false
+                        self.setResumableDirection("TO_IPHONE")
+                        self.userMessage = "等待 iPhone 写入超时，进度已保留，可重新连接后继续。"
+                        return
+                    }
+                }
             }
         }
     }
