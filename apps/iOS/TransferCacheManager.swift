@@ -16,7 +16,7 @@ final class TransferCacheManager: ObservableObject {
     func refresh() async {
         let roots = managedDirectories
         let result = await Task.detached(priority: .utility) {
-            Self.measure(roots: roots)
+            await Self.measure(roots: roots)
         }.value
         fileCount = result.files
         byteCount = result.bytes
