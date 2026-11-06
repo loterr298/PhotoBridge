@@ -1,0 +1,8 @@
+PhotoBridge V4.5 transfer cache lifecycle build evidence
+Run: https://github.com/loterr298/PhotoBridge/actions/runs/42257886474
+Commit: e15a3bc61f869fa51ac287867f95977536a0a9e4
+Result: success
+Tests: 113 Python tests, CoreChecks, simulator UI passed
+iOS IPA SHA-256: 3a659798b6c2047913606dc5e9c5f163d9d4713e877bbc84000b30cd4048fbd1
+Intel Mac ZIP SHA-256: 2ee152e49be95b74e905da2f806f38cfa320994ea387aad78f15c0e776b56de9
+Real iPhone throughput: not measured in this run

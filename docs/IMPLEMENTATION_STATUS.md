@@ -7,6 +7,8 @@
 - 已完成：设置页增加“清理传输缓存”，清理 DirectInbox、RestoreInbox、Exports 和临时控制文件，传输进行中自动禁用。
 - 已完成：缓存清理路径经过 UUID 和目录边界校验，不接受路径穿越。
 - 本地验证：iOS 语法检查、CoreChecks、Intel Mac release 构建、Python 113 项测试通过。
+- 云编译证据：GitHub Actions run `42257886474`（commit `e15a3bc`）成功，iOS unsigned build、模拟器 UI、Intel Mac build 和 113 项 Python 测试均通过。
+- 云产物 SHA-256：iOS `3a659798b6c2047913606dc5e9c5f163d9d4713e877bbc84000b30cd4048fbd1`；Intel Mac `2ee152e49be95b74e905da2f806f38cfa320994ea387aad78f15c0e776b56de9`。
 
 ## V4.4 传输速度与导入顺序核验（2026-11-07）
 
