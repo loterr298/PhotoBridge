@@ -47,6 +47,14 @@ func runProgressChecks() throws {
                 "direct import rejects an order mismatch")
     try require(!DirectOrderVerification.matches(expected: ["a", "b", "b"], actual: ["a", "b", "b"]),
                 "direct import rejects duplicate identifiers")
+    try require(DirectCachePolicy.isOwnedSession("00000000-0000-0000-0000-000000000001"),
+                "cache cleanup accepts a UUID session")
+    try require(!DirectCachePolicy.isOwnedSession("../other"),
+                "cache cleanup rejects path traversal sessions")
+    try require(DirectCachePolicy.isOwnedRelativePath("DirectInbox/00000000-0000-0000-0000-000000000001/000001/photo.jpg"),
+                "cache cleanup accepts an owned direct item")
+    try require(!DirectCachePolicy.isOwnedRelativePath("Exports/other/photo.jpg"),
+                "cache cleanup does not treat arbitrary paths as direct items")
 }
 
 func runTransferDisplayChecks() throws {

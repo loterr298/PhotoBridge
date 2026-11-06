@@ -15,6 +15,7 @@ struct PhotoBridgeApp: App {
                 MacExportCompanionView().tabItem { Label("导出到 Mac", systemImage: "arrow.down.to.line.compact") }.tag(0)
                 RestoreView().tabItem { Label("导入到 iPhone", systemImage: "arrow.up.to.line.compact") }.tag(1)
                 PhotoInfoView().tabItem { Label("照片信息", systemImage: "slider.horizontal.3") }.tag(2)
+                SettingsView().tabItem { Label("设置", systemImage: "gearshape") }.tag(3)
             }
             .tint(.bridgeBlue)
             .environmentObject(library)

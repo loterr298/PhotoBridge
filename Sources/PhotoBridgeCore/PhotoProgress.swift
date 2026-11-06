@@ -178,3 +178,16 @@ public enum DirectOrderVerification {
         return expectedIndex == expected.count
     }
 }
+
+public enum DirectCachePolicy {
+    public static func isOwnedSession(_ value: String) -> Bool {
+        UUID(uuidString: value) != nil && !value.contains("/") && !value.contains("\\")
+    }
+
+    public static func isOwnedRelativePath(_ value: String) -> Bool {
+        let parts = value.split(separator: "/", omittingEmptySubsequences: true)
+        guard parts.count >= 4, parts[0] == "DirectInbox",
+              isOwnedSession(String(parts[1])), parts[2].allSatisfy(\.isNumber) else { return false }
+        return !value.hasPrefix("/") && !value.contains("..") && !value.contains("\\")
+    }
+}

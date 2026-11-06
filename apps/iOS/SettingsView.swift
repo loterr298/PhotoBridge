@@ -1,6 +1,10 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @EnvironmentObject private var control: MacControlService
+    @EnvironmentObject private var restore: RestoreService
+    @StateObject private var cache = TransferCacheManager()
+    @State private var clearing = false
     private var version: String {
         let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "未知"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "未知"
@@ -37,12 +41,36 @@ struct SettingsView: View {
                                 Text("照片只在你的 iPhone 和 Mac 之间传输。").font(.subheadline).foregroundStyle(.secondary)
                             }
                         }
+                        BridgeCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("传输缓存").font(.headline)
+                                Text(cache.fileCount == 0 ? "没有发现 PhotoBridge 临时文件" : "当前有 (cache.fileCount.formatted()) 个文件，占用 (ByteCountFormatter.string(fromByteCount: cache.byteCount, countStyle: .file))")
+                                    .font(.subheadline).foregroundStyle(.secondary)
+                                Button {
+                                    clearing = true
+                                    Task {
+                                        await cache.clear()
+                                        clearing = false
+                                    }
+                                } label: {
+                                    HStack {
+                                        if clearing { ProgressView().controlSize(.small) }
+                                        Text(clearing ? "正在清理…" : "清理传输缓存")
+                                        Spacer()
+                                    }
+                                }
+                                .buttonStyle(BridgeButtonStyle(primary: true))
+                                .disabled(clearing || control.active || control.directProgress?.isActive == true || restore.busy)
+                                Text("只删除 PhotoBridge 临时文件，不删除系统照片。").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
                     }
                     .padding(20)
                 }
             }
             .navigationBarHidden(true)
         }
+        .task { await cache.refresh() }
     }
 }
 

@@ -66,12 +66,14 @@ final class NativePhotoImportService: ObservableObject {
                     items.append(try pendingItem(from: value, session: session, ordinal: ordinal))
                 }
                 createdIdentifiers.append(contentsOf: try await importBatch(items))
+                cleanupImportedItems(items, root: root)
                 for ordinal in items.map(\.ordinal) {
                     publish(DirectImportProgress(sessionID: session, completed: ordinal, total: total, phase: "IMPORTING"))
                 }
             }
             publish(DirectImportProgress(sessionID: session, completed: total, total: total, phase: "VERIFYING"))
             try verifyAlbumOrder(expectedIdentifiers: createdIdentifiers)
+            try? FileManager.default.removeItem(at: root)
             publish(DirectImportProgress(sessionID: session, completed: total, total: total, phase: "COMMITTED"))
         } catch is CancellationError {
             return
@@ -85,6 +87,14 @@ final class NativePhotoImportService: ObservableObject {
     private func publish(_ value: DirectImportProgress) {
         directProgress = value
         onProgress?(value)
+    }
+
+    private func cleanupImportedItems(_ items: [PendingItem], root: URL) {
+        for item in items {
+            let itemDirectory = root.appendingPathComponent(String(format: "%06d", item.ordinal), isDirectory: true)
+            guard itemDirectory.path.hasPrefix(root.path + "/") else { continue }
+            try? FileManager.default.removeItem(at: itemDirectory)
+        }
     }
 
     private func waitForMarker(at url: URL) async throws -> [String: Any] {
