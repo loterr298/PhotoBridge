@@ -731,7 +731,7 @@ final class MacTransferModel: ObservableObject {
             return Int(safe)
         }
         let state = json["status"] as? String ?? json["state"] as? String ?? ""
-        let uploading = (json["remote"] as? String ?? "").hasPrefix("RestoreInbox/")
+        let uploading = (json["remote"] as? String ?? "").hasPrefix("RestoreInbox/") || resumableDirection == "TO_IPHONE"
         let assets = count("assetsVerified"), total = count("totalAssets")
         let verifying = state == "VERIFYING"
         let scanning = total == 0 && !verifying
