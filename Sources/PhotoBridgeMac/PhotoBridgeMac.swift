@@ -476,8 +476,14 @@ final class MacTransferModel: ObservableObject {
                         self.importProgressTask?.cancel()
                         self.importProgressTask = nil
                         self.busy = false
-                        self.setResumableDirection("TO_IPHONE")
-                        self.userMessage = "导入已暂停，已写入的照片会保留，可重新开始。"
+                        if self.directTerminalSession == session {
+                            self.progressText = self.directTerminalPhase == "COMMITTED"
+                                ? "已完成写入 iPhone 系统相册"
+                                : "导入已暂停，进度已保留"
+                        } else {
+                            self.setResumableDirection("TO_IPHONE")
+                            self.userMessage = "导入已暂停，已写入的照片会保留，可重新开始。"
+                        }
                     }
                     self.directScriptSession = nil
                     try? FileManager.default.removeItem(at: orderFile)
