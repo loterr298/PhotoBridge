@@ -6,6 +6,8 @@
 - 已完成：iPhone 暂存进度日志限频，减少大量照片时的重复写盘和 fsync。
 - 已完成：导出和导入都使用连续 ordinal、资源清单和最终顺序核验。
 - 本地验证：iOS 语法检查、CoreChecks、Intel Mac release 构建、Python 113 项测试通过。
+- 云编译证据：GitHub Actions run `42341498931`（commit `7b78fcb`）成功，iOS unsigned build、模拟器 UI、Intel Mac build 和 113 项 Python 测试均通过。
+- 云产物 SHA-256：iOS `47c2b716aae90413cdfdb6180b5cb584909cbcfc3bda2dc508efb6579b0e69eb`；Intel Mac `2f3c69ac794c40a898cdcdf89f087e08b35677b5c3134b87b9e536490b97e75a`。
 
 ## V4.8 导入顺序读取进度（2026-11-07）
 
