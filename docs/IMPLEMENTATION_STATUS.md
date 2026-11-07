@@ -6,6 +6,7 @@
 - PhotoBridge 自己导出的文件夹继续使用 `album-order.json` 的 ordinal 顺序。普通文件夹不向来源目录写入清单或缓存文件，顺序清单只保存在本次任务的应用目录和 USB 会话中。
 - Python 直写脚本收到 Mac 清单后严格按清单发送，未提供清单时也不再自行推导自然文件名顺序。
 - 版本提升为 4.11.0/build 1。真实 Finder 自定义排序和真机 PhotoKit 写入仍需设备现场验收，不能用目录枚举测试冒充 Finder 视图证据。
+- 云端 GitHub Actions run `42394859599`（commit `4abe608`）成功，模拟器 UI 2 项通过。最终 iOS IPA SHA-256 `df25753cfcc03cfab8011e5f6481d42bd957854c9dac017daecf255865f00819`，Intel Mac ZIP SHA-256 `944bba6c9545b361c26aa45cc8e23a84189df217835888a01d1605335e8323ac`。Mac 4.11.0 已覆盖安装到 `/Applications/PhotoBridgeMac.app`。
 
 ## V4.10 全链路审计与界面收口（2026-11-07）
 
