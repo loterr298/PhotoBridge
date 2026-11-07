@@ -50,11 +50,13 @@ struct BridgeButtonStyle: ButtonStyle {
     var tint: Color = .bridgeBlue
     var fill: Color?
     func makeBody(configuration: Configuration) -> some View {
+        let foreground = primary ? (enabled ? Color.white : tint.opacity(0.55)) : Color.bridgeInk
+        let background = primary ? (enabled ? tint : (fill ?? Color.bridgeButtonFill)) : Color(uiColor: .secondarySystemGroupedBackground)
         configuration.label.font(.body.weight(.semibold))
             .padding(.horizontal, 18).padding(.vertical, 13)
             .frame(minHeight: 46)
-            .foregroundStyle(primary ? tint : Color.bridgeInk)
-            .background(primary ? (fill ?? Color.bridgeButtonFill) : Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .foregroundStyle(foreground)
+            .background(background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .shadow(color: .black.opacity(enabled && !configuration.isPressed ? 0.055 : 0.015), radius: 6, y: 3)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .opacity(enabled ? (configuration.isPressed ? 0.76 : 1) : 0.45)

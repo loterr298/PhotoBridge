@@ -1148,10 +1148,12 @@ struct MacSoftButtonStyle: ButtonStyle {
     var tint: Color = .macBridgeBlue
     var fill: Color?
     func makeBody(configuration: Configuration) -> some View {
+        let foreground = primary ? (enabled ? Color.white : tint.opacity(0.55)) : Color.macBridgeInk
+        let background = primary ? (enabled ? tint : (fill ?? Color.macBridgeButtonFill)) : Color(nsColor: .controlBackgroundColor)
         configuration.label.font(.body.weight(.semibold))
             .padding(.horizontal, 16).padding(.vertical, 10).frame(minHeight: 36)
-            .foregroundStyle(primary ? tint : Color.macBridgeInk)
-            .background(primary ? (fill ?? Color.macBridgeButtonFill) : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .foregroundStyle(foreground)
+            .background(background, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .shadow(color: .black.opacity(enabled && !configuration.isPressed ? 0.055 : 0.015), radius: 5, y: 2)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .opacity(enabled ? (configuration.isPressed ? 0.76 : 1) : 0.45)
@@ -1170,7 +1172,7 @@ private struct MacCard<Content: View>: View {
         self.content = content()
     }
     var body: some View {
-        content.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+        content.padding(20).frame(maxWidth: .infinity, alignment: .leading)
             .background(tint ?? (emphasis ? Color.macBridgeProgressFill : Color(nsColor: .controlBackgroundColor)), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .stroke(tint?.opacity(0.55) ?? (emphasis ? Color.macBridgeBlue.opacity(0.14) : Color.clear), lineWidth: 1))

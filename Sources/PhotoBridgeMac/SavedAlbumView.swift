@@ -84,7 +84,7 @@ struct FolderThumbnailGrid: View {
             ProgressView("正在读取缩略图…").frame(maxWidth: .infinity, minHeight: 120)
         } else if photos.isEmpty {
             Text(emptyText).font(.subheadline).foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
+                .frame(maxWidth: .infinity, minHeight: 48, alignment: .center)
         } else {
             ScrollView(.vertical) {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 10) {
