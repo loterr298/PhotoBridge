@@ -6,6 +6,8 @@
 - 已完成：iPhone 和 Mac 在顺序核验阶段显示已找到数量、总数和“正在确认导入顺序”。
 - 已完成：顺序不匹配立即失败，匹配完成才进入 COMMITTED。
 - 本地验证：iOS 语法检查、CoreChecks、Intel Mac release 构建、Python 113 项测试通过。
+- 云编译证据：GitHub Actions run `42338751356`（commit `4dcff22`）成功，iOS unsigned build、模拟器 UI、Intel Mac build 和 113 项 Python 测试均通过。
+- 云产物 SHA-256：iOS `99fd9546392627e4ba679c42812b27eeff6a7d2cfc5afe321e9d44cff6774403`；Intel Mac `23f34f942f0fef5f42a9bc696bcb67a7aa8213759aac330510c23e7c4d910d43`。
 
 ## V4.7 保存与导入顺序最终核验（2026-11-07）
 
