@@ -7,6 +7,7 @@
 - 截图自评后继续收口：按钮可见性从“弱”改为启用时实心绿色、禁用时低饱和填充，空文件夹状态缩短留白，Mac 连接状态保留轻弹性过渡。评分维度为层级、对比度、操作可见性、信息密度和反馈动效。
 - 版本提升为 4.12.0/build 1。需要真实设备验证的 USB、PhotoKit 和大批量吞吐仍保持证据边界。
 - 云端 GitHub Actions run `42424211971`（commit `3c7676c`）成功，模拟器 UI 2 项通过。最终 iOS IPA SHA-256 `7a4ae8dcf1ba1c406c70fedb0d5b74192757c4ef81bb777bc4435f67442e2f52`，Intel Mac ZIP SHA-256 `63cafe27e1a4dc139f199e960953a1a8a5c621a59e96dc656411c30a49829990`。Mac 4.12.0 已覆盖安装到 `/Applications/PhotoBridgeMac.app`。
+- 视觉收口提交 `284fe1d` 已重新云编译，run `42425409096` 成功。最终 iOS IPA SHA-256 `b781388f55969fa0c9b1c8da193b12497dd4c9cacda04e104313bc2213cd5994`，Intel Mac ZIP SHA-256 `702c85950fbc43766501972c6f8543871d6b91bce25aa6db97018e5ad2fba7e0`。Mac 已安装包含按钮强化和动效收口的构建。
 
 ## V4.11 Mac 可见顺序清单（2026-11-08）
 
