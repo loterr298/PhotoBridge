@@ -308,9 +308,10 @@ private final class StreamingManifestWriter {
                             storedRelativePath: relative, sha256: receipt.sha256, byteCount: receipt.byteCount)
                     }
                     if !fastExport { try checkAssetSnapshot(source, asset: photoAsset) }
+                    let verifyContent = !fastExport
                     try await Task.detached(priority: .utility) {
                         try StagingResume.record(completed, ordinal: index + 1, plan: plan, digest: digest, in: dir,
-                            verifyContent: !fastExport, checkCancellation: cancellation.check)
+                            verifyContent: verifyContent, checkCancellation: cancellation.check)
                     }.value
                     exported.append(completed); resourcesCompleted += 1; bytesCompleted += completed.byteCount
                     if reusable[relative] != nil { reusedResources += 1 } else { photoKitResourcesRead += 1 }
