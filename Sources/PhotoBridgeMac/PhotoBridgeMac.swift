@@ -82,6 +82,7 @@ final class MacTransferModel: ObservableObject {
     private var connectionTask: Task<Void, Never>?
     private var connectionFreshness = ConnectionFreshness()
     private var importPreviewTask: Task<Void, Never>?
+    private var importPreviewGeneration = UUID()
     private var directTerminalSession: String?
     private var directTerminalPhase: String?
     private var directScriptSession: String?
@@ -519,6 +520,8 @@ final class MacTransferModel: ObservableObject {
     }
 
     private func loadImportPreview(from directory: URL) {
+        let generation = UUID()
+        importPreviewGeneration = generation
         importPreview = []
         importOrderNames = []
         loadingImportPreview = true
@@ -528,12 +531,14 @@ final class MacTransferModel: ObservableObject {
                 let result = try await Task.detached(priority: .utility) { try Self.readPreview(from: directory) }.value
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
+                    guard self?.importPreviewGeneration == generation, self?.importFolder == directory else { return }
                     self?.importPreview = result.1
                     self?.importOrderNames = result.1.map { $0.mediaURL.lastPathComponent }
                     self?.loadingImportPreview = false
                 }
             } catch {
                 await MainActor.run {
+                    guard self?.importPreviewGeneration == generation else { return }
                     self?.importOrderNames = []
                     self?.loadingImportPreview = false
                 }
@@ -1125,16 +1130,16 @@ final class MacTransferModel: ObservableObject {
 extension Color {
     static let macConnectedFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : NSColor(red: 0.79, green: 0.94, blue: 0.83, alpha: 1) })
     static let macConnectedInk = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.69, green: 0.94, blue: 0.76, alpha: 1) : NSColor(red: 0.10, green: 0.35, blue: 0.19, alpha: 1) })
-    static let macBridgeBlue = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.62, green: 0.86, blue: 0.68, alpha: 1) : NSColor(red: 0.18, green: 0.48, blue: 0.29, alpha: 1) })
-    static let macBridgeSky = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .windowBackgroundColor : NSColor(red: 0.94, green: 0.98, blue: 0.95, alpha: 1) })
+    static let macBridgeBlue = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.62, green: 0.86, blue: 0.70, alpha: 1) : NSColor(red: 0.11, green: 0.34, blue: 0.24, alpha: 1) })
+    static let macBridgeSky = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.07, green: 0.10, blue: 0.09, alpha: 1) : NSColor(red: 0.96, green: 0.98, blue: 0.97, alpha: 1) })
     static let macBridgeInk = Color(nsColor: .labelColor)
     static let macBridgeMuted = Color(nsColor: .secondaryLabelColor)
-    static let macBridgeButtonFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.16, green: 0.30, blue: 0.20, alpha: 1) : NSColor(red: 0.84, green: 0.95, blue: 0.87, alpha: 1) })
+    static let macBridgeButtonFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.13, green: 0.28, blue: 0.20, alpha: 1) : NSColor(red: 0.88, green: 0.95, blue: 0.91, alpha: 1) })
     static let macBridgeProgressFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.18, blue: 0.22, alpha: 1) : NSColor(red: 0.985, green: 0.992, blue: 0.998, alpha: 1) })
-    static let macExport = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.62, green: 0.80, blue: 0.94, alpha: 1) : NSColor(red: 0.18, green: 0.37, blue: 0.56, alpha: 1) })
-    static let macExportFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.13, green: 0.22, blue: 0.32, alpha: 1) : NSColor(red: 0.88, green: 0.94, blue: 0.98, alpha: 1) })
-    static let macImport = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.65, green: 0.88, blue: 0.71, alpha: 1) : NSColor(red: 0.13, green: 0.39, blue: 0.23, alpha: 1) })
-    static let macImportFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : NSColor(red: 0.84, green: 0.95, blue: 0.87, alpha: 1) })
+    static let macExport = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.58, green: 0.84, blue: 0.68, alpha: 1) : NSColor(red: 0.10, green: 0.36, blue: 0.25, alpha: 1) })
+    static let macExportFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.11, green: 0.25, blue: 0.18, alpha: 1) : NSColor(red: 0.88, green: 0.95, blue: 0.90, alpha: 1) })
+    static let macImport = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.74, green: 0.88, blue: 0.62, alpha: 1) : NSColor(red: 0.31, green: 0.45, blue: 0.21, alpha: 1) })
+    static let macImportFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.22, green: 0.31, blue: 0.14, alpha: 1) : NSColor(red: 0.92, green: 0.95, blue: 0.84, alpha: 1) })
 }
 
 struct MacSoftButtonStyle: ButtonStyle {
@@ -1148,8 +1153,10 @@ struct MacSoftButtonStyle: ButtonStyle {
             .foregroundStyle(primary ? tint : Color.macBridgeInk)
             .background(primary ? (fill ?? Color.macBridgeButtonFill) : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .shadow(color: .black.opacity(enabled && !configuration.isPressed ? 0.055 : 0.015), radius: 5, y: 2)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .opacity(enabled ? (configuration.isPressed ? 0.76 : 1) : 0.45)
             .contentShape(RoundedRectangle(cornerRadius: 13))
+            .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
     }
 }
 
@@ -1167,7 +1174,7 @@ private struct MacCard<Content: View>: View {
             .background(tint ?? (emphasis ? Color.macBridgeProgressFill : Color(nsColor: .controlBackgroundColor)), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .stroke(tint?.opacity(0.55) ?? (emphasis ? Color.macBridgeBlue.opacity(0.14) : Color.clear), lineWidth: 1))
-            .shadow(color: .black.opacity(emphasis ? 0.07 : 0.035), radius: emphasis ? 14 : 10, y: emphasis ? 6 : 4)
+            .shadow(color: (tint ?? Color.macBridgeBlue).opacity(emphasis ? 0.10 : 0.06), radius: emphasis ? 16 : 12, y: emphasis ? 7 : 5)
     }
 }
 
@@ -1217,6 +1224,8 @@ private struct MacTransferScreen: View {
                             .foregroundStyle(connected ? Color.macConnectedInk : Color.macBridgeMuted)
                             .padding(.horizontal, 18).padding(.vertical, 12)
                             .background(connected ? Color.macConnectedFill : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
+                            .scaleEffect(connected ? 1 : 0.99)
+                            .animation(.spring(response: 0.28, dampingFraction: 0.82), value: connected)
                             .accessibilityIdentifier("connectionStatus")
                     }
                     if transfer.busy || !transfer.progressText.isEmpty { progress }
@@ -1238,6 +1247,7 @@ private struct MacTransferScreen: View {
             }
         }
         .frame(minWidth: 760, minHeight: 620)
+        .animation(.easeOut(duration: 0.22), value: transfer.busy)
         .sheet(isPresented: $transfer.showAlbum) { SavedAlbumView(model: transfer) }
         .onAppear {
             transfer.startConnectionMonitoring()
