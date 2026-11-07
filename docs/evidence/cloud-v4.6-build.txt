@@ -1,0 +1,8 @@
+PhotoBridge V4.6 fast Mac export build evidence
+Run: https://github.com/loterr298/PhotoBridge/actions/runs/42334940421
+Commit: 5a47d96734fd834d74a852dcd266cb3dac38bf9e
+Result: success
+Tests: 113 Python tests, CoreChecks, simulator UI passed
+iOS IPA SHA-256: 2e7b5a9208a5fb99d7ae0f2b2a0a1d3450862e934ecf3d0764a6629c7afb9b7d
+Intel Mac ZIP SHA-256: 653c2f6d3b7c11872a1a432f86f31dfeb996aa700a144e96c263af734aef2bfe
+Real iPhone throughput: not measured in this run

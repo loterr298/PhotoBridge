@@ -7,6 +7,8 @@
 - 已完成：Mac 端传输进度日志限频，减少大量照片时的频繁 fsync 和 UI 写盘。
 - 已完成：本地保存仍按原相册顺序写入单一文件夹，断点文件和失败状态继续保留。
 - 本地验证：iOS 语法检查、CoreChecks、Intel Mac release 构建、Python 113 项测试通过。
+- 云编译证据：GitHub Actions run `42334940421`（commit `5a47d96`）成功，iOS unsigned build、模拟器 UI、Intel Mac build 和 113 项 Python 测试均通过。
+- 云产物 SHA-256：iOS `2e7b5a9208a5fb99d7ae0f2b2a0a1d3450862e934ecf3d0764a6629c7afb9b7d`；Intel Mac `653c2f6d3b7c11872a1a432f86f31dfeb996aa700a144e96c263af734aef2bfe`。
 
 ## V4.5 传输缓存生命周期（2026-11-07）
 
