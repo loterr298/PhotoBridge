@@ -832,7 +832,8 @@ final class MacTransferModel: ObservableObject {
             // The phone is the source of truth once PhotoKit writing starts.
             // The USB upload journal may finish earlier and must not replace
             // the live native Photos counter on the Mac UI.
-            if importProgressTask != nil { return }
+            let session = json["sessionID"] as? String ?? ""
+            if importProgressTask != nil || directTerminalSession == session { return }
             let done = count("completed")
             let expected = count("total")
             let finished = state == "COMMITTED" && expected > 0 && done == expected
@@ -1007,6 +1008,7 @@ final class MacTransferModel: ObservableObject {
                     _ = self.displayProgress.update(value.progress, operationID: "DIRECT:\(session)", phase: value.phase)
                     let progress = self.displayProgress.progress
                     self.lastDisplayedProgress = progress
+                    self.progressIndeterminate = value.total == 0
                     self.progressFraction = progress.fraction
                     self.progressCountText = "\(value.completed.formatted()) / \(total.formatted()) 张已写入 iPhone"
                     self.progressPercentText = progress.percentText
@@ -1103,9 +1105,9 @@ extension Color {
     static let macBridgeMuted = Color(nsColor: .secondaryLabelColor)
     static let macBridgeButtonFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.16, green: 0.30, blue: 0.20, alpha: 1) : NSColor(red: 0.84, green: 0.95, blue: 0.87, alpha: 1) })
     static let macBridgeProgressFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.18, blue: 0.22, alpha: 1) : NSColor(red: 0.985, green: 0.992, blue: 0.998, alpha: 1) })
-    static let macExport = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.62, green: 0.80, blue: 0.94, alpha: 1) : NSColor(red: 0.24, green: 0.46, blue: 0.67, alpha: 1) })
+    static let macExport = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.62, green: 0.80, blue: 0.94, alpha: 1) : NSColor(red: 0.18, green: 0.37, blue: 0.56, alpha: 1) })
     static let macExportFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.13, green: 0.22, blue: 0.32, alpha: 1) : NSColor(red: 0.88, green: 0.94, blue: 0.98, alpha: 1) })
-    static let macImport = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.65, green: 0.88, blue: 0.71, alpha: 1) : NSColor(red: 0.18, green: 0.48, blue: 0.29, alpha: 1) })
+    static let macImport = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.65, green: 0.88, blue: 0.71, alpha: 1) : NSColor(red: 0.13, green: 0.39, blue: 0.23, alpha: 1) })
     static let macImportFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : NSColor(red: 0.84, green: 0.95, blue: 0.87, alpha: 1) })
 }
 
