@@ -3,6 +3,10 @@ import UIKit
 
 extension Color {
     static let bridgeBlue = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.62, green: 0.86, blue: 0.68, alpha: 1) : UIColor(red: 0.18, green: 0.48, blue: 0.29, alpha: 1) })
+    static let bridgeExport = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.58, green: 0.76, blue: 0.92, alpha: 1) : UIColor(red: 0.23, green: 0.43, blue: 0.62, alpha: 1) })
+    static let bridgeExportFill = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.12, green: 0.22, blue: 0.31, alpha: 1) : UIColor(red: 0.88, green: 0.94, blue: 0.98, alpha: 1) })
+    static let bridgeImport = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.62, green: 0.86, blue: 0.68, alpha: 1) : UIColor(red: 0.18, green: 0.48, blue: 0.29, alpha: 1) })
+    static let bridgeImportFill = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : UIColor(red: 0.84, green: 0.95, blue: 0.87, alpha: 1) })
     static let bridgeSky = Color(uiColor: .systemGroupedBackground)
     static let connectedFill = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : UIColor(red: 0.79, green: 0.94, blue: 0.83, alpha: 1) })
     static let connectedInk = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.69, green: 0.94, blue: 0.76, alpha: 1) : UIColor(red: 0.10, green: 0.35, blue: 0.19, alpha: 1) })
@@ -41,12 +45,14 @@ struct BridgeCard<Content: View>: View {
 struct BridgeButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     var primary = false
+    var tint: Color = .bridgeBlue
+    var fill: Color?
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.body.weight(.semibold))
             .padding(.horizontal, 18).padding(.vertical, 13)
             .frame(minHeight: 46)
-            .foregroundStyle(primary ? Color.bridgeBlue : Color.bridgeInk)
-            .background(primary ? Color.bridgeButtonFill : Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .foregroundStyle(primary ? tint : Color.bridgeInk)
+            .background(primary ? (fill ?? Color.bridgeButtonFill) : Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .shadow(color: .black.opacity(enabled && !configuration.isPressed ? 0.055 : 0.015), radius: 6, y: 3)
             .opacity(enabled ? (configuration.isPressed ? 0.76 : 1) : 0.45)
             .contentShape(RoundedRectangle(cornerRadius: 16))

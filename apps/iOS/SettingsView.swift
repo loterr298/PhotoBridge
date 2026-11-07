@@ -44,7 +44,7 @@ struct SettingsView: View {
                         BridgeCard {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("传输缓存").font(.headline)
-                                Text(cache.fileCount == 0 ? "没有发现 PhotoBridge 临时文件" : "当前有 (cache.fileCount.formatted()) 个文件，占用 (ByteCountFormatter.string(fromByteCount: cache.byteCount, countStyle: .file))")
+                                Text(cache.fileCount == 0 ? "没有发现 PhotoBridge 临时文件" : "当前有 \(cache.fileCount.formatted()) 个文件，占用 \(ByteCountFormatter.string(fromByteCount: cache.byteCount, countStyle: .file))")
                                     .font(.subheadline).foregroundStyle(.secondary)
                                 Button {
                                     clearing = true

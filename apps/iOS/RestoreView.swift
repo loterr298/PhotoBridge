@@ -30,7 +30,7 @@ struct RestoreView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("导入到 iPhone").font(.largeTitle.bold()).foregroundStyle(Color.bridgeInk)
+                            Text("导入到 iPhone").font(.largeTitle.bold()).foregroundStyle(Color.bridgeImport)
                             Text("把 Mac 发来的照片，保存到新相册。")
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
@@ -47,7 +47,7 @@ struct RestoreView: View {
                                 Spacer()
                                 if service.photoPermission != .authorized {
                                     Button("允许") { Task { _ = await service.requestPhotoPermission() } }
-                                        .buttonStyle(BridgeButtonStyle(primary: true))
+                                        .buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeImport, fill: .bridgeImportFill))
                                 }
                             }
                         }
@@ -85,7 +85,7 @@ struct RestoreView: View {
                                                 if service.loadingSessions { ProgressView() }
                                                 Text("查找收到的照片")
                                             }.frame(maxWidth: .infinity)
-                                        }.buttonStyle(BridgeButtonStyle(primary: true)).disabled(working)
+                                        }.buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeImport, fill: .bridgeImportFill)).disabled(working)
                                     } else {
                                         Text("收到的相册").font(.headline)
                                         Picker("选择相册", selection: $session) {
@@ -112,7 +112,7 @@ struct RestoreView: View {
                                             } label: {
                                                 Text(service.ready ? (service.recovering ? "继续导入" : "开始导入") : "检查照片")
                                                     .frame(maxWidth: .infinity)
-                                            }.buttonStyle(BridgeButtonStyle(primary: true)).disabled(session.isEmpty || working)
+                                            }.buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeImport, fill: .bridgeImportFill)).disabled(session.isEmpty || working)
                                         }
                                         DisclosureGroup("更多选项", isExpanded: $showOptions) {
                                             VStack(alignment: .leading, spacing: 16) {

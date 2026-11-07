@@ -434,11 +434,7 @@ final class MacTransferModel: ObservableObject {
     /// The legacy inbox uploader and end-of-job verification are bypassed.
     func directImportFolder() {
         guard !busy, let directory = importFolder else { chooseImportFolder(); return }
-        let supported = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles]))?.filter { url in
-            guard (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { return false }
-            let ext = url.pathExtension.lowercased()
-            return ["jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "dng", "gif", "mov", "mp4", "m4v"].contains(ext)
-        }.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending } ?? []
+        let supported = Self.orderedMediaURLs(in: directory)
         guard !supported.isEmpty else { userMessage = "文件夹里没有可导入的照片或视频。"; return }
         busy = true; setResumableDirection("TO_IPHONE"); overallStartedAt = Date()
         progressIndeterminate = false; progressFraction = 0; progressPercentText = "0%"
@@ -461,14 +457,16 @@ final class MacTransferModel: ObservableObject {
                 // runScript owns the streaming job state and requires an idle
                 // model before it starts its bounded subprocess.
                 self.busy = false
+                self.watchDirectImport(session: session, total: supported.count)
                 self.runScript("direct_batch.py", arguments: ["--local", directory.path, "--session", session,
-                    "--order-file", orderFile.path], progressFile: progressFile, controlFile: self.makeControlFile()) { [weak self] result in
+                    "--order-file", orderFile.path], progressFile: progressFile, controlFile: self.makeControlFile(), keepImportProgress: true) { [weak self] result in
                     guard let self else { return }
                     if result.success {
                         self.busy = true
                         self.progressText = "正在等待 iPhone 完成写入"
-                        self.watchDirectImport(session: session, total: supported.count)
                     } else {
+                        self.importProgressTask?.cancel()
+                        self.importProgressTask = nil
                         self.busy = false
                         self.setResumableDirection("TO_IPHONE")
                         self.userMessage = "导入已暂停，已写入的照片会保留，可重新开始。"
@@ -639,6 +637,17 @@ final class MacTransferModel: ObservableObject {
             }
         }
     }
+
+    nonisolated private static func orderedMediaURLs(in folder: URL) -> [URL] {
+        let supportedExtensions: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "dng", "gif", "mov", "mp4", "m4v"]
+        let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey], options: [.skipsHiddenFiles]))?.filter { url in
+            let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+            return values?.isRegularFile == true && values?.isSymbolicLink != true && supportedExtensions.contains(url.pathExtension.lowercased())
+        } ?? []
+        let byName = Dictionary(uniqueKeysWithValues: files.map { ($0.lastPathComponent, $0) })
+        return MediaOrder.sorted(Array(byName.keys)).compactMap { byName[$0] }
+    }
+
     nonisolated private static func readPreview(from folder: URL) throws -> (String, [BackupAssetPreview]) {
         try Task.checkCancellation()
         var title = "已保存的相册"
@@ -654,7 +663,9 @@ final class MacTransferModel: ObservableObject {
                     let info = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
                     return info?.isRegularFile == true && info?.isSymbolicLink != true && Int(url.lastPathComponent.split(separator: "_", maxSplits: 1).first ?? "") != nil
                 }
-            }.sorted { $0.lastPathComponent < $1.lastPathComponent }.enumerated().map { index, url in
+            }.sorted { lhs, rhs in
+                MediaOrder.sorted([lhs.lastPathComponent, rhs.lastPathComponent]).first == lhs.lastPathComponent
+            }.enumerated().map { index, url in
                 BackupAssetPreview(id: index, ordinal: Int(url.lastPathComponent.split(separator: "_", maxSplits: 1)[0]) ?? index + 1,
                     primaryFilename: url.lastPathComponent, mediaURL: url)
             }
@@ -666,7 +677,9 @@ final class MacTransferModel: ObservableObject {
                 let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
                 return values?.isRegularFile == true && values?.isSymbolicLink != true && genericExtensions.contains(url.pathExtension.lowercased())
             }
-            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .sorted { lhs, rhs in
+                MediaOrder.sorted([lhs.lastPathComponent, rhs.lastPathComponent]).first == lhs.lastPathComponent
+            }
         let hasManifest = FileManager.default.fileExists(atPath: metadataURL(in: folder, name: "album-order.json").path)
         let hasRecords = FileManager.default.fileExists(atPath: folder.appendingPathComponent("asset-records").path)
         if !hasManifest && !hasRecords {
@@ -718,11 +731,13 @@ final class MacTransferModel: ObservableObject {
     }
 
     private func runScript(_ name: String, arguments: [String], progressFile: URL? = nil,
-                           controlFile: URL? = nil,
+                           controlFile: URL? = nil, keepImportProgress: Bool = false,
                            completion: @escaping (ScriptResult) -> Void) {
         guard !busy else { return }
         busy = true
-        importProgressTask?.cancel(); importProgressTask = nil
+        if !keepImportProgress {
+            importProgressTask?.cancel(); importProgressTask = nil
+        }
         progressCountText = ""; progressPercentText = "—"; elapsedText = ""
         lastDisplayedProgress = nil
         displayProgress = ProgressDisplayState()
@@ -803,6 +818,10 @@ final class MacTransferModel: ObservableObject {
         let state = json["status"] as? String ?? json["state"] as? String ?? ""
         let direct = json["direction"] as? String == "TO_IPHONE" && json["kind"] as? String == "PhotoBridgeTransferDisplay"
         if direct {
+            // The phone is the source of truth once PhotoKit writing starts.
+            // The USB upload journal may finish earlier and must not replace
+            // the live native Photos counter on the Mac UI.
+            if importProgressTask != nil { return }
             let done = count("completed")
             let expected = count("total")
             let finished = state == "COMMITTED" && expected > 0 && done == expected
@@ -845,11 +864,10 @@ final class MacTransferModel: ObservableObject {
         lastDisplayedProgress = progress
         progressIndeterminate = expected == 0
         let scanComplete = scanning && expected > 0 && done == expected
-        let preparingFirst = !verifying && done == 0 && expected > 0 && (json["bytesVerified"] as? NSNumber)?.int64Value == 0
-        progressIndeterminate = preparingFirst || expected == 0
+        progressIndeterminate = expected == 0
         progressFraction = verifying ? 0.5 : (scanComplete ? 1 : progress.fraction)
-        progressCountText = verifying ? "已发送，正在写入 iPhone 照片" : (preparingFirst ? "正在准备第一张照片…" : (scanning && uploading ? "已准备 \(done.formatted()) / \(expected.formatted()) 张" : (expected > 0 ? progress.countText : (scanning ? "已准备 (done) 张" : "正在读取照片…"))))
-        progressPercentText = verifying ? "50%" : (preparingFirst ? "—" : (scanComplete ? "100%" : progress.percentText))
+        progressCountText = verifying ? "已发送，正在写入 iPhone 照片" : (scanning && uploading ? "已准备 \(done.formatted()) / \(expected.formatted()) 张" : (expected > 0 ? progress.countText : (scanning ? "已准备 \(done.formatted()) 张" : "正在读取照片…")))
+        progressPercentText = verifying ? "50%" : (scanComplete ? "100%" : progress.percentText)
         if verifying { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "正在核对照片" }
         else if scanComplete { progressText = uploading ? "正在按顺序导入 iPhone 照片" : "扫描完成，正在完成最后检查" }
         else if scanning { progressText = uploading ? "正在准备照片" : "正在读取照片" }
@@ -986,7 +1004,14 @@ final class MacTransferModel: ObservableObject {
                     self.elapsedText = "已用 \(self.formatDuration(max(0, elapsed)))"
                     self.currentResource = ""
                     self.speedText = ""
-                    self.etaText = value.finished ? "" : "正在等待手机写入…"
+                    if value.finished {
+                        self.etaText = ""
+                    } else if progress.fraction > 0, elapsed > 0 {
+                        let remaining = elapsed * (1 / progress.fraction - 1)
+                        self.etaText = "约剩 \(self.formatDuration(remaining))"
+                    } else {
+                        self.etaText = "正在估算剩余时间…"
+                    }
                     if value.finished {
                         self.busy = false
                         self.setResumableDirection(nil)
@@ -1058,16 +1083,22 @@ extension Color {
     static let macBridgeMuted = Color(nsColor: .secondaryLabelColor)
     static let macBridgeButtonFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.16, green: 0.30, blue: 0.20, alpha: 1) : NSColor(red: 0.84, green: 0.95, blue: 0.87, alpha: 1) })
     static let macBridgeProgressFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.18, blue: 0.22, alpha: 1) : NSColor(red: 0.985, green: 0.992, blue: 0.998, alpha: 1) })
+    static let macExport = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.62, green: 0.80, blue: 0.94, alpha: 1) : NSColor(red: 0.24, green: 0.46, blue: 0.67, alpha: 1) })
+    static let macExportFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.13, green: 0.22, blue: 0.32, alpha: 1) : NSColor(red: 0.88, green: 0.94, blue: 0.98, alpha: 1) })
+    static let macImport = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.65, green: 0.88, blue: 0.71, alpha: 1) : NSColor(red: 0.18, green: 0.48, blue: 0.29, alpha: 1) })
+    static let macImportFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : NSColor(red: 0.84, green: 0.95, blue: 0.87, alpha: 1) })
 }
 
 struct MacSoftButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     var primary = false
+    var tint: Color = .macBridgeBlue
+    var fill: Color?
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.body.weight(.semibold))
             .padding(.horizontal, 16).padding(.vertical, 10).frame(minHeight: 36)
-            .foregroundStyle(primary ? Color.macBridgeBlue : Color.macBridgeInk)
-            .background(primary ? Color.macBridgeButtonFill : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .foregroundStyle(primary ? tint : Color.macBridgeInk)
+            .background(primary ? (fill ?? Color.macBridgeButtonFill) : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .shadow(color: .black.opacity(enabled && !configuration.isPressed ? 0.055 : 0.015), radius: 5, y: 2)
             .opacity(enabled ? (configuration.isPressed ? 0.76 : 1) : 0.45)
             .contentShape(RoundedRectangle(cornerRadius: 13))
@@ -1077,15 +1108,17 @@ struct MacSoftButtonStyle: ButtonStyle {
 private struct MacCard<Content: View>: View {
     let content: Content
     let emphasis: Bool
-    init(emphasis: Bool = false, @ViewBuilder content: () -> Content) {
+    let tint: Color?
+    init(emphasis: Bool = false, tint: Color? = nil, @ViewBuilder content: () -> Content) {
         self.emphasis = emphasis
+        self.tint = tint
         self.content = content()
     }
     var body: some View {
         content.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-            .background(emphasis ? Color.macBridgeProgressFill : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .background(tint ?? (emphasis ? Color.macBridgeProgressFill : Color(nsColor: .controlBackgroundColor)), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(emphasis ? Color.macBridgeBlue.opacity(0.14) : Color.clear, lineWidth: 1))
+                .stroke(tint?.opacity(0.55) ?? (emphasis ? Color.macBridgeBlue.opacity(0.14) : Color.clear), lineWidth: 1))
             .shadow(color: .black.opacity(emphasis ? 0.07 : 0.035), radius: emphasis ? 14 : 10, y: emphasis ? 6 : 4)
     }
 }
@@ -1140,8 +1173,8 @@ private struct MacTransferScreen: View {
                     }
                     if transfer.busy || !transfer.progressText.isEmpty { progress }
                     HStack(alignment: .top, spacing: 20) {
-                        MacCard { exportControls }.frame(maxWidth: .infinity)
-                        MacCard { importControls }.frame(maxWidth: .infinity)
+                        MacCard(tint: .macExportFill) { exportControls }.frame(maxWidth: .infinity)
+                        MacCard(tint: .macImportFill) { importControls }.frame(maxWidth: .infinity)
                     }
                     if !transfer.userMessage.isEmpty && !transfer.userMessage.hasPrefix("还没有连接 iPhone") {
                         Text(transfer.userMessage).font(.callout).foregroundStyle(.secondary)
@@ -1164,7 +1197,9 @@ private struct MacTransferScreen: View {
     }
     private var exportControls: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("保存到 Mac").font(.title2.weight(.semibold))
+            Label("保存到 Mac", systemImage: "arrow.down.to.line")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Color.macExport)
             Text("把 iPhone 相册保存到 Mac")
                 .font(.subheadline).foregroundStyle(Color.macBridgeMuted)
             if !transfer.albums.isEmpty {
@@ -1193,7 +1228,7 @@ private struct MacTransferScreen: View {
                     else { Image(systemName: connected ? "arrow.down.to.line" : "iphone") }
                     Text(connected && transfer.selectedAlbumID.isEmpty ? "读取相册" : "选择保存位置并导出")
                 }.frame(maxWidth: .infinity)
-            }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working || !connected)
+            }.buttonStyle(MacSoftButtonStyle(primary: true, tint: .macExport, fill: .macExportFill)).disabled(working || !connected)
             if transfer.resumableDirection == "TO_MAC" {
                 Button("继续上次导出") { transfer.continueMacExport() }
                     .buttonStyle(MacSoftButtonStyle())
@@ -1211,13 +1246,15 @@ private struct MacTransferScreen: View {
     }
     private var importControls: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("导入到 iPhone").font(.title2.weight(.semibold))
+            Label("导入到 iPhone", systemImage: "arrow.up.to.line")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Color.macImport)
             Text("按 Mac 当前顺序逐张写入 iPhone 系统照片")
                 .font(.subheadline).foregroundStyle(Color.macBridgeMuted)
                 .fixedSize(horizontal: false, vertical: true)
             if let folder = transfer.importFolder {
                 HStack {
-                    Image(systemName: "folder.fill").foregroundStyle(Color.macBridgeBlue)
+                    Image(systemName: "folder.fill").foregroundStyle(Color.macImport)
                     Text(folder.lastPathComponent).font(.headline).lineLimit(1)
                     Spacer()
                     Button("更换") { transfer.chooseImportFolder() }.buttonStyle(MacSoftButtonStyle())
@@ -1235,7 +1272,7 @@ private struct MacTransferScreen: View {
             } label: {
                 Label(transfer.importFolder == nil ? "选择文件夹" : "开始导入到 iPhone", systemImage: "arrow.up.to.line")
                     .frame(maxWidth: .infinity)
-            }.buttonStyle(MacSoftButtonStyle(primary: true)).disabled(working || !connected)
+            }.buttonStyle(MacSoftButtonStyle(primary: true, tint: .macImport, fill: .macImportFill)).disabled(working || !connected)
             if transfer.resumableDirection == "TO_IPHONE" {
                 Button("继续上次发送") { transfer.resumeUpload() }
                     .buttonStyle(MacSoftButtonStyle())

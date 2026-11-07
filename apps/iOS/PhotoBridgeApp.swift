@@ -125,7 +125,7 @@ struct AlbumsView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("备份照片到 Mac").font(.system(size: 36, weight: .bold, design: .rounded)).foregroundStyle(Color.bridgeInk)
+                            Text("备份照片到 Mac").font(.system(size: 36, weight: .bold, design: .rounded)).foregroundStyle(Color.bridgeInk)
                                 BridgeStatus(title: library.authorization == .authorized ? "照片权限已准备" : "请先允许访问照片", connected: library.authorization == .authorized)
                             }
                             Spacer()
@@ -149,12 +149,12 @@ struct AlbumsView: View {
                                 NavigationLink { AlbumTransferPicker() } label: {
                                     Label("选择相册开始备份", systemImage: "photo.on.rectangle.angled")
                                         .frame(maxWidth: .infinity)
-                                }.buttonStyle(BridgeButtonStyle(primary: true)).tint(.bridgeBlue).controlSize(.large)
+                                }.buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeExport, fill: .bridgeExportFill)).tint(.bridgeExport).controlSize(.large)
                             }
                         }
 
                         HStack(alignment: .firstTextBaseline) {
-                            Text("选择相册").font(.title2.bold()).foregroundStyle(Color.bridgeInk)
+                                Text("选择相册").font(.title2.bold()).foregroundStyle(Color.bridgeExport)
                             Spacer()
                             Button(showAll ? "收起" : "查看全部") { withAnimation(.easeOut(duration: 0.2)) { showAll.toggle() } }
                                 .font(.subheadline.weight(.medium)).foregroundStyle(Color.bridgeMuted)
