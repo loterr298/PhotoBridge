@@ -9,6 +9,7 @@
 - 新版本统一为 4.10.0/build 1。
 - 本地验证：Python 113 项、StagingChecks 26 项、CoreChecks 全部通过，iOS Swift 语法解析通过，Intel macOS release 构建通过。合成检查不等同于真实 USB 吞吐或真实 PhotoKit 顺序验收，设备证据仍待真机运行。
 - 本地 Mac 已覆盖安装 `/Applications/PhotoBridgeMac.app`。Intel 包为 `build/PhotoBridgeMac-Intel.zip`，SHA-256 `830f11f10d9c68bb289f10aeae773134cff128b451382a4753f38d641bf25b29`；交付门禁日志为 `build/verification/delivery-gate.log`。
+- 云端 GitHub Actions run `42374486353` 已成功。云端 iOS IPA SHA-256 `1cb8534a90a20cdf06e27f43bf3f45abcffe824c0cf15e5d76621d854262a036`，Intel Mac ZIP SHA-256 `f4cb686aea6636587ee6c43d5fa0ac0838cfbad42b6ba091b73e68f28794f653`。云端模拟器和构建日志保存在 `build/cloud-4.10.0-run42374486353/`。
 
 ## V4.9 全链路性能审计（2026-11-07）
 
