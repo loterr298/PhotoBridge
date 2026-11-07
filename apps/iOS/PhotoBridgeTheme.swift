@@ -39,8 +39,8 @@ struct BridgeCard<Content: View>: View {
     init(@ViewBuilder content: () -> Content) { self.content = content() }
     var body: some View {
         content.padding(22)
-            .background(Color(uiColor: .systemBackground).opacity(0.94), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: Color.bridgeBlue.opacity(0.06), radius: 16, y: 7)
+            .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: Color.black.opacity(0.055), radius: 14, y: 6)
     }
 }
 

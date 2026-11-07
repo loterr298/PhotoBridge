@@ -1162,6 +1162,25 @@ struct MacSoftButtonStyle: ButtonStyle {
     }
 }
 
+private struct MacDirectionLabel: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(tint)
+                .frame(width: 9, height: 9)
+                .shadow(color: tint.opacity(0.25), radius: 3)
+            Label(title, systemImage: systemImage)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Color.macBridgeInk)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct MacCard<Content: View>: View {
     let content: Content
     let emphasis: Bool
@@ -1173,10 +1192,10 @@ private struct MacCard<Content: View>: View {
     }
     var body: some View {
         content.padding(20).frame(maxWidth: .infinity, alignment: .leading)
-            .background(tint ?? (emphasis ? Color.macBridgeProgressFill : Color(nsColor: .controlBackgroundColor)), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(tint?.opacity(0.55) ?? (emphasis ? Color.macBridgeBlue.opacity(0.14) : Color.clear), lineWidth: 1))
-            .shadow(color: (tint ?? Color.macBridgeBlue).opacity(emphasis ? 0.10 : 0.06), radius: emphasis ? 16 : 12, y: emphasis ? 7 : 5)
+                .stroke(emphasis ? Color.macBridgeBlue.opacity(0.14) : Color.black.opacity(0.05), lineWidth: 1))
+            .shadow(color: .black.opacity(emphasis ? 0.08 : 0.05), radius: emphasis ? 16 : 12, y: emphasis ? 7 : 5)
     }
 }
 
@@ -1247,8 +1266,9 @@ private struct MacTransferScreen: View {
                     Text("按原相册顺序传输，原照片不会删除。").font(.caption).foregroundStyle(.secondary)
                 }.padding(32).frame(maxWidth: 1080, alignment: .leading).frame(maxWidth: .infinity)
             }
+            .scrollIndicators(.hidden)
         }
-        .frame(minWidth: 760, minHeight: 620)
+        .frame(width: 1120, height: 760)
         .animation(.easeOut(duration: 0.22), value: transfer.busy)
         .sheet(isPresented: $transfer.showAlbum) { SavedAlbumView(model: transfer) }
         .onAppear {
@@ -1260,9 +1280,7 @@ private struct MacTransferScreen: View {
     }
     private var exportControls: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Label("保存到 Mac", systemImage: "arrow.down.to.line")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(Color.macBridgeInk)
+            MacDirectionLabel(title: "保存到 Mac", systemImage: "arrow.down.to.line", tint: .macExport)
             Text("把 iPhone 相册保存到 Mac")
                 .font(.subheadline).foregroundStyle(Color.macBridgeMuted)
             if !transfer.albums.isEmpty {
@@ -1309,9 +1327,7 @@ private struct MacTransferScreen: View {
     }
     private var importControls: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Label("导入到 iPhone", systemImage: "arrow.up.to.line")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(Color.macBridgeInk)
+            MacDirectionLabel(title: "导入到 iPhone", systemImage: "arrow.up.to.line", tint: .macImport)
             Text("按 Mac 当前顺序逐张写入 iPhone 系统照片")
                 .font(.subheadline).foregroundStyle(Color.macBridgeMuted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1408,5 +1424,7 @@ struct PhotoBridgeMacApp: App {
     @StateObject private var transfer = MacTransferModel()
     var body: some Scene {
         WindowGroup("PhotoBridge") { MacTransferScreen(transfer: transfer) }
+            .defaultSize(width: 1120, height: 760)
+            .windowResizability(.contentSize)
     }
 }

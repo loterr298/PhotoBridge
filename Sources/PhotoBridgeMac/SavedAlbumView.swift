@@ -41,7 +41,7 @@ struct SavedPhotoThumbnail: View {
         .onAppear { load() }
         .onDisappear {
             if let request { QLThumbnailGenerator.shared.cancel(request) }
-            request = nil; image = nil
+            request = nil
         }
     }
     private func load() {
@@ -96,7 +96,8 @@ struct FolderThumbnailGrid: View {
                 }
             }
             .scrollIndicators(.hidden)
-            .frame(maxHeight: 132)
+            .frame(height: 118)
+            .clipped()
         }
     }
 }
@@ -132,6 +133,7 @@ struct SavedAlbumView: View {
                     }
                     .padding(.vertical, 4)
                 }
+                .scrollIndicators(.hidden)
             }
         }
         .padding(24).frame(minWidth: 740, minHeight: 560)
