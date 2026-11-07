@@ -83,6 +83,7 @@ final class MacTransferModel: ObservableObject {
     private var importPreviewTask: Task<Void, Never>?
     private var directTerminalSession: String?
     private var directTerminalPhase: String?
+    private var directScriptSession: String?
     private var lastDisplayedProgress: PhotoProgress?
     private var displayProgress = ProgressDisplayState()
     private var displayOperationID = ""
@@ -435,7 +436,7 @@ final class MacTransferModel: ObservableObject {
     /// while the iPhone watcher commits each marker to PhotoKit immediately.
     /// The legacy inbox uploader and end-of-job verification are bypassed.
     func directImportFolder() {
-        guard !busy, let directory = importFolder else { chooseImportFolder(); return }
+        guard !busy, directScriptSession == nil, let directory = importFolder else { chooseImportFolder(); return }
         let supported = Self.orderedMediaURLs(in: directory)
         guard !supported.isEmpty else { userMessage = "文件夹里没有可导入的照片或视频。"; return }
         busy = true; setResumableDirection("TO_IPHONE"); overallStartedAt = Date()
@@ -445,6 +446,7 @@ final class MacTransferModel: ObservableObject {
         progressCountText = "0 / \(supported.count.formatted()) 张已写入 iPhone"
         progressText = "正在导入 iPhone 照片"; elapsedText = ""; etaText = "正在计算剩余时间…"
         let session = UUID().uuidString
+        directScriptSession = session
         let progressFile = directProgressFile(session: session)
         let orderFile = directOrderFile(session: session)
         try? FileManager.default.createDirectory(at: orderFile.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -477,10 +479,12 @@ final class MacTransferModel: ObservableObject {
                         self.setResumableDirection("TO_IPHONE")
                         self.userMessage = "导入已暂停，已写入的照片会保留，可重新开始。"
                     }
+                    self.directScriptSession = nil
                     try? FileManager.default.removeItem(at: orderFile)
                 }
             } catch {
-                self.busy = false; self.setResumableDirection("TO_IPHONE"); self.userMessage = "导入没有开始：\(error.localizedDescription)"
+                self.busy = false; self.directScriptSession = nil
+                self.setResumableDirection("TO_IPHONE"); self.userMessage = "导入没有开始：\(error.localizedDescription)"
                 try? FileManager.default.removeItem(at: orderFile)
             }
         }
@@ -1028,7 +1032,7 @@ final class MacTransferModel: ObservableObject {
                     if value.finished {
                         self.directTerminalSession = session
                         self.directTerminalPhase = value.phase
-                        self.busy = false
+                        self.busy = self.directScriptSession == session
                         self.setResumableDirection(nil)
                         self.userMessage = "照片已全部写入 iPhone 系统相册。"
                         self.importProgressTask = nil
@@ -1037,7 +1041,7 @@ final class MacTransferModel: ObservableObject {
                     if value.phase == "FAILED" {
                         self.directTerminalSession = session
                         self.directTerminalPhase = value.phase
-                        self.busy = false
+                        self.busy = self.directScriptSession == session
                         self.setResumableDirection("TO_IPHONE")
                         self.userMessage = "iPhone 写入没有完成，已写入的照片会保留。"
                         self.importProgressTask = nil
@@ -1048,7 +1052,7 @@ final class MacTransferModel: ObservableObject {
                     if missedReads >= 120 {
                         self.directTerminalSession = session
                         self.directTerminalPhase = "FAILED"
-                        self.busy = false
+                        self.busy = self.directScriptSession == session
                         self.setResumableDirection("TO_IPHONE")
                         self.userMessage = "等待 iPhone 写入超时，进度已保留，可重新连接后继续。"
                         self.importProgressTask = nil
