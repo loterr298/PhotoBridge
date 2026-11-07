@@ -72,7 +72,7 @@ final class NativePhotoImportService: ObservableObject {
                 }
             }
             publish(DirectImportProgress(sessionID: session, completed: total, total: total, phase: "VERIFYING"))
-            try verifyAlbumOrder(expectedIdentifiers: createdIdentifiers)
+            try verifyAlbumOrder(expectedIdentifiers: createdIdentifiers, session: session, total: total)
             try? FileManager.default.removeItem(at: root)
             publish(DirectImportProgress(sessionID: session, completed: total, total: total, phase: "COMMITTED"))
         } catch is CancellationError {
@@ -171,20 +171,42 @@ final class NativePhotoImportService: ObservableObject {
         return identifiers
     }
 
-    private func verifyAlbumOrder(expectedIdentifiers: [String]) throws {
-        guard let album, DirectOrderVerification.matches(expected: expectedIdentifiers,
-                                                         actual: Self.identifiers(in: album)) else {
+    private func verifyAlbumOrder(expectedIdentifiers: [String], session: String, total: Int) throws {
+        guard let album, !expectedIdentifiers.isEmpty else {
             throw NSError(domain: "PhotoBridge.DirectImport", code: 10,
                           userInfo: [NSLocalizedDescriptionKey: "导入后的相册顺序核验失败"])
         }
-    }
-
-    private static func identifiers(in album: PHAssetCollection) -> [String] {
+        let expected = Set(expectedIdentifiers)
+        guard expected.count == expectedIdentifiers.count else {
+            throw NSError(domain: "PhotoBridge.DirectImport", code: 10,
+                          userInfo: [NSLocalizedDescriptionKey: "导入后的相册顺序核验失败"])
+        }
         let assets = PHAsset.fetchAssets(in: album, options: nil)
-        var identifiers: [String] = []
-        identifiers.reserveCapacity(assets.count)
-        assets.enumerateObjects { asset, _, _ in identifiers.append(asset.localIdentifier) }
-        return identifiers
+        var matched: [String] = []
+        matched.reserveCapacity(expectedIdentifiers.count)
+        var mismatch = false
+        assets.enumerateObjects { asset, _, stop in
+            guard !mismatch, matched.count < expectedIdentifiers.count else {
+                stop.pointee = true
+                return
+            }
+            let identifier = asset.localIdentifier
+            guard expected.contains(identifier) else { return }
+            guard identifier == expectedIdentifiers[matched.count] else {
+                mismatch = true
+                stop.pointee = true
+                return
+            }
+            matched.append(identifier)
+            if matched.count == expectedIdentifiers.count || matched.count.isMultiple(of: 32) {
+                self.publish(DirectImportProgress(sessionID: session, completed: matched.count, total: total, phase: "VERIFYING"))
+            }
+            if matched.count == expectedIdentifiers.count { stop.pointee = true }
+        }
+        guard !mismatch, DirectOrderVerification.matches(expected: expectedIdentifiers, actual: matched), matched.count == expectedIdentifiers.count else {
+            throw NSError(domain: "PhotoBridge.DirectImport", code: 10,
+                          userInfo: [NSLocalizedDescriptionKey: "导入后的相册顺序核验失败"])
+        }
     }
 
     func importItem(session: String, ordinal: Int, title: String, relativePath: String,

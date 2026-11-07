@@ -54,7 +54,7 @@ struct RestoreView: View {
                         if let direct = control.directProgress {
                             BridgeCard {
                                 VStack(alignment: .leading, spacing: 12) {
-                                    let title = direct.phase == "COMMITTED" ? "已导入到 iPhone 照片" : direct.phase == "FAILED" ? "导入没有完成" : "正在导入 iPhone 照片"
+                                    let title = direct.phase == "COMMITTED" ? "已导入到 iPhone 照片" : direct.phase == "FAILED" ? "导入没有完成" : direct.phase == "VERIFYING" ? "正在确认导入顺序" : "正在导入 iPhone 照片"
                                     PhotoCountView(title: title, progress: direct.progress, elapsedSeconds: direct.elapsedSeconds)
                                     if direct.phase == "COMMITTED" {
                                         Text("照片已写入系统照片，并按文件夹顺序保存。").font(.subheadline).foregroundStyle(.secondary)
