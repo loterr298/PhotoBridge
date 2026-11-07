@@ -5,6 +5,8 @@
 - 已完成：快速保存到 Mac 仍在结束阶段重新核对 PhotoKit 相簿成员、相册名称、资源目录和原始顺序。
 - 已完成：快速模式只跳过重复的资源字节哈希，不跳过顺序核验和资源目录核验。
 - 已完成：iPhone 导入完成后重新读取目标相簿，按新建资产标识核对实际相对顺序，顺序不一致不会标记完成。
+- 云编译证据：GitHub Actions run `42336526625`（commit `28817fb`）成功，iOS unsigned build、模拟器 UI、Intel Mac build 和 113 项 Python 测试均通过。
+- 云产物 SHA-256：iOS `e92ce9293621ec23228d87b219ae8da02de0d72b2b9a381d07e7f4d03f32abad`；Intel Mac `06169ab13ac18660472a177bbd049365e449e344f842218a77317f8e79b661a3`。
 
 ## V4.6 保存到 Mac 直通提速（2026-11-07）
 
