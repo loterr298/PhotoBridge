@@ -330,16 +330,18 @@ private final class StreamingManifestWriter {
             if !fastExport {
                 let checked = try await Task.detached(priority: .utility) { try StagingResume.reusable(in: dir, plan: plan, digest: digest, checkCancellation: cancellation.check) }.value
                 guard checked.count == resourcesCompleted else { throw ExportError.invalidManifest("完成资源与检查点数量不一致") }
-                if let previous, let previousDigest {
-                    let samePlan = try await Task.detached(priority: .utility) {
-                        try autoreleasepool { try StagingResume.load(in: previous).digest == previousDigest }
-                    }.value
-                    guard samePlan else { throw ExportError.invalidManifest("旧会话计划已变化") }
-                }
-                try await Task.detached(priority: .userInitiated) {
-                    try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources, cancellation: cancellation)
-                }.value
             }
+            if let previous, let previousDigest {
+                let samePlan = try await Task.detached(priority: .utility) {
+                    try autoreleasepool { try StagingResume.load(in: previous).digest == previousDigest }
+                }.value
+                guard samePlan else { throw ExportError.invalidManifest("旧会话计划已变化") }
+            }
+            // The fast path skips duplicate byte hashing, while the final
+            // PhotoKit order and resource-directory check remains mandatory.
+            try await Task.detached(priority: .userInitiated) {
+                try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources, cancellation: cancellation)
+            }.value
             try checkStopAndPermission()
             try journal("FINALIZING_MANIFEST")
             message = "正在整理保存记录，请不要关闭 App"
