@@ -146,8 +146,9 @@ public enum StagingResume {
             throw ExportError.invalidManifest("暂存资源大小或 SHA-256 不一致，停止继续")
         }
     }
-    public static func record(_ resource: ExportResource, ordinal: Int, plan: StagingPlan, digest: String, in directory: URL, checkCancellation: () throws -> Void = {}) throws {
-        try validate(resource, ordinal: ordinal, plan: plan); try verify(resource, in: directory, checkCancellation: checkCancellation)
+    public static func record(_ resource: ExportResource, ordinal: Int, plan: StagingPlan, digest: String, in directory: URL, verifyContent: Bool = true, checkCancellation: () throws -> Void = {}) throws {
+        try validate(resource, ordinal: ordinal, plan: plan)
+        if verifyContent { try verify(resource, in: directory, checkCancellation: checkCancellation) }
         let records = directory.appendingPathComponent("resource-records"); try requireDirectory(records)
         let final = records.appendingPathComponent(String(format: "%06d-%04d.json", ordinal, resource.resourceIndex))
         let part = final.appendingPathExtension("part")

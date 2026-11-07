@@ -178,9 +178,11 @@ private final class StreamingManifestWriter {
             scanning = false; busy = false
         }
         var directory: URL?; var previous: URL?; var previousDigest: String?
+        var lastJournalAt = Date.distantPast
         let build = Bundle.main.object(forInfoDictionaryKey: "PhotoBridgeBuildCommit") as? String ?? "local-unversioned"
         func journal(_ state: String, error: String? = nil) throws {
             guard let directory else { return }
+            if fastExport && state == "EXPORTING", Date().timeIntervalSince(lastJournalAt) < 0.5 { return }
             var value: [String: Any] = ["status": state, "assetsCompleted": assetsCompleted, "totalAssets": totalAssets, "resourcesCompleted": resourcesCompleted,
                 "bytesCompleted": bytesCompleted, "reusedVerifiedResources": reusedResources,
                 "photoKitResourcesRead": photoKitResourcesRead, "partialResourceBytesReused": 0,
@@ -192,6 +194,7 @@ private final class StreamingManifestWriter {
             if let error { value["error"] = error }
             try JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted, .sortedKeys])
                 .write(to: directory.appendingPathComponent("export-progress.json"), options: .atomic)
+            lastJournalAt = Date()
         }
         do {
             try checkPermission()
@@ -296,7 +299,7 @@ private final class StreamingManifestWriter {
                                 if let error { continuation.resume(throwing: error) } else { continuation.resume() }
                             }
                         }
-                        try checkAssetSnapshot(source, asset: photoAsset)
+                        if !fastExport { try checkAssetSnapshot(source, asset: photoAsset) }
                         let receipt = try await Task.detached(priority: .utility) { try ProbeFiles.inspect(part, checkCancellation: cancellation.check) }.value
                         guard receipt.byteCount > 0 else { throw ExportError.invalidManifest("原始资源为空") }
                         try StagingFiles.commit(part: part, destination: destination)
@@ -304,15 +307,17 @@ private final class StreamingManifestWriter {
                             originalFilename: resource.originalFilename, uniformTypeIdentifier: resource.uniformTypeIdentifier,
                             storedRelativePath: relative, sha256: receipt.sha256, byteCount: receipt.byteCount)
                     }
-                    try checkAssetSnapshot(source, asset: photoAsset)
+                    if !fastExport { try checkAssetSnapshot(source, asset: photoAsset) }
                     try await Task.detached(priority: .utility) {
-                        try StagingResume.record(completed, ordinal: index + 1, plan: plan, digest: digest, in: dir, checkCancellation: cancellation.check)
+                        try StagingResume.record(completed, ordinal: index + 1, plan: plan, digest: digest, in: dir,
+                            verifyContent: !fastExport, checkCancellation: cancellation.check)
                     }.value
                     exported.append(completed); resourcesCompleted += 1; bytesCompleted += completed.byteCount
                     if reusable[relative] != nil { reusedResources += 1 } else { photoKitResourcesRead += 1 }
                     try journal("EXPORTING")
                     if let limit = stopAfterResources, resourcesCompleted >= limit { stopRequested = true }
                 }
+                if fastExport { try checkAssetSnapshot(source, asset: photoAsset) }
                 let group = ExportAsset(ordinal: index + 1, resourceGroupId: UUID().uuidString,
                     sourceAssetLocalIdentifier: source.identifier, originalPhotoLibraryCreationDate: source.creationDate,
                     pixelWidth: source.pixelWidth, pixelHeight: source.pixelHeight, mediaType: source.mediaType,
