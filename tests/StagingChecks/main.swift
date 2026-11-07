@@ -98,6 +98,5 @@ do {
     try require(StagingResume.reusable(in: new, plan: newPlan, digest: newDigest).count == 1, "crash after commit before checkpoint causes reread, never unverified skip")
     try Data("{}".utf8).write(to: new.appendingPathComponent("album-order.json"))
     try rejects("completed staging session cannot be resumed") { _ = try StagingResume.load(in: new) }
-    try require(MediaOrder.sorted(["IMG_10.JPG", "IMG_2.JPG", "img_1.JPG"]) == ["img_1.JPG", "IMG_2.JPG", "IMG_10.JPG"], "Mac preview and direct import share natural filename order")
     print("\(checks) staging recovery checks passed; synthetic only, device PhotoKit recovery NOT_RUN")
 } catch { fputs("FAIL staging recovery: \(error)\n", stderr); exit(1) }

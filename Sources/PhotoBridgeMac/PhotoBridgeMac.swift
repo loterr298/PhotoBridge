@@ -67,6 +67,7 @@ final class MacTransferModel: ObservableObject {
     @Published var exportFolderName = ""
     @Published var importFolder: URL?
     @Published var importPreview: [BackupAssetPreview] = []
+    @Published var importOrderNames: [String] = []
     @Published var loadingImportPreview = false
     @Published var allowCloudDownload = false
     @Published var showAlbum = false
@@ -421,6 +422,7 @@ final class MacTransferModel: ObservableObject {
             if result.success {
                 self.importFolder = nil
                 self.importPreview = []
+                self.importOrderNames = []
                 UserDefaults.standard.removeObject(forKey: "PhotoBridge.lastImportFolder")
                 self.userMessage = "文件已发送，正在写入 iPhone 照片…"
                 if let session = Self.restoreSession(from: result.text) {
@@ -437,7 +439,12 @@ final class MacTransferModel: ObservableObject {
     /// The legacy inbox uploader and end-of-job verification are bypassed.
     func directImportFolder() {
         guard !busy, directScriptSession == nil, let directory = importFolder else { chooseImportFolder(); return }
-        let supported = Self.orderedMediaURLs(in: directory)
+        guard !loadingImportPreview else {
+            userMessage = "正在读取 Mac 上看到的照片顺序，请稍候。"
+            return
+        }
+        let orderedNames = importOrderNames.isEmpty ? importPreview.map { $0.mediaURL.lastPathComponent } : importOrderNames
+        let supported = Self.orderedMediaURLs(in: directory, names: orderedNames)
         guard !supported.isEmpty else { userMessage = "文件夹里没有可导入的照片或视频。"; return }
         busy = true; setResumableDirection("TO_IPHONE"); overallStartedAt = Date()
         directTerminalSession = nil
@@ -501,7 +508,19 @@ final class MacTransferModel: ObservableObject {
         guard let directory = chooseDirectory(title: "选择要发送到 iPhone 的照片") else { return }
         importFolder = directory
         UserDefaults.standard.set(directory.path, forKey: "PhotoBridge.lastImportFolder")
+        loadImportPreview(from: directory)
+    }
+
+    func refreshImportPreviewIfNeeded() {
+        guard let directory = importFolder,
+              FileManager.default.fileExists(atPath: directory.path),
+              importPreview.isEmpty, !loadingImportPreview else { return }
+        loadImportPreview(from: directory)
+    }
+
+    private func loadImportPreview(from directory: URL) {
         importPreview = []
+        importOrderNames = []
         loadingImportPreview = true
         importPreviewTask?.cancel()
         importPreviewTask = Task { [weak self] in
@@ -510,10 +529,14 @@ final class MacTransferModel: ObservableObject {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     self?.importPreview = result.1
+                    self?.importOrderNames = result.1.map { $0.mediaURL.lastPathComponent }
                     self?.loadingImportPreview = false
                 }
             } catch {
-                await MainActor.run { self?.loadingImportPreview = false }
+                await MainActor.run {
+                    self?.importOrderNames = []
+                    self?.loadingImportPreview = false
+                }
             }
         }
     }
@@ -527,16 +550,7 @@ final class MacTransferModel: ObservableObject {
             directory = chosen
         }
         importFolder = directory
-        importPreview = []
-        loadingImportPreview = true
-        importPreviewTask?.cancel()
-        importPreviewTask = Task { [weak self] in
-            if let result = try? await (Task.detached(priority: .utility) { try Self.readPreview(from: directory) }.value) {
-                await MainActor.run { self?.importPreview = result.1; self?.loadingImportPreview = false }
-            } else {
-                await MainActor.run { self?.loadingImportPreview = false }
-            }
-        }
+        loadImportPreview(from: directory)
         busy = true; progressIndeterminate = true; progressText = "正在查找上次发送记录…"
         pendingUploadTask = Task {
             guard !Task.isCancelled else {
@@ -555,6 +569,7 @@ final class MacTransferModel: ObservableObject {
                 if result.success {
                     self.importFolder = nil
                     self.importPreview = []
+                    self.importOrderNames = []
                     UserDefaults.standard.removeObject(forKey: "PhotoBridge.lastImportFolder")
                     self.userMessage = "文件已发送，正在写入 iPhone 照片…"
                     if let session = Self.restoreSession(from: result.text) {
@@ -654,14 +669,16 @@ final class MacTransferModel: ObservableObject {
         }
     }
 
-    nonisolated private static func orderedMediaURLs(in folder: URL) -> [URL] {
+    nonisolated private static func orderedMediaURLs(in folder: URL, names: [String]) -> [URL] {
         let supportedExtensions: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "dng", "gif", "mov", "mp4", "m4v"]
         let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey], options: [.skipsHiddenFiles]))?.filter { url in
             let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
             return values?.isRegularFile == true && values?.isSymbolicLink != true && supportedExtensions.contains(url.pathExtension.lowercased())
         } ?? []
         let byName = Dictionary(uniqueKeysWithValues: files.map { ($0.lastPathComponent, $0) })
-        return MediaOrder.sorted(Array(byName.keys)).compactMap { byName[$0] }
+        guard !names.isEmpty, Set(names).count == names.count,
+              names.allSatisfy({ byName[$0] != nil }) else { return [] }
+        return names.compactMap { byName[$0] }
     }
 
     nonisolated private static func readPreview(from folder: URL) throws -> (String, [BackupAssetPreview]) {
@@ -680,7 +697,9 @@ final class MacTransferModel: ObservableObject {
                     return info?.isRegularFile == true && info?.isSymbolicLink != true && Int(url.lastPathComponent.split(separator: "_", maxSplits: 1).first ?? "") != nil
                 }
             }.sorted { lhs, rhs in
-                MediaOrder.sorted([lhs.lastPathComponent, rhs.lastPathComponent]).first == lhs.lastPathComponent
+                let left = Int(lhs.lastPathComponent.split(separator: "_", maxSplits: 1).first ?? "") ?? Int.max
+                let right = Int(rhs.lastPathComponent.split(separator: "_", maxSplits: 1).first ?? "") ?? Int.max
+                return left == right ? lhs.lastPathComponent < rhs.lastPathComponent : left < right
             }.enumerated().map { index, url in
                 BackupAssetPreview(id: index, ordinal: Int(url.lastPathComponent.split(separator: "_", maxSplits: 1)[0]) ?? index + 1,
                     primaryFilename: url.lastPathComponent, mediaURL: url)
@@ -692,9 +711,6 @@ final class MacTransferModel: ObservableObject {
             .filter { url in
                 let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
                 return values?.isRegularFile == true && values?.isSymbolicLink != true && genericExtensions.contains(url.pathExtension.lowercased())
-            }
-            .sorted { lhs, rhs in
-                MediaOrder.sorted([lhs.lastPathComponent, rhs.lastPathComponent]).first == lhs.lastPathComponent
             }
         let hasManifest = FileManager.default.fileExists(atPath: metadataURL(in: folder, name: "album-order.json").path)
         let hasRecords = FileManager.default.fileExists(atPath: folder.appendingPathComponent("asset-records").path)
@@ -1160,7 +1176,7 @@ private struct MacTransferScreen: View {
     @State private var exportOptions = false
     @State private var thumbnailRatio: ThumbnailRatio = .square
     private var connected: Bool { transfer.usbState == "已连接" }
-    private var working: Bool { transfer.busy || transfer.loadingAlbums }
+    private var working: Bool { transfer.busy || transfer.loadingAlbums || transfer.loadingImportPreview }
     var body: some View {
         ZStack {
             Color.macBridgeSky.ignoresSafeArea()
@@ -1223,7 +1239,10 @@ private struct MacTransferScreen: View {
         }
         .frame(minWidth: 760, minHeight: 620)
         .sheet(isPresented: $transfer.showAlbum) { SavedAlbumView(model: transfer) }
-        .onAppear { transfer.startConnectionMonitoring() }
+        .onAppear {
+            transfer.startConnectionMonitoring()
+            transfer.refreshImportPreviewIfNeeded()
+        }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.willSleepNotification)) { _ in transfer.invalidateConnection() }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)) { _ in transfer.invalidateConnection() }
     }
@@ -1311,7 +1330,7 @@ private struct MacTransferScreen: View {
                     .disabled(working || !connected)
             }
             if transfer.resumableDirection != "TO_IPHONE" {
-                Text("照片顺序和文件名会保持不变")
+                Text("按当前预览顺序导入，文件名保持不变")
                     .font(.caption).foregroundStyle(Color.macBridgeMuted)
             }
         }

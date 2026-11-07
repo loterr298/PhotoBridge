@@ -33,14 +33,11 @@ def ordered_media_files(folder: Path, ordered_names: list[str] | None = None) ->
             raise ValueError("order file does not match source folder")
         return [by_name[name] for name in ordered_names]
 
-    def natural_key(path: Path):
-        return tuple(
-            (0, int(part)) if part.isdigit() else (1, part.casefold())
-            for part in re.split(r"(\d+)", path.name)
-            if part
-        )
-
-    return sorted(files, key=natural_key)
+    # The Mac UI writes an explicit order file before starting direct import.
+    # When this helper is used without one, preserve the directory enumeration
+    # order instead of inventing a filename order that may differ from what the
+    # user saw.
+    return files
 
 
 def _safe_name(path: Path) -> str:
