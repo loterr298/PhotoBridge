@@ -81,6 +81,8 @@ final class MacTransferModel: ObservableObject {
     private var connectionTask: Task<Void, Never>?
     private var connectionFreshness = ConnectionFreshness()
     private var importPreviewTask: Task<Void, Never>?
+    private var directTerminalSession: String?
+    private var directTerminalPhase: String?
     private var lastDisplayedProgress: PhotoProgress?
     private var displayProgress = ProgressDisplayState()
     private var displayOperationID = ""
@@ -437,6 +439,8 @@ final class MacTransferModel: ObservableObject {
         let supported = Self.orderedMediaURLs(in: directory)
         guard !supported.isEmpty else { userMessage = "文件夹里没有可导入的照片或视频。"; return }
         busy = true; setResumableDirection("TO_IPHONE"); overallStartedAt = Date()
+        directTerminalSession = nil
+        directTerminalPhase = nil
         progressIndeterminate = false; progressFraction = 0; progressPercentText = "0%"
         progressCountText = "0 / \(supported.count.formatted()) 张已写入 iPhone"
         progressText = "正在导入 iPhone 照片"; elapsedText = ""; etaText = "正在计算剩余时间…"
@@ -459,11 +463,13 @@ final class MacTransferModel: ObservableObject {
                 self.busy = false
                 self.watchDirectImport(session: session, total: supported.count)
                 self.runScript("direct_batch.py", arguments: ["--local", directory.path, "--session", session,
-                    "--order-file", orderFile.path], progressFile: progressFile, controlFile: self.makeControlFile(), keepImportProgress: true) { [weak self] result in
+                    "--order-file", orderFile.path], progressFile: progressFile, controlFile: self.makeControlFile(), keepImportProgress: true, preserveProgress: true) { [weak self] result in
                     guard let self else { return }
                     if result.success {
-                        self.busy = true
-                        self.progressText = "正在等待 iPhone 完成写入"
+                        if self.directTerminalSession != session {
+                            self.busy = true
+                            self.progressText = "正在等待 iPhone 完成写入"
+                        }
                     } else {
                         self.importProgressTask?.cancel()
                         self.importProgressTask = nil
@@ -732,25 +738,30 @@ final class MacTransferModel: ObservableObject {
 
     private func runScript(_ name: String, arguments: [String], progressFile: URL? = nil,
                            controlFile: URL? = nil, keepImportProgress: Bool = false,
+                           preserveProgress: Bool = false,
                            completion: @escaping (ScriptResult) -> Void) {
         guard !busy else { return }
         busy = true
         if !keepImportProgress {
             importProgressTask?.cancel(); importProgressTask = nil
         }
-        progressCountText = ""; progressPercentText = "—"; elapsedText = ""
+        if !preserveProgress {
+            progressCountText = ""; progressPercentText = "—"; elapsedText = ""
+        }
         lastDisplayedProgress = nil
         displayProgress = ProgressDisplayState()
         displayOperationID = progressFile?.path ?? UUID().uuidString
         self.controlFile = controlFile
         if let controlFile { try? FileManager.default.removeItem(at: controlFile) }
-        progressFraction = 0
-        progressIndeterminate = true
-        progressText = "正在准备照片…"
-        progressCountText = "准备完成后立即开始导入"
-        speedText = ""
-        etaText = ""
-        currentResource = ""
+        if !preserveProgress {
+            progressFraction = 0
+            progressIndeterminate = true
+            progressText = "正在准备照片…"
+            progressCountText = "准备完成后立即开始导入"
+            speedText = ""
+            etaText = ""
+            currentResource = ""
+        }
         startProgressPolling(file: progressFile)
         output = "正在执行 \(name)…"
         Task {
@@ -1013,6 +1024,8 @@ final class MacTransferModel: ObservableObject {
                         self.etaText = "正在估算剩余时间…"
                     }
                     if value.finished {
+                        self.directTerminalSession = session
+                        self.directTerminalPhase = value.phase
                         self.busy = false
                         self.setResumableDirection(nil)
                         self.userMessage = "照片已全部写入 iPhone 系统相册。"
@@ -1020,6 +1033,8 @@ final class MacTransferModel: ObservableObject {
                         return
                     }
                     if value.phase == "FAILED" {
+                        self.directTerminalSession = session
+                        self.directTerminalPhase = value.phase
                         self.busy = false
                         self.setResumableDirection("TO_IPHONE")
                         self.userMessage = "iPhone 写入没有完成，已写入的照片会保留。"
@@ -1029,6 +1044,8 @@ final class MacTransferModel: ObservableObject {
                 } else {
                     missedReads += 1
                     if missedReads >= 120 {
+                        self.directTerminalSession = session
+                        self.directTerminalPhase = "FAILED"
                         self.busy = false
                         self.setResumableDirection("TO_IPHONE")
                         self.userMessage = "等待 iPhone 写入超时，进度已保留，可重新连接后继续。"
