@@ -262,7 +262,7 @@ final class MacTransferModel: ObservableObject {
             guard let self else { return }
             do {
                 if existingRequestID == nil {
-                    var command: [String: Any] = ["id": requestID, "kind": "startExport", "albumIdentifier": album.id, "allowNetwork": allowNetwork]
+                    var command: [String: Any] = ["id": requestID, "kind": "startExport", "albumIdentifier": album.id, "allowNetwork": allowNetwork, "fast": true]
                     if let resumeSession { command["resumeSession"] = resumeSession }
                     try await sendControl(command, requestID: requestID)
                     _ = try await waitForControlResponse(id: requestID)

@@ -63,6 +63,7 @@ private final class StreamingManifestWriter {
     @Published var sessionName: String?
     @Published var elapsedSeconds: Double = 0
     @Published var candidates: [StagingCandidate] = []
+    private var fastExport = false
     private var stopRequested = false
     private var cancellation = OperationCancellation()
     private var operationStartedAt: Date?
@@ -154,8 +155,9 @@ private final class StreamingManifestWriter {
             }.sorted { $0.capturedAt > $1.capturedAt }
         }.value) ?? []
     }
-    func start(collection: PHAssetCollection, allowNetwork: Bool, resumeSession: String? = nil, stopAfterResources: Int? = nil) async {
+    func start(collection: PHAssetCollection, allowNetwork: Bool, resumeSession: String? = nil, stopAfterResources: Int? = nil, fast: Bool = false) async {
         guard !busy else { return }
+        fastExport = fast
         busy = true; scanning = true; state = "SCANNING"; scannedAssets = 0; scanTotalAssets = 0; stopRequested = false; resourcesCompleted = 0; totalResources = 0; bytesCompleted = 0
         operationStartedAt = Date(); elapsedSeconds = 0
         elapsedTask?.cancel()
@@ -325,17 +327,19 @@ private final class StreamingManifestWriter {
             }
             try checkStopAndPermission()
             state = "FINALIZING"; message = "正在核对相册和保存记录…"
-            let checked = try await Task.detached(priority: .utility) { try StagingResume.reusable(in: dir, plan: plan, digest: digest, checkCancellation: cancellation.check) }.value
-            guard checked.count == resourcesCompleted else { throw ExportError.invalidManifest("完成资源与检查点数量不一致") }
-            if let previous, let previousDigest {
-                let samePlan = try await Task.detached(priority: .utility) {
-                    try autoreleasepool { try StagingResume.load(in: previous).digest == previousDigest }
+            if !fastExport {
+                let checked = try await Task.detached(priority: .utility) { try StagingResume.reusable(in: dir, plan: plan, digest: digest, checkCancellation: cancellation.check) }.value
+                guard checked.count == resourcesCompleted else { throw ExportError.invalidManifest("完成资源与检查点数量不一致") }
+                if let previous, let previousDigest {
+                    let samePlan = try await Task.detached(priority: .utility) {
+                        try autoreleasepool { try StagingResume.load(in: previous).digest == previousDigest }
+                    }.value
+                    guard samePlan else { throw ExportError.invalidManifest("旧会话计划已变化") }
+                }
+                try await Task.detached(priority: .userInitiated) {
+                    try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources, cancellation: cancellation)
                 }.value
-                guard samePlan else { throw ExportError.invalidManifest("旧会话计划已变化") }
             }
-            try await Task.detached(priority: .userInitiated) {
-                try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources, cancellation: cancellation)
-            }.value
             try checkStopAndPermission()
             try journal("FINALIZING_MANIFEST")
             message = "正在整理保存记录，请不要关闭 App"

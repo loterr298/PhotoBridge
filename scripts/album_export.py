@@ -276,14 +276,6 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
                     albumIdentifier=album_identifier, reusedVerifiedResources=0, totalAssets=0, resourcesVerified=0, bytesVerified=0, totalResources=0,
                     totalBytes=0, restoration='NOT_RUN', message='正在连接 iPhone…')
     journal = local_path(local, 'transfer-progress.json')
-    def report():
-        total = progress['totalAssets']
-        done = progress['assetsVerified']
-        progress['percent'] = (100 if progress['status'] == 'COMMITTED' else min(99, done * 100 // total)) if total else None
-        write_json(journal, progress)
-        if progress_callback: progress_callback(progress)
-    report()
-
     def read_optional(path, maximum=64 * 1024 * 1024):
         try: return read_snapshot(client, path, maximum)
         except RuntimeError as error:
@@ -293,10 +285,24 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
             raise
 
     last_poll = float("-inf"); last_job = None
+    last_report = float("-inf")
+    def report(force=False):
+        nonlocal last_report
+        now = time.monotonic()
+        if not force and now - last_report < .25:
+            return
+        total = progress['totalAssets']
+        done = progress['assetsVerified']
+        progress['percent'] = (100 if progress['status'] == 'COMMITTED' else min(99, done * 100 // total)) if total else None
+        write_json(journal, progress)
+        last_report = now
+        if progress_callback: progress_callback(progress)
+    report(force=True)
     def job(force=False):
         nonlocal last_activity, previous_activity, last_poll, last_job
         check_cancel(cancel_file)
         now = time.monotonic()
+        urgent = force
         if not force and last_job is not None and now - last_poll < status_interval:
             return last_job
         raw = read_optional('Control/Jobs/' + request_id + '.json', 1024 * 1024)
@@ -311,14 +317,16 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
             activity = (value.get('status'), value.get('resourcesCompleted'), value.get('scannedAssets'))
             if activity != previous_activity:
                 last_activity = time.monotonic(); previous_activity = activity
+                urgent = True
             progress['message'] = value.get('message', '正在读取相册…')
             progress['scannedAssets'] = value.get('scannedAssets', 0)
             progress['scanTotalAssets'] = value.get('scanTotalAssets', 0)
             if type(value.get('phoneInForeground')) is bool:
+                urgent = urgent or progress.get('phoneInForeground') != value['phoneInForeground']
                 progress['phoneInForeground'] = value['phoneInForeground']
         if time.monotonic() - last_activity > idle_timeout:
             raise TimeoutError('iPhone 长时间没有新进度，请保持手机解锁并打开 PhotoBridge')
-        report()
+        report(force=urgent)
         last_poll = now; last_job = value
         return value
 
@@ -411,11 +419,11 @@ def download_live_album(client, request_id, album_identifier, local, cancel_file
                         totalBytes=progress['bytesVerified'], sourceManifestSHA256=hashlib.sha256(final_raw).hexdigest(),
                         seconds=time.monotonic() - start, message='全部照片已保存并校验')
         write_json(local_path(local, 'transfer-manifest.json'), progress, exclusive=True)
-        report()
+        report(force=True)
         return progress
     except Exception as error:
         progress.update(status='STOPPED' if isinstance(error, CancellationRequested) else 'FAILED', error=str(error))
-        report()
+        report(force=True)
         raise
 
 

@@ -224,8 +224,9 @@ final class MacControlService: ObservableObject {
             exporter.resourcesCompleted = 0; exporter.totalResources = 0
             exporter.scannedAssets = 0; exporter.scanTotalAssets = 0
             let allowNetwork = request["allowNetwork"] as? Bool ?? false
+            let fast = request["fast"] as? Bool ?? false
             Task {
-                await exporter.start(collection: collection, allowNetwork: allowNetwork, resumeSession: request["resumeSession"] as? String)
+                await exporter.start(collection: collection, allowNetwork: allowNetwork, resumeSession: request["resumeSession"] as? String, fast: fast)
                 active = false
                 publishJob()
             }
