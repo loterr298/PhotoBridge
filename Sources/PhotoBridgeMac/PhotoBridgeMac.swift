@@ -1016,12 +1016,14 @@ final class MacTransferModel: ObservableObject {
                         self.busy = false
                         self.setResumableDirection(nil)
                         self.userMessage = "照片已全部写入 iPhone 系统相册。"
+                        self.importProgressTask = nil
                         return
                     }
                     if value.phase == "FAILED" {
                         self.busy = false
                         self.setResumableDirection("TO_IPHONE")
                         self.userMessage = "iPhone 写入没有完成，已写入的照片会保留。"
+                        self.importProgressTask = nil
                         return
                     }
                 } else {
@@ -1030,6 +1032,7 @@ final class MacTransferModel: ObservableObject {
                         self.busy = false
                         self.setResumableDirection("TO_IPHONE")
                         self.userMessage = "等待 iPhone 写入超时，进度已保留，可重新连接后继续。"
+                        self.importProgressTask = nil
                         return
                     }
                 }
