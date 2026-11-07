@@ -11,6 +11,7 @@
 - 本地 Mac 已覆盖安装 `/Applications/PhotoBridgeMac.app`。Intel 包为 `build/PhotoBridgeMac-Intel.zip`，SHA-256 `830f11f10d9c68bb289f10aeae773134cff128b451382a4753f38d641bf25b29`；交付门禁日志为 `build/verification/delivery-gate.log`。
 - 云端 GitHub Actions run `42374486353` 已成功。云端 iOS IPA SHA-256 `1cb8534a90a20cdf06e27f43bf3f45abcffe824c0cf15e5d76621d854262a036`，Intel Mac ZIP SHA-256 `f4cb686aea6636587ee6c43d5fa0ac0838cfbad42b6ba091b73e68f28794f653`。云端模拟器和构建日志保存在 `build/cloud-4.10.0-run42374486353/`。
 - 后续稳定性收口：直写任务在手机终态后仍保持旧脚本锁，避免下一次任务与旧 USB 收尾重叠；脚本晚到的成功/失败不会覆盖 PhotoKit 终态；Mac 端实时导入进度保持确定进度条，浅色方向按钮对比度已加深。新增本地验证仍为 113 项 Python、26 项 StagingChecks、CoreChecks、iOS 语法和 Intel release 构建通过，最终云包以最新成功 run 为准。
+- 最终云端 run `42382722092`（commit `328618e`）成功。最终 iOS IPA SHA-256 `208ab6a3a44f354a2c64ff7a640473054381cf676a7224ab65fc6a6c13fe7dfa`，Intel Mac ZIP SHA-256 `b6852f56021f843aea3e9f4c2a6e0113ca16445294fbb375ddfff6ae7bc56127`；云端模拟器 2 项通过，113 项 Python 和交付门禁通过。最终产物保存在 `build/cloud-4.10.0-run42382722092/`。
 
 ## V4.9 全链路性能审计（2026-11-07）
 
