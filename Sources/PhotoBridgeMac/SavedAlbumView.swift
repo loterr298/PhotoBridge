@@ -15,6 +15,7 @@ private enum AlbumThumbnailCache {
 struct SavedPhotoThumbnail: View {
     let photo: BackupAssetPreview
     var ratio: ThumbnailRatio = .square
+    var compact = false
     @State private var image: NSImage?
     @State private var request: QLThumbnailGenerator.Request?
     @State private var loading = true
@@ -27,7 +28,8 @@ struct SavedPhotoThumbnail: View {
                     else if loading { ProgressView().controlSize(.small) }
                     else { Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary) }
                 }
-                .aspectRatio(ratio.value, contentMode: .fit)
+                .aspectRatio(compact ? nil : ratio.value, contentMode: .fit)
+                .frame(height: compact ? 74 : nil)
                 .frame(maxWidth: .infinity).clipped().clipShape(RoundedRectangle(cornerRadius: 12))
                 Text(String(format: "%06d", photo.ordinal)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 Text(photo.primaryFilename).font(.caption).foregroundStyle(.primary).lineLimit(1)
@@ -89,12 +91,12 @@ struct FolderThumbnailGrid: View {
             ScrollView(.vertical) {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 10) {
                     ForEach(photos) { photo in
-                        SavedPhotoThumbnail(photo: photo, ratio: ratio)
+                    SavedPhotoThumbnail(photo: photo, ratio: ratio, compact: true)
                     }
                 }
             }
             .scrollIndicators(.hidden)
-            .frame(maxHeight: 320)
+            .frame(maxHeight: 132)
         }
     }
 }
