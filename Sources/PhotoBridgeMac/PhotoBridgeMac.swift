@@ -1131,7 +1131,7 @@ extension Color {
     static let macConnectedFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : NSColor(red: 0.79, green: 0.94, blue: 0.83, alpha: 1) })
     static let macConnectedInk = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.69, green: 0.94, blue: 0.76, alpha: 1) : NSColor(red: 0.10, green: 0.35, blue: 0.19, alpha: 1) })
     static let macBridgeBlue = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.62, green: 0.86, blue: 0.70, alpha: 1) : NSColor(red: 0.11, green: 0.34, blue: 0.24, alpha: 1) })
-    static let macBridgeSky = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.07, green: 0.10, blue: 0.09, alpha: 1) : NSColor(red: 0.96, green: 0.98, blue: 0.97, alpha: 1) })
+    static let macBridgeSky = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.07, green: 0.10, blue: 0.09, alpha: 1) : NSColor.white })
     static let macBridgeInk = Color(nsColor: .labelColor)
     static let macBridgeMuted = Color(nsColor: .secondaryLabelColor)
     static let macBridgeButtonFill = Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(red: 0.13, green: 0.28, blue: 0.20, alpha: 1) : NSColor(red: 0.88, green: 0.95, blue: 0.91, alpha: 1) })
@@ -1232,8 +1232,8 @@ private struct MacTransferScreen: View {
                     }
                     if transfer.busy || !transfer.progressText.isEmpty { progress }
                     HStack(alignment: .top, spacing: 20) {
-                        MacCard(tint: .macExportFill) { exportControls }.frame(maxWidth: .infinity)
-                        MacCard(tint: .macImportFill) { importControls }.frame(maxWidth: .infinity)
+                        MacCard { exportControls }.frame(maxWidth: .infinity)
+                        MacCard { importControls }.frame(maxWidth: .infinity)
                     }
                     if !transfer.userMessage.isEmpty && !transfer.userMessage.hasPrefix("还没有连接 iPhone") {
                         Text(transfer.userMessage).font(.callout).foregroundStyle(.secondary)
@@ -1262,7 +1262,7 @@ private struct MacTransferScreen: View {
         VStack(alignment: .leading, spacing: 20) {
             Label("保存到 Mac", systemImage: "arrow.down.to.line")
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(Color.macExport)
+                .foregroundStyle(Color.macBridgeInk)
             Text("把 iPhone 相册保存到 Mac")
                 .font(.subheadline).foregroundStyle(Color.macBridgeMuted)
             if !transfer.albums.isEmpty {
@@ -1311,7 +1311,7 @@ private struct MacTransferScreen: View {
         VStack(alignment: .leading, spacing: 20) {
             Label("导入到 iPhone", systemImage: "arrow.up.to.line")
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(Color.macImport)
+                .foregroundStyle(Color.macBridgeInk)
             Text("按 Mac 当前顺序逐张写入 iPhone 系统照片")
                 .font(.subheadline).foregroundStyle(Color.macBridgeMuted)
                 .fixedSize(horizontal: false, vertical: true)

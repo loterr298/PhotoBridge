@@ -7,7 +7,7 @@ extension Color {
     static let bridgeExportFill = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.11, green: 0.25, blue: 0.18, alpha: 1) : UIColor(red: 0.88, green: 0.95, blue: 0.90, alpha: 1) })
     static let bridgeImport = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.74, green: 0.88, blue: 0.62, alpha: 1) : UIColor(red: 0.31, green: 0.45, blue: 0.21, alpha: 1) })
     static let bridgeImportFill = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.22, green: 0.31, blue: 0.14, alpha: 1) : UIColor(red: 0.92, green: 0.95, blue: 0.84, alpha: 1) })
-    static let bridgeSky = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.07, green: 0.10, blue: 0.09, alpha: 1) : UIColor(red: 0.96, green: 0.98, blue: 0.97, alpha: 1) })
+    static let bridgeSky = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.07, green: 0.10, blue: 0.09, alpha: 1) : UIColor.white })
     static let connectedFill = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.12, green: 0.29, blue: 0.19, alpha: 1) : UIColor(red: 0.79, green: 0.94, blue: 0.83, alpha: 1) })
     static let connectedInk = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.69, green: 0.94, blue: 0.76, alpha: 1) : UIColor(red: 0.10, green: 0.35, blue: 0.19, alpha: 1) })
     static let bridgeInk = Color(uiColor: .label)

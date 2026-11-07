@@ -154,7 +154,7 @@ struct AlbumsView: View {
                         }
 
                         HStack(alignment: .firstTextBaseline) {
-                                Text("选择相册").font(.title2.bold()).foregroundStyle(Color.bridgeExport)
+                                Text("选择相册").font(.title2.bold()).foregroundStyle(Color.bridgeInk)
                             Spacer()
                             Button(showAll ? "收起" : "查看全部") { withAnimation(.easeOut(duration: 0.2)) { showAll.toggle() } }
                                 .font(.subheadline.weight(.medium)).foregroundStyle(Color.bridgeMuted)

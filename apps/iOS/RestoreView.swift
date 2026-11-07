@@ -30,7 +30,7 @@ struct RestoreView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("导入到 iPhone").font(.largeTitle.bold()).foregroundStyle(Color.bridgeImport)
+                            Text("导入到 iPhone").font(.largeTitle.bold()).foregroundStyle(Color.bridgeInk)
                             Text("把 Mac 发来的照片，保存到新相册。")
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
