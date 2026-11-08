@@ -323,6 +323,7 @@ struct MacExportCompanionView: View {
                     }
                     Text("传输时请保持 App 在前台。原照片不会删除。")
                         .font(.subheadline).foregroundStyle(.secondary)
+                    AppVersionLabel()
                     DisclosureGroup("连接帮助", isExpanded: $showHelp) {
                         Text("打开两端 PhotoBridge，用数据线连接并解锁 iPhone。如出现提示，请选择“信任此电脑”。连接状态会自动更新。")
                             .font(.subheadline).foregroundStyle(.secondary).padding(.top, 8)

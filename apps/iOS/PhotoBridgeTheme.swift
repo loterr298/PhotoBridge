@@ -19,6 +19,17 @@ struct BridgeBackground: View {
     var body: some View { Color.bridgeSky.ignoresSafeArea() }
 }
 
+struct AppVersionLabel: View {
+    var body: some View {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+        Text("v\(version)")
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(Color.bridgeMuted)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .accessibilityLabel("版本 \(version)")
+    }
+}
+
 struct PhoneConnectionStatus: View {
     let connected: Bool
     var body: some View {

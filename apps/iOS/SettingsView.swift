@@ -64,6 +64,7 @@ struct SettingsView: View {
                                 Text("只删除 PhotoBridge 临时文件，不删除系统照片。").font(.caption).foregroundStyle(.secondary)
                             }
                         }
+                        AppVersionLabel()
                     }
                     .padding(20)
                 }

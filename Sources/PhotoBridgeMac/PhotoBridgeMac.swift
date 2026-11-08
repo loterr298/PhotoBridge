@@ -1309,7 +1309,11 @@ private struct MacTransferScreen: View {
                             Button("查看已保存照片") { transfer.viewSavedAlbum() }.buttonStyle(MacSoftButtonStyle())
                         }
                     }
-                    Text("按原相册顺序传输，原照片不会删除。").font(.caption).foregroundStyle(.secondary)
+                    HStack {
+                        Text("按原相册顺序传输，原照片不会删除。").font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Text("v1.0.0").font(.caption2.monospacedDigit()).foregroundStyle(Color.macBridgeMuted)
+                    }
                 }.padding(32).frame(maxWidth: 1080, alignment: .leading).frame(maxWidth: .infinity)
             }
             .scrollIndicators(.hidden)

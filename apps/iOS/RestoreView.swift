@@ -129,6 +129,7 @@ struct RestoreView: View {
                             }
                         }
                         Text("保留相册顺序，原照片不会删除。").font(.subheadline).foregroundStyle(.secondary)
+                        AppVersionLabel()
                     }.padding(24).frame(maxWidth: 580, alignment: .leading).frame(maxWidth: .infinity)
                 }
             }.navigationBarHidden(true)
