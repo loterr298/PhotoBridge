@@ -28,8 +28,8 @@ struct SavedPhotoThumbnail: View {
                     else if loading { ProgressView().controlSize(.small) }
                     else { Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary) }
                 }
-                .aspectRatio(compact ? nil : ratio.value, contentMode: .fit)
-                .frame(height: compact ? 74 : nil)
+                .aspectRatio(compact ? 1 : ratio.value, contentMode: .fit)
+                .frame(width: compact ? 64 : nil, height: compact ? 64 : nil)
                 .frame(maxWidth: .infinity).clipped().clipShape(RoundedRectangle(cornerRadius: 12))
                 Text(String(format: "%06d", photo.ordinal)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 Text(photo.primaryFilename).font(.caption).foregroundStyle(.primary).lineLimit(1)
@@ -96,7 +96,7 @@ struct FolderThumbnailGrid: View {
                 }
             }
             .scrollIndicators(.hidden)
-            .frame(height: 118)
+            .frame(height: 330)
             .clipped()
         }
     }
