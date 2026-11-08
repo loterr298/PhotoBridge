@@ -145,7 +145,9 @@ struct TransferSessionCard: View {
                 }
                 if let albumName = summary.albumName, !albumName.isEmpty { Text(albumName).font(.headline) }
                 if summary.totalBytes > 0 {
-                    ProgressView(value: summary.fraction).tint(.bridgeBlue)
+                    ProgressView(value: summary.fraction)
+                        .tint(.bridgeBlue)
+                        .animation(.linear(duration: 0.32), value: summary.fraction)
                     let progress = PhotoProgress(completed: summary.completed, total: summary.total,
                         finished: ["STAGED", "VERIFIED", "COMMITTED"].contains(summary.status))
                     HStack {

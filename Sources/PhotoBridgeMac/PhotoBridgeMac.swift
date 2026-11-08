@@ -75,6 +75,7 @@ final class MacTransferModel: ObservableObject {
     @Published var loadingPreview = false
     @Published var previewError = ""
     @Published var resumableDirection: String?
+    @Published var completedSuccessfully = false
     private var previewTask: Task<(String, [BackupAssetPreview]), Error>?
     private var pendingExportTask: Task<Void, Never>?
     private var pendingUploadTask: Task<Void, Never>?
@@ -97,6 +98,10 @@ final class MacTransferModel: ObservableObject {
     private var automaticImportSessions = Set<String>()
     private var overallStartedAt: Date?
     private var controlFile: URL?
+
+    private func resetCompletion() {
+        completedSuccessfully = false
+    }
 
     init() {
         recentBackups = UserDefaults.standard.stringArray(forKey: "PhotoBridge.recentBackups") ?? []
@@ -236,6 +241,7 @@ final class MacTransferModel: ObservableObject {
     /// soon as it is ready, without waiting for the whole phone album to stage.
     func startMacExport(previous: URL? = nil, resumeSession: String? = nil, existingRequestID: String? = nil) {
         guard !busy && !loadingAlbums else { return }
+        resetCompletion()
         guard let album = albums.first(where: { $0.id == selectedAlbumID }) else { userMessage = "请先选择一个相册。"; return }
         guard let parent = previous?.deletingLastPathComponent() ?? chooseDirectory(title: "选择照片保存位置") else { return }
         let requestID = existingRequestID ?? UUID().uuidString
@@ -283,6 +289,7 @@ final class MacTransferModel: ObservableObject {
                     self.output = result.text
                     self.activeExportRequestID = nil; self.pendingExportTask = nil
                     self.setResumableDirection(result.success ? nil : "TO_MAC")
+                    self.completedSuccessfully = result.success
                     self.userMessage = result.success ? "全部照片已保存到：\(folder.path)" : "导出没有完成。保存位置：\(folder.path)"
                     if !result.success {
                         self.stopPhoneExport(requestID)
@@ -303,6 +310,7 @@ final class MacTransferModel: ObservableObject {
 
     func continueMacExport() {
         guard !busy && !loadingAlbums else { return }
+        resetCompletion()
         guard let previous = chooseDirectory(title: "选择未完成的导出文件夹"),
               let data = try? Data(contentsOf: metadataFile(in: previous, name: "transfer-progress.json")),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -381,6 +389,7 @@ final class MacTransferModel: ObservableObject {
         runScript("album_export.py", arguments: ["download", "--remote", "Exports/\(selectedSession)", "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
             self?.setResumableDirection(result.success ? nil : "TO_MAC")
+            self?.completedSuccessfully = result.success
             self?.userMessage = result.success ? "已保存到：\(folder.path)" : "保存没有完成，请重新连接 iPhone 后继续。"
             if result.success { self?.loadPreview(from: folder) }
         }
@@ -397,6 +406,7 @@ final class MacTransferModel: ObservableObject {
         runScript("album_resume.py", arguments: ["--remote", "Exports/\(selectedSession)", "--from-directory", previous.path, "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
             self?.setResumableDirection(result.success ? nil : "TO_MAC")
+            self?.completedSuccessfully = result.success
             self?.userMessage = result.success ? "已保存到：\(folder.path)" : "继续保存没有完成，请重试。"
             if result.success { self?.loadPreview(from: folder) }
         }
@@ -408,6 +418,7 @@ final class MacTransferModel: ObservableObject {
             chooseImportFolder()
             return
         }
+        resetCompletion()
         userMessage = "正在发送照片到 iPhone…"
         overallStartedAt = Date()
         setResumableDirection("TO_IPHONE")
@@ -447,6 +458,7 @@ final class MacTransferModel: ObservableObject {
         let orderedNames = importOrderNames.isEmpty ? importPreview.map { $0.mediaURL.lastPathComponent } : importOrderNames
         let supported = Self.orderedMediaURLs(in: directory, names: orderedNames)
         guard !supported.isEmpty else { userMessage = "文件夹里没有可导入的照片或视频。"; return }
+        resetCompletion()
         busy = true; setResumableDirection("TO_IPHONE"); overallStartedAt = Date()
         directTerminalSession = nil
         directTerminalPhase = nil
@@ -548,6 +560,7 @@ final class MacTransferModel: ObservableObject {
 
     func resumeUpload() {
         guard !busy && !loadingAlbums else { return }
+        resetCompletion()
         let directory: URL
         if let importFolder { directory = importFolder }
         else {
@@ -967,6 +980,7 @@ final class MacTransferModel: ObservableObject {
                     self.etaText = combined > 0 && combined < 1 ? "约剩 \(self.formatDuration(elapsed * (1 / combined - 1)))" : ""
                     self.currentResource = ""
                     if value.finished {
+                        self.completedSuccessfully = true
                         self.setResumableDirection(nil)
                         self.userMessage = "照片已全部写入 iPhone 系统相册"
                         return
@@ -1057,6 +1071,7 @@ final class MacTransferModel: ObservableObject {
                         self.etaText = "正在估算剩余时间…"
                     }
                     if value.finished {
+                        self.completedSuccessfully = true
                         self.directTerminalSession = session
                         self.directTerminalPhase = value.phase
                         self.busy = self.directScriptSession == session
@@ -1181,6 +1196,34 @@ private struct MacDirectionLabel: View {
                 .foregroundStyle(Color.macBridgeInk)
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+private struct MacCompletionBadge: View {
+    let title: String
+    let subtitle: String
+    @State private var visible = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle().fill(Color.macConnectedFill)
+                Image(systemName: "checkmark")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.macConnectedInk)
+            }
+            .frame(width: 34, height: 34)
+            .scaleEffect(visible ? 1 : 0.45)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline.weight(.semibold))
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+        .onAppear {
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.72)) { visible = true }
+        }
     }
 }
 
@@ -1369,6 +1412,9 @@ private struct MacTransferScreen: View {
     private var progress: some View {
         MacCard(emphasis: true) {
             VStack(alignment: .leading, spacing: 14) {
+                if transfer.completedSuccessfully {
+                    MacCompletionBadge(title: "已完成", subtitle: "照片已保存到目标位置")
+                }
                 HStack {
                     HStack(spacing: 8) {
                         Circle().fill(transfer.progressIndeterminate ? Color.macBridgeBlue : Color.macConnectedInk)
@@ -1398,7 +1444,11 @@ private struct MacTransferScreen: View {
                         .animation(.easeOut(duration: 0.18), value: transfer.progressCountText)
                 }
                 if transfer.progressIndeterminate { ProgressView().controlSize(.small) }
-                else { ProgressView(value: transfer.progressFraction).tint(.macBridgeBlue) }
+                else {
+                    ProgressView(value: transfer.progressFraction)
+                        .tint(.macBridgeBlue)
+                        .animation(.linear(duration: 0.32), value: transfer.progressFraction)
+                }
                 HStack {
                     Text(transfer.speedText).font(.caption).foregroundStyle(.secondary)
                     if !transfer.elapsedText.isEmpty { Text(transfer.elapsedText).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }

@@ -91,6 +91,35 @@ struct BridgeStatus: View {
     }
 }
 
+struct CompletionBadge: View {
+    let title: String
+    let subtitle: String
+    var tint: Color = .connectedInk
+    @State private var visible = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle().fill(tint.opacity(0.16))
+                Image(systemName: "checkmark")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(tint)
+            }
+            .frame(width: 38, height: 38)
+            .scaleEffect(visible ? 1 : 0.45)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.headline.weight(.semibold))
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+        .onAppear {
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.72)) { visible = true }
+        }
+    }
+}
+
 struct BridgePrimaryButton<Label: View>: View {
     let action: () -> Void
     let label: Label

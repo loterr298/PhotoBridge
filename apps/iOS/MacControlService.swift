@@ -364,9 +364,14 @@ struct PhotoCountView: View {
                             .animation(.easeOut(duration: 0.18), value: progress.percent)
                     }
                 }.monospacedDigit()
-                ProgressView(value: progress.fraction).tint(.bridgeBlue)
+                ProgressView(value: progress.fraction)
+                    .tint(.bridgeBlue)
+                    .animation(.linear(duration: 0.32), value: progress.fraction)
                 if let elapsedSeconds, elapsedSeconds.isFinite, elapsedSeconds >= 0 {
                     Text("已用 \(elapsedText(elapsedSeconds))").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
+                if progress.finished {
+                    CompletionBadge(title: "已完成", subtitle: "任务已完成")
                 }
             } else {
                 ProgressView("正在读取总张数…")
