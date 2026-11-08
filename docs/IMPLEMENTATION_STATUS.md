@@ -3,11 +3,13 @@
 ## V1.0 正式版收口（2026-11-08）
 
 - 产品版本从 4.12.0 切换为 1.0.0，iOS 与 Intel macOS 使用同一正式版本号和 build 1。
-- 图标按用户最新参考图左上角花瓣图标重新裁切并做透明 alpha 蒙版，外部背景透明，保留玻璃方盒与花瓣比例。玻璃边框贴近 AppIcon 外缘，macOS `.icns` 使用 16px–1024px 多尺寸资源。
+- 图标改为从零绘制的标准正方形玻璃花瓣图标，外部背景透明，花瓣对称居中，macOS `.icns` 使用 16px–1024px 多尺寸资源。
 - 导入和导出完成后显示带弹簧过渡的完成徽标。进度条使用线性插值动画，数字继续使用等宽数字和 numericText 过渡，避免进度跳跃。
 - 本轮改动仍需云端构建和模拟器检查，真机 USB、PhotoKit 和真实传输吞吐不在本地验证范围内。
 - 最新透明边缘资源 SHA-256：PNG `ff49274c0a5ef7ed158642fd5d8af693023c96d02fb17a26a375240c8c4837d1`，ICNS `21b1c5bf27ff58dd6bda50d0adbc99f37afad6b2165a334b8f6079e98510b2ff`。本地 Intel Mac ZIP SHA-256 `902bd924e5a08699632cd80bcfe944c4ea0ef629405e28d75f6de9299b608fda`。
 - GitHub Actions run `42478530469`（commit `88b5d3c`）成功，正式版 `1.0.0/build 1`、114 项回归、模拟器 UI 和 Intel x86_64 构建通过。云端 artifact ID `13616577087`，Intel Mac ZIP SHA-256 `268a03807030a733f0838cf14643564ef16aef284de20ec5d6b003cc681642bc`。
+- 最新重绘图标资源 SHA-256：PNG `ff49274c0a5ef7ed158642fd5d8af693023c96d02fb17a26a375240c8c4837d1`，ICNS `21b1c5bf27ff58dd6bda50d0adbc99f37afad6b2165a334b8f6079e98510b2ff`。本地 Intel Mac ZIP SHA-256 `902bd924e5a08699632cd80bcfe944c4ea0ef629405e28d75f6de9299b608fda`。
+- GitHub Actions run `42480227859`（commit `a26f6b3`）成功，正式版 `1.0.0/build 1`、114 项回归、模拟器 UI 和 Intel x86_64 构建通过。云端 artifact ID `13618220152`，Intel Mac ZIP SHA-256 `3838d469c06c29774e284c6c9a0be646f744ab17afbf32acbb0c079757db7497`。
 - GitHub Actions run `42476660377`（commit `5743a0b`）成功。编译后的 iOS Info.plist 已确认版本 `1.0.0/build 1`，114 项回归、模拟器 UI 2 项和 Intel x86_64 构建通过。云端 artifact ID `13615762640`，Intel Mac ZIP SHA-256 `6ca1bf59eae76b9fccb75157d4697bad84b46c31073a2e9e84e5d42597765a51`。本地安装包 SHA-256 `af1893333962c9a13f8f3587b9e7a2822836cfcf2ead452d23f2aa0f9227c4a7`。
 
 ## V4.12 稳定性审计与绿色视觉重设计（2026-11-08）
