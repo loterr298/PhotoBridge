@@ -24,7 +24,7 @@
 - 按用户提供的玻璃彩色花瓣参考图重做 iOS 与 Intel macOS 图标，保留其花瓣长宽比例、中心位置和半透明叠色关系。
 - 使用参考图的图标区域裁切为 1024×1024 母版，生成 iOS AppIcon 和 16px 至 1024px 的 macOS `.icns`，Finder 使用标准图标尺寸，不再出现图标内容缩得过小的问题。
 - 当前图标资源 SHA-256：PNG `a380a06930091816787bf40f92880cd8b5af740c558987d975a98e2091e6b7c9`，ICNS `424f8c28e7a488df935d24cddf984fcd423c0bb916bbdb51099a24663e7f86f1`。
-- 首次图标云编译 run `42471472643` 的源码测试已通过，但 XcodeGen 下载请求收到 GitHub 504，未产生可交付包；已触发重试。
+- 首次图标云编译 run `42471472643` 的源码测试已通过，但 XcodeGen 下载请求收到 GitHub 504，未产生可交付包。重试 run `42471816688` 已成功，云端 iOS AppIcon、模拟器 UI 2 项、114 项 Python 回归、CoreChecks、StagingChecks、RecoveryChecks 与 Intel x86_64 构建全部通过。产物 artifact ID 为 `13613883105`，云端 Intel Mac ZIP SHA-256 `a0aaabb06e62352b6afa6f1bbea1a03c9a821ab542468941405e9df1594207d2`。本机最终参考图版本已覆盖安装，当前本地 Intel Mac ZIP SHA-256 `b23e7209f85a356d03d3d63560bcc8af74bf8b7a25a2b6f398ca6c6bf41a48af`。
 
 ## V4.11 Mac 可见顺序清单（2026-11-08）
 
