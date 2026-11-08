@@ -50,17 +50,20 @@ struct BridgeButtonStyle: ButtonStyle {
     var tint: Color = .bridgeBlue
     var fill: Color?
     func makeBody(configuration: Configuration) -> some View {
-        let foreground = primary ? (enabled ? Color.white : tint.opacity(0.55)) : Color.bridgeInk
-        let background = primary ? (enabled ? tint : (fill ?? Color.bridgeButtonFill)) : Color(uiColor: .secondarySystemGroupedBackground)
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        let foreground = primary ? (enabled ? tint : tint.opacity(0.42)) : Color.bridgeInk
+        let tintOpacity = enabled ? (configuration.isPressed ? 0.22 : 0.14) : 0.06
         configuration.label.font(.body.weight(.semibold))
             .padding(.horizontal, 18).padding(.vertical, 13)
             .frame(minHeight: 46)
             .foregroundStyle(foreground)
-            .background(background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .shadow(color: .black.opacity(enabled && !configuration.isPressed ? 0.055 : 0.015), radius: 6, y: 3)
+            .background(.regularMaterial, in: shape)
+            .background(primary ? tint.opacity(tintOpacity) : Color(uiColor: .secondarySystemGroupedBackground).opacity(0.68), in: shape)
+            .overlay(shape.stroke(primary ? tint.opacity(enabled ? 0.30 : 0.12) : Color.white.opacity(0.78), lineWidth: 1))
+            .shadow(color: tint.opacity(enabled && !configuration.isPressed ? 0.12 : 0.03), radius: 7, y: 3)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .opacity(enabled ? (configuration.isPressed ? 0.76 : 1) : 0.45)
-            .contentShape(RoundedRectangle(cornerRadius: 16))
+            .contentShape(shape)
             .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
     }
 }

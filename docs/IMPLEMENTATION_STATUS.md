@@ -19,11 +19,12 @@
 - 本地 Intel Mac release 构建通过，包 SHA-256 `536d2423aad8ced55d2a645de8417c2fed215f9a754ca4338c822cfed5a9ab53`。本地安装后的截图复核确认窗口不可缩放、主窗口无右侧滚动条、方向色点可见、预览显示完整三行方形缩略图。
 - GitHub Actions run `42453522538`（commit `c3a0467`）已成功，云端模拟器 UI 2 项通过，交付门禁和回归测试通过。云端 iOS IPA SHA-256 `4f433e491a81284acbe5d729f7c1b844b8723fddc60bd3cd372350af97000ac4`，Intel Mac ZIP SHA-256 `83e21759a31625faed356314d754ae9e24a3e3cfc4f9368aa0e0c8c90971e0e7`。本轮尚未新增真机 PhotoKit/USB 现场证据。
 
-### V4.12 应用图标重做（2026-11-08）
+### V4.12 应用图标与玻璃按钮重做（2026-11-08）
 
-- 按用户提供的玻璃彩色花瓣参考图重做 iOS 与 Intel macOS 图标，保留其花瓣长宽比例、中心位置和半透明叠色关系。
-- 使用参考图的图标区域裁切为 1024×1024 母版，生成 iOS AppIcon 和 16px 至 1024px 的 macOS `.icns`，Finder 使用标准图标尺寸，不再出现图标内容缩得过小的问题。
-- 当前图标资源 SHA-256：PNG `a380a06930091816787bf40f92880cd8b5af740c558987d975a98e2091e6b7c9`，ICNS `424f8c28e7a488df935d24cddf984fcd423c0bb916bbdb51099a24663e7f86f1`。
+- 按用户最新参考图左上角图标区域重做 iOS 与 Intel macOS 图标，保留其花瓣长宽比例、中心位置和半透明叠色关系。
+- 使用参考图裁切为 1024×1024 母版，生成 iOS AppIcon 和 16px 至 1024px 的 macOS `.icns`，Finder 使用标准图标尺寸，不再出现图标内容缩得过小的问题。
+- 保存到 Mac、导入到 iPhone 的主按钮改为材质底、方向色透层和细高光边缘。两端继续使用不同方向色，按压时保留轻微缩放反馈。
+- 当前图标资源 SHA-256：PNG `0ccae85082b4c9253e69b4b5e4e0b352d32f9948dbb16a22052699d78613b023`，ICNS `756c1015801364e3a64d386686d7ffe793ac4f5d03c293bfc220a07dc072ba58`。本地 Intel Mac ZIP SHA-256 `f4d88c445a2764a5b74f4d1374f76e23033f320e10f479ebc099babc6c8ac1cc`。
 - 首次图标云编译 run `42471472643` 的源码测试已通过，但 XcodeGen 下载请求收到 GitHub 504，未产生可交付包。重试 run `42471816688` 已成功，云端 iOS AppIcon、模拟器 UI 2 项、114 项 Python 回归、CoreChecks、StagingChecks、RecoveryChecks 与 Intel x86_64 构建全部通过。产物 artifact ID 为 `13613883105`，云端 Intel Mac ZIP SHA-256 `a0aaabb06e62352b6afa6f1bbea1a03c9a821ab542468941405e9df1594207d2`。本机最终参考图版本已覆盖安装，当前本地 Intel Mac ZIP SHA-256 `b23e7209f85a356d03d3d63560bcc8af74bf8b7a25a2b6f398ca6c6bf41a48af`。
 
 ## V4.11 Mac 可见顺序清单（2026-11-08）
