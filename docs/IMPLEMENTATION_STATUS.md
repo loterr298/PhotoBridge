@@ -25,6 +25,7 @@
 - 使用参考图裁切为 1024×1024 母版，生成 iOS AppIcon 和 16px 至 1024px 的 macOS `.icns`，Finder 使用标准图标尺寸，不再出现图标内容缩得过小的问题。
 - 保存到 Mac、导入到 iPhone 的主按钮改为材质底、方向色透层和细高光边缘。两端继续使用不同方向色，按压时保留轻微缩放反馈。
 - 当前图标资源 SHA-256：PNG `0ccae85082b4c9253e69b4b5e4e0b352d32f9948dbb16a22052699d78613b023`，ICNS `756c1015801364e3a64d386686d7ffe793ac4f5d03c293bfc220a07dc072ba58`。本地 Intel Mac ZIP SHA-256 `f4d88c445a2764a5b74f4d1374f76e23033f320e10f479ebc099babc6c8ac1cc`。
+- GitHub Actions run `42474326546`（commit `7dd6d5e`）成功，iOS AppIcon、模拟器 UI 2 项、114 项回归和 Intel x86_64 构建全部通过。云端 artifact ID `13615275919`，Intel Mac ZIP SHA-256 `c6bfbbd2683d0d165b07e134ecf49f51aeb2e53f0cb7d1ed49de8c28158d314a`。
 - 首次图标云编译 run `42471472643` 的源码测试已通过，但 XcodeGen 下载请求收到 GitHub 504，未产生可交付包。重试 run `42471816688` 已成功，云端 iOS AppIcon、模拟器 UI 2 项、114 项 Python 回归、CoreChecks、StagingChecks、RecoveryChecks 与 Intel x86_64 构建全部通过。产物 artifact ID 为 `13613883105`，云端 Intel Mac ZIP SHA-256 `a0aaabb06e62352b6afa6f1bbea1a03c9a821ab542468941405e9df1594207d2`。本机最终参考图版本已覆盖安装，当前本地 Intel Mac ZIP SHA-256 `b23e7209f85a356d03d3d63560bcc8af74bf8b7a25a2b6f398ca6c6bf41a48af`。
 
 ## V4.11 Mac 可见顺序清单（2026-11-08）
