@@ -14,6 +14,7 @@
 - iOS 与 Mac 全部内容卡片采用系统材质、白色高光边缘、轻阴影和方向色按钮。
 - 视觉复核后将卡片材质收口为 `ultraThinMaterial`，降低白色覆盖层不透明度，并为两端加入浅蓝、浅薄荷的多层渐变背景与柔和光晕。纯白底造成的灰色块感已移除，玻璃边缘和背景透色重新可见。
 - 本地 Intel macOS release 构建和安装复核通过，窗口背景已确认出现浅蓝、浅薄荷渐变与光晕，卡片不再依赖纯白底。最终再将卡片白色层提高并叠加顶部高光渐变，避免系统材质在浅色背景上发灰。最新 Intel ZIP SHA-256 `2eaa397f70264c5b619dc79bff516cf249350d0b9293ed439c2fc6a90746a1b7`。
+- GitHub Actions run `42643407032`（commit `9b0bc91`）成功，114 项回归、iOS 模拟器流程和 Intel x86_64 构建全部通过。云端 iOS IPA SHA-256 `da15ba04729a8672970ae59ddad000c12ff75c4501d2117298b2234190bb5b0b`，Intel Mac ZIP SHA-256 `2e948bfa8cf9d3e1ac8dd0003b50ff4d23947696406f98425b59bce0e3c5ea67`，artifact ID `13686758828`。
 - GitHub Actions run `42529171056`（commit `386669a`）成功，正式版 `1.0.0/build 1`、114 项回归、模拟器 UI 和 Intel x86_64 构建通过。云端 artifact ID `13637435989`，Intel Mac ZIP SHA-256 `7a204198148a84fc62cd697b341f97b601032d2ef1ea16772fb199be2337e2a0`。
 - GitHub Actions run `42480227859`（commit `a26f6b3`）成功，正式版 `1.0.0/build 1`、114 项回归、模拟器 UI 和 Intel x86_64 构建通过。云端 artifact ID `13618220152`，Intel Mac ZIP SHA-256 `3838d469c06c29774e284c6c9a0be646f744ab17afbf32acbb0c079757db7497`。
 - GitHub Actions run `42482004108`（commit `2cd3873`）成功，正式版 `1.0.0/build 1`、双端版本标识、114 项回归、模拟器 UI 和 Intel x86_64 构建通过。云端 artifact ID `13618410453`，Intel Mac ZIP SHA-256 `ec2b1c4e24504ea7506a47f80f4d24873b40bdcbb5fc6758ee2f7f405b94f57f`。
