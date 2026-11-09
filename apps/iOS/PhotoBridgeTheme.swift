@@ -16,7 +16,14 @@ extension Color {
 }
 
 struct BridgeBackground: View {
-    var body: some View { Color.bridgeSky.ignoresSafeArea() }
+    var body: some View {
+        LinearGradient(
+            colors: [Color.white, Color(red: 0.975, green: 0.985, blue: 0.995)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
 }
 
 struct AppVersionLabel: View {
@@ -51,8 +58,8 @@ struct BridgeCard<Content: View>: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
         content.padding(22)
-            .background(.regularMaterial, in: shape)
-            .background(Color.white.opacity(0.28), in: shape)
+            .background(.ultraThinMaterial, in: shape)
+            .background(Color.white.opacity(0.62), in: shape)
             .overlay(shape.stroke(Color.white.opacity(0.72), lineWidth: 1))
             .shadow(color: Color.black.opacity(0.055), radius: 14, y: 6)
     }
