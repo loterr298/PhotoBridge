@@ -1240,7 +1240,7 @@ private struct MacCard<Content: View>: View {
         let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
         content.padding(20).frame(maxWidth: .infinity, alignment: .leading)
             .background(.ultraThinMaterial, in: shape)
-            .background(Color.white.opacity(emphasis ? 0.52 : 0.44), in: shape)
+            .background(Color.white.opacity(emphasis ? 0.72 : 0.64), in: shape)
             .overlay(shape.stroke(emphasis ? Color.macBridgeBlue.opacity(0.20) : Color.white.opacity(0.72), lineWidth: 1))
             .shadow(color: .black.opacity(emphasis ? 0.08 : 0.05), radius: emphasis ? 16 : 12, y: emphasis ? 7 : 5)
     }
@@ -1252,20 +1252,20 @@ private struct MacBackground: View {
             LinearGradient(
                 colors: [
                     Color(nsColor: NSColor(red: 0.95, green: 0.975, blue: 0.99, alpha: 1)),
-                    Color(nsColor: NSColor(red: 0.985, green: 0.995, blue: 0.98, alpha: 1)),
-                    Color(nsColor: NSColor(red: 0.94, green: 0.97, blue: 0.955, alpha: 1))
+                    Color(nsColor: NSColor(red: 0.955, green: 0.965, blue: 0.995, alpha: 1)),
+                    Color(nsColor: NSColor(red: 0.90, green: 0.955, blue: 0.94, alpha: 1))
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             RadialGradient(
-                colors: [Color(nsColor: NSColor(red: 0.63, green: 0.86, blue: 0.75, alpha: 0.16)), .clear],
+                colors: [Color(nsColor: NSColor(red: 0.54, green: 0.84, blue: 0.68, alpha: 0.23)), .clear],
                 center: .topLeading,
                 startRadius: 16,
                 endRadius: 520
             )
             RadialGradient(
-                colors: [Color(nsColor: NSColor(red: 0.69, green: 0.80, blue: 0.98, alpha: 0.10)), .clear],
+                colors: [Color(nsColor: NSColor(red: 0.60, green: 0.75, blue: 0.98, alpha: 0.16)), .clear],
                 center: .bottomTrailing,
                 startRadius: 40,
                 endRadius: 620

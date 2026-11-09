@@ -20,21 +20,21 @@ struct BridgeBackground: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color(red: 0.965, green: 0.982, blue: 0.995),
-                    Color(red: 0.985, green: 0.995, blue: 0.985),
-                    Color(red: 0.955, green: 0.978, blue: 0.970)
+                    Color(red: 0.910, green: 0.965, blue: 0.945),
+                    Color(red: 0.955, green: 0.965, blue: 0.995),
+                    Color(red: 0.900, green: 0.955, blue: 0.945)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             RadialGradient(
-                colors: [Color(red: 0.66, green: 0.88, blue: 0.78).opacity(0.16), .clear],
+                colors: [Color(red: 0.54, green: 0.84, blue: 0.68).opacity(0.22), .clear],
                 center: .topLeading,
                 startRadius: 20,
                 endRadius: 440
             )
             RadialGradient(
-                colors: [Color(red: 0.70, green: 0.82, blue: 0.98).opacity(0.11), .clear],
+                colors: [Color(red: 0.60, green: 0.75, blue: 0.98).opacity(0.16), .clear],
                 center: .bottomTrailing,
                 startRadius: 40,
                 endRadius: 520
@@ -77,7 +77,7 @@ struct BridgeCard<Content: View>: View {
         let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
         content.padding(22)
             .background(.ultraThinMaterial, in: shape)
-            .background(Color.white.opacity(0.44), in: shape)
+            .background(Color.white.opacity(0.64), in: shape)
             .overlay(shape.stroke(Color.white.opacity(0.72), lineWidth: 1))
             .shadow(color: Color.black.opacity(0.055), radius: 14, y: 6)
     }

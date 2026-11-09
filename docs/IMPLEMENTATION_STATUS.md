@@ -11,8 +11,9 @@
 - GitHub Actions run `42478530469`（commit `88b5d3c`）成功，正式版 `1.0.0/build 1`、114 项回归、模拟器 UI 和 Intel x86_64 构建通过。云端 artifact ID `13616577087`，Intel Mac ZIP SHA-256 `268a03807030a733f0838cf14643564ef16aef284de20ec5d6b003cc681642bc`。
 - 最新重绘图标资源 SHA-256：PNG `ff49274c0a5ef7ed158642fd5d8af693023c96d02fb17a26a375240c8c4837d1`，ICNS `21b1c5bf27ff58dd6bda50d0adbc99f37afad6b2165a334b8f6079e98510b2ff`。本地 Intel Mac ZIP SHA-256 `902bd924e5a08699632cd80bcfe944c4ea0ef629405e28d75f6de9299b608fda`。
 - 花瓣按用户反馈改为更小的大圆角长方形，资源 SHA-256 为 PNG `86555a77340f4468d58095b9f7337db8fe3a879e8b2cee647429f3b077e89619`，ICNS `ca25d11905925aebd107d3982e36d785158b1ede3f0c4296219cc700c282df99`。本地 Intel Mac ZIP SHA-256 `d91b4bbc08f5d42f74bf2d6356eee72b6cc9dc5d503ad716e1bc15709291a46a`。
-- iOS 与 Mac 全部内容卡片改用 `regularMaterial` 毛玻璃材质，保留白色高光边缘、轻阴影和方向色按钮。
+- iOS 与 Mac 全部内容卡片采用系统材质、白色高光边缘、轻阴影和方向色按钮。
 - 视觉复核后将卡片材质收口为 `ultraThinMaterial`，降低白色覆盖层不透明度，并为两端加入浅蓝、浅薄荷的多层渐变背景与柔和光晕。纯白底造成的灰色块感已移除，玻璃边缘和背景透色重新可见。
+- 本地 Intel macOS release 构建和安装复核通过，窗口背景已确认出现浅蓝、浅薄荷渐变与光晕，卡片不再依赖纯白底。最新 Intel ZIP SHA-256 `aa30b24811f9a0e9f5b8e272b131dc691dca40b221ecac2d49fc4f85648ebce4`。
 - GitHub Actions run `42529171056`（commit `386669a`）成功，正式版 `1.0.0/build 1`、114 项回归、模拟器 UI 和 Intel x86_64 构建通过。云端 artifact ID `13637435989`，Intel Mac ZIP SHA-256 `7a204198148a84fc62cd697b341f97b601032d2ef1ea16772fb199be2337e2a0`。
 - GitHub Actions run `42480227859`（commit `a26f6b3`）成功，正式版 `1.0.0/build 1`、114 项回归、模拟器 UI 和 Intel x86_64 构建通过。云端 artifact ID `13618220152`，Intel Mac ZIP SHA-256 `3838d469c06c29774e284c6c9a0be646f744ab17afbf32acbb0c079757db7497`。
 - GitHub Actions run `42482004108`（commit `2cd3873`）成功，正式版 `1.0.0/build 1`、双端版本标识、114 项回归、模拟器 UI 和 Intel x86_64 构建通过。云端 artifact ID `13618410453`，Intel Mac ZIP SHA-256 `ec2b1c4e24504ea7506a47f80f4d24873b40bdcbb5fc6758ee2f7f405b94f57f`。
