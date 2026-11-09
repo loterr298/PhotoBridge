@@ -1237,10 +1237,11 @@ private struct MacCard<Content: View>: View {
         self.content = content()
     }
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
         content.padding(20).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(emphasis ? Color.macBridgeBlue.opacity(0.14) : Color.black.opacity(0.05), lineWidth: 1))
+            .background(.regularMaterial, in: shape)
+            .background(Color.white.opacity(emphasis ? 0.24 : 0.18), in: shape)
+            .overlay(shape.stroke(emphasis ? Color.macBridgeBlue.opacity(0.20) : Color.white.opacity(0.72), lineWidth: 1))
             .shadow(color: .black.opacity(emphasis ? 0.08 : 0.05), radius: emphasis ? 16 : 12, y: emphasis ? 7 : 5)
     }
 }

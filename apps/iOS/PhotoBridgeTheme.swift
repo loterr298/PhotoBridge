@@ -49,8 +49,11 @@ struct BridgeCard<Content: View>: View {
     let content: Content
     init(@ViewBuilder content: () -> Content) { self.content = content() }
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
         content.padding(22)
-            .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .background(.regularMaterial, in: shape)
+            .background(Color.white.opacity(0.28), in: shape)
+            .overlay(shape.stroke(Color.white.opacity(0.72), lineWidth: 1))
             .shadow(color: Color.black.opacity(0.055), radius: 14, y: 6)
     }
 }
