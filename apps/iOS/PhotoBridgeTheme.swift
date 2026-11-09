@@ -77,7 +77,15 @@ struct BridgeCard<Content: View>: View {
         let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
         content.padding(22)
             .background(.ultraThinMaterial, in: shape)
-            .background(Color.white.opacity(0.64), in: shape)
+            .background(Color.white.opacity(0.76), in: shape)
+            .overlay(
+                LinearGradient(
+                    colors: [Color.white.opacity(0.26), Color.white.opacity(0.02)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .clipShape(shape)
+            )
             .overlay(shape.stroke(Color.white.opacity(0.72), lineWidth: 1))
             .shadow(color: Color.black.opacity(0.055), radius: 14, y: 6)
     }
