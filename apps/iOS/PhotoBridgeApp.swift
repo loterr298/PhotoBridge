@@ -12,12 +12,14 @@ struct PhotoBridgeApp: App {
     var body: some Scene {
         WindowGroup {
             TabView(selection: $selectedTab) {
-                MacExportCompanionView().tabItem { Label("导出到 Mac", systemImage: "arrow.down.to.line.compact") }.tag(0)
-                RestoreView().tabItem { Label("导入到 iPhone", systemImage: "arrow.up.to.line.compact") }.tag(1)
-                PhotoInfoView().tabItem { Label("照片信息", systemImage: "slider.horizontal.3") }.tag(2)
-                SettingsView().tabItem { Label("设置", systemImage: "gearshape") }.tag(3)
+                MacExportCompanionView().tabItem { Label("导出到 Mac", systemImage: "arrow.down.circle.fill") }.tag(0)
+                RestoreView().tabItem { Label("导入到 iPhone", systemImage: "arrow.up.circle.fill") }.tag(1)
+                SettingsView().tabItem { Label("设置", systemImage: "gearshape.fill") }.tag(2)
             }
             .tint(.bridgeBlue)
+            .toolbarBackground(.ultraThinMaterial, for: .tabBar)
+            .toolbarBackground(.visible, for: .tabBar)
+            .toolbarColorScheme(.light, for: .tabBar)
             .environmentObject(library)
             .environmentObject(macControl)
             .environmentObject(restore)
@@ -83,7 +85,10 @@ final class LibraryProbe: ObservableObject {
     func reloadAuthorization() { authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite) }
     func requestAccessOnly() async {
         _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
-        reloadAuthorization()
+        reload()
+        if authorization == .denied || authorization == .restricted {
+            message = "请在系统设置中允许 PhotoBridge 访问全部照片"
+        }
     }
     func reload() {
         authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite)

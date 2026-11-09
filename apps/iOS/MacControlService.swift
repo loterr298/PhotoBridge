@@ -1,6 +1,7 @@
 import Foundation
 import Photos
 import SwiftUI
+import UIKit
 import PhotoBridgeCore
 
 /// Request-scoped USB control. Only an open, authorized phone app reads Photos.
@@ -302,6 +303,42 @@ struct MacExportCompanionView: View {
                             .font(.subheadline).foregroundStyle(.secondary)
                     }
                     PhoneConnectionStatus(connected: control.connected)
+                    if library.authorization == .authorized && !library.albums.isEmpty {
+                        BridgeCard {
+                            VStack(alignment: .leading, spacing: 14) {
+                                HStack {
+                                    Text("选择相册").font(.headline)
+                                    Spacer()
+                                    Button("重新读取") { library.reload() }
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(Color.bridgeBlue)
+                                }
+                                ForEach(library.albums.prefix(8)) { item in
+                                    NavigationLink { OriginalExportView(collection: item.collection) } label: {
+                                        AlbumRow(item: item)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    } else {
+                        BridgeCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(library.authorization == .notDetermined ? "允许访问照片" : "需要全部照片权限")
+                                    .font(.headline)
+                                Text("允许后会显示你的相册，并出现“开始备份到 Mac”按钮。")
+                                    .font(.subheadline).foregroundStyle(.secondary)
+                                Button(library.authorization == .notDetermined ? "允许访问照片" : "打开照片设置") {
+                                    if library.authorization == .notDetermined {
+                                        Task { await library.requestAccessOnly() }
+                                    } else if let url = URL(string: UIApplication.openSettingsURLString) {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }
+                                .buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeExport, fill: .bridgeExportFill))
+                            }
+                        }
+                    }
                     if let display = control.exportDisplay, display.direction == "TO_MAC" {
                         BridgeCard { PhotoCountView(title: display.presentationLabel(), progress: display.progress, elapsedSeconds: display.elapsedSeconds) }
                     } else if control.active {
@@ -318,9 +355,6 @@ struct MacExportCompanionView: View {
                             }.frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
-                    if library.authorization != .authorized {
-                        BridgePrimaryButton(action: { Task { await library.requestAccessOnly() } }) { Text("允许访问照片") }
-                    }
                     Text("传输时请保持 App 在前台。原照片不会删除。")
                         .font(.subheadline).foregroundStyle(.secondary)
                     AppVersionLabel()
@@ -331,7 +365,7 @@ struct MacExportCompanionView: View {
                 }.padding(24).frame(maxWidth: 580, alignment: .leading).frame(maxWidth: .infinity)
             }
         }
-        .task { library.reloadAuthorization() }
+        .task { library.reload() }
     }
 }
 

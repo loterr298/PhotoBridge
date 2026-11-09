@@ -46,7 +46,9 @@ struct RestoreView: View {
                                 }
                                 Spacer()
                                 if service.photoPermission != .authorized {
-                                    Button("允许") { Task { _ = await service.requestPhotoPermission() } }
+                                    Button(service.photoPermission == .notDetermined ? "允许照片" : "打开设置") {
+                                        Task { _ = await service.requestPhotoPermission() }
+                                    }
                                         .buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeImport, fill: .bridgeImportFill))
                                 }
                             }
@@ -134,7 +136,10 @@ struct RestoreView: View {
                 }
             }.navigationBarHidden(true)
         }
-        .task { if service.sessions.isEmpty && !service.busy { await refresh() } }
+        .task {
+            service.refreshPhotoPermission()
+            if service.sessions.isEmpty && !service.busy { await refresh() }
+        }
         .onChange(of: service.savedTitle) { value in if !value.isEmpty { title = value } }
         .onChange(of: session) { value in
             service.invalidate()

@@ -66,9 +66,29 @@ private struct RestoreInboxRequest: Decodable {
     }
 
     func requestPhotoPermission() async -> Bool {
+        photoPermission = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        if photoPermission == .denied || photoPermission == .restricted || photoPermission == .limited {
+            openPhotoSettings()
+            message = photoPermission == .limited ? "当前只允许部分照片，请在设置中改为全部照片" : "请在系统设置中允许 PhotoBridge 访问全部照片"
+            return false
+        }
         let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
         photoPermission = status
+        if status == .limited {
+            message = "当前只允许部分照片，请在设置中改为全部照片"
+        } else if status == .denied || status == .restricted {
+            message = "请在系统设置中允许 PhotoBridge 访问全部照片"
+        }
         return status == .authorized
+    }
+
+    func refreshPhotoPermission() {
+        photoPermission = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+    }
+
+    private func openPhotoSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     func refresh() async {
