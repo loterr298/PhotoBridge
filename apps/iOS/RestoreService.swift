@@ -42,6 +42,7 @@ private struct RestoreInboxRequest: Decodable {
     @Published var totalAssets = 0
     @Published var authorizedTimestampDifferences = 0
     @Published private(set) var photoPermission = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+    @Published private(set) var requestingPhotoPermission = false
     private var selected: URL?
     private var manifest: AlbumExportManifest?
     private var manifestData: Data?
@@ -66,6 +67,9 @@ private struct RestoreInboxRequest: Decodable {
     }
 
     func requestPhotoPermission() async -> Bool {
+        requestingPhotoPermission = true
+        defer { requestingPhotoPermission = false }
+        message = "正在请求照片权限…"
         photoPermission = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         if photoPermission == .denied || photoPermission == .restricted || photoPermission == .limited {
             openPhotoSettings()

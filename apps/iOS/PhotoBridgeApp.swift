@@ -64,6 +64,13 @@ struct AlbumItem: Identifiable {
     let previews: [PHAsset]
 }
 
+private struct AlbumRecord: Sendable {
+    let identifier: String
+    let name: String
+    let count: Int
+    let previewIdentifiers: [String]
+}
+
 enum FetchMode: String, CaseIterable, Identifiable {
     case defaults = "nil-options", empty = "empty-options"
     var id: String { rawValue }
@@ -75,16 +82,28 @@ enum FetchMode: String, CaseIterable, Identifiable {
 final class LibraryProbe: ObservableObject {
     @Published var albums: [AlbumItem] = []
     @Published var authorization: PHAuthorizationStatus = .notDetermined
+    @Published var loadingAlbums = false
+    @Published var requestingPermission = false
     @Published var message = "准备查看你的相册"
+    private var reloadGeneration = UUID()
     var permissionName: String {
         switch authorization { case .authorized: return "full"; case .limited: return "limited"
         case .denied: return "denied"; case .restricted: return "restricted"
         case .notDetermined: return "notDetermined"; @unknown default: return "unknown" }
     }
-    func request() async { _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite); reload() }
+    func request() async {
+        requestingPermission = true
+        message = "正在请求照片权限…"
+        _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+        requestingPermission = false
+        reload()
+    }
     func reloadAuthorization() { authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite) }
     func requestAccessOnly() async {
+        requestingPermission = true
+        message = "正在请求照片权限…"
         _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+        requestingPermission = false
         reload()
         if authorization == .denied || authorization == .restricted {
             message = "请在系统设置中允许 PhotoBridge 访问全部照片"
@@ -92,20 +111,47 @@ final class LibraryProbe: ObservableObject {
     }
     func reload() {
         authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        reloadGeneration = UUID()
+        let generation = reloadGeneration
         albums = []
         guard authorization == .authorized || authorization == .limited else {
+            loadingAlbums = false
             message = "请允许访问照片，才能显示你的相册"; return
         }
-        let collections = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil)
-        collections.enumerateObjects { collection, _, _ in
-            let assets = PHAsset.fetchAssets(in: collection, options: nil)
-            var previews: [PHAsset] = []; previews.reserveCapacity(3)
-            assets.enumerateObjects { asset, index, stop in
-                if index < 3 { previews.append(asset) } else { stop.pointee = true }
+        loadingAlbums = true
+        message = "正在读取相册…"
+        let access = authorization
+        Task { @MainActor in
+            let records = await Task.detached(priority: .userInitiated) {
+                var values: [AlbumRecord] = []
+                let collections = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil)
+                collections.enumerateObjects { collection, _, _ in
+                    autoreleasepool {
+                        let assets = PHAsset.fetchAssets(in: collection, options: nil)
+                        var previewIdentifiers: [String] = []
+                        previewIdentifiers.reserveCapacity(3)
+                        assets.enumerateObjects { asset, index, stop in
+                            if index < 3 { previewIdentifiers.append(asset.localIdentifier) } else { stop.pointee = true }
+                        }
+                        values.append(AlbumRecord(identifier: collection.localIdentifier,
+                                                  name: collection.localizedTitle ?? "未命名相册",
+                                                  count: assets.count,
+                                                  previewIdentifiers: previewIdentifiers))
+                    }
+                }
+                return values
+            }.value
+            guard generation == self.reloadGeneration else { return }
+            albums = records.compactMap { record in
+                guard let collection = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [record.identifier], options: nil).firstObject else { return nil }
+                let previews = PHAsset.fetchAssets(withLocalIdentifiers: record.previewIdentifiers, options: nil)
+                var previewAssets: [PHAsset] = []
+                previews.enumerateObjects { asset, _, _ in previewAssets.append(asset) }
+                return AlbumItem(collection: collection, count: record.count, cover: previewAssets.first, previews: previewAssets)
             }
-            self.albums.append(AlbumItem(collection: collection, count: assets.count, cover: previews.first, previews: previews))
+            loadingAlbums = false
+            message = access == .limited ? "当前只显示你选中的照片" : "相册已准备好"
         }
-        message = authorization == .limited ? "当前只显示你选中的照片" : "相册已准备好"
     }
     func read(_ collection: PHAssetCollection, mode: FetchMode) -> (OrderSnapshot, [PHAsset]) {
         let result = PHAsset.fetchAssets(in: collection, options: mode.options)

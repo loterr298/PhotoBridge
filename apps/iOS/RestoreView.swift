@@ -46,10 +46,11 @@ struct RestoreView: View {
                                 }
                                 Spacer()
                                 if service.photoPermission != .authorized {
-                                    Button(service.photoPermission == .notDetermined ? "允许照片" : "打开设置") {
+                                    Button(service.requestingPhotoPermission ? "正在请求…" : (service.photoPermission == .notDetermined ? "允许照片" : "打开设置")) {
                                         Task { _ = await service.requestPhotoPermission() }
                                     }
                                         .buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeImport, fill: .bridgeImportFill))
+                                        .disabled(service.requestingPhotoPermission)
                                 }
                             }
                         }

@@ -303,7 +303,14 @@ struct MacExportCompanionView: View {
                             .font(.subheadline).foregroundStyle(.secondary)
                     }
                     PhoneConnectionStatus(connected: control.connected)
-                    if library.authorization == .authorized && !library.albums.isEmpty {
+                    if library.loadingAlbums {
+                        BridgeCard {
+                            HStack(spacing: 12) {
+                                ProgressView()
+                                Text("正在读取相册…").font(.subheadline.weight(.semibold))
+                            }
+                        }
+                    } else if library.authorization == .authorized && !library.albums.isEmpty {
                         BridgeCard {
                             VStack(alignment: .leading, spacing: 14) {
                                 HStack {
@@ -324,18 +331,24 @@ struct MacExportCompanionView: View {
                     } else {
                         BridgeCard {
                             VStack(alignment: .leading, spacing: 12) {
-                                Text(library.authorization == .notDetermined ? "允许访问照片" : "需要全部照片权限")
+                                Text(library.authorization == .authorized ? "没有找到可显示的相册" : (library.authorization == .notDetermined ? "允许访问照片" : "需要全部照片权限"))
                                     .font(.headline)
-                                Text("允许后会显示你的相册，并出现“开始备份到 Mac”按钮。")
+                                Text(library.authorization == .authorized ? "可以点“重新读取”再次扫描相册。" : "允许后会显示你的相册，并出现“开始备份到 Mac”按钮。")
                                     .font(.subheadline).foregroundStyle(.secondary)
-                                Button(library.authorization == .notDetermined ? "允许访问照片" : "打开照片设置") {
+                                if library.authorization == .authorized {
+                                    Button("重新读取") { library.reload() }
+                                        .buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeExport, fill: .bridgeExportFill))
+                                } else {
+                                    Button(library.requestingPermission ? "正在请求…" : (library.authorization == .notDetermined ? "允许访问照片" : "打开照片设置")) {
                                     if library.authorization == .notDetermined {
                                         Task { await library.requestAccessOnly() }
                                     } else if let url = URL(string: UIApplication.openSettingsURLString) {
                                         UIApplication.shared.open(url)
                                     }
+                                    }
+                                    .buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeExport, fill: .bridgeExportFill))
+                                    .disabled(library.requestingPermission)
                                 }
-                                .buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeExport, fill: .bridgeExportFill))
                             }
                         }
                     }
