@@ -1350,7 +1350,7 @@ private struct MacTransferScreen: View {
                     HStack {
                         Text("按原相册顺序传输，原照片不会删除。").font(.caption).foregroundStyle(.secondary)
                         Spacer()
-                        Text("v1.0.0").font(.caption2.monospacedDigit()).foregroundStyle(Color.macBridgeMuted)
+                        Text("v1.0.1").font(.caption2.monospacedDigit()).foregroundStyle(Color.macBridgeMuted)
                     }
                 }.padding(32).frame(maxWidth: 1080, alignment: .leading).frame(maxWidth: .infinity)
             }
