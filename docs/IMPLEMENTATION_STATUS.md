@@ -6,6 +6,7 @@
 - 1.0.1/build 2 的“导出到 Mac”页在权限通过后重新读取并显示真实相册列表，每个相册进入独立的“开始备份到 Mac”页面。
 - 移除 iPhone 底部“照片信息”入口和对应页面，保留“导出到 Mac / 导入到 iPhone / 设置”三个入口。底部标签使用系统材质、填充 SF Symbols 和可见的毛玻璃背景。
 - GitHub Actions run `42656882582`（commit `2855f01`）成功，114 项回归、iOS 模拟器流程和 Intel x86_64 构建全部通过。v1.0.1/build 2 的 iOS IPA SHA-256 `2d6d68f4fa2260179b2f3f8727641fbb35e7fee5578709ed22e72927d2396166`，Intel Mac ZIP SHA-256 `a2edeb33220189cb76fe8148d7c272b1ff4b6931657a0e7f2b2bf83b85e443fe`，artifact ID `13694180077`。
+- Mac 版本显示同步提交 `a77e5ef` 重新云编译，run `42787522466` 成功，iOS 模拟器流程和 Intel x86_64 构建全部通过。最终 v1.0.1/build 2 的 iOS IPA SHA-256 `bd02c4387aa95afe3e55411b8c4d63eb7cc1d8bb1d0e495d9504b2370f433126`，Intel Mac ZIP SHA-256 `10edc2bad412bb23360640133991f45080d371890cacd6590ee8ababaf3ab5cc`，artifact ID `13751251338`。
 - 产品版本从 4.12.0 切换为 1.0.1，iOS 与 Intel macOS 使用同一正式版本号和 build 2。
 - 图标改为从零绘制的标准正方形玻璃花瓣图标，外部背景透明，花瓣对称居中，macOS `.icns` 使用 16px–1024px 多尺寸资源。
 - 导入和导出完成后显示带弹簧过渡的完成徽标。进度条使用线性插值动画，数字继续使用等宽数字和 numericText 过渡，避免进度跳跃。
