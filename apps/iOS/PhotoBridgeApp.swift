@@ -364,6 +364,7 @@ struct AlbumProbeView: View {
     @State private var exportURL: URL?
     @State private var error: String?
     @State private var showOriginalExport = false
+    private var indexedAssets: [(offset: Int, element: PHAsset)] { Array(assets.enumerated()) }
     var body: some View {
         List {
             Section("相册顺序") {
@@ -383,46 +384,56 @@ struct AlbumProbeView: View {
                 Text("完整保存原图和 Live Photo，不压缩、不改变照片里的拍摄信息。")
             }
             Section("照片顺序") {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 4)], spacing: 4) {
-                    ForEach(Array(assets.enumerated()), id: \.element.localIdentifier) { index, asset in
-                        NavigationLink {
-                            AssetDetailView(asset: asset, ordinal: index + 1)
-                        } label: {
-                            ZStack(alignment: .bottomLeading) {
-                                AssetThumbnail(asset: asset)
-                                    .frame(height: 104)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                Text(String(format: "%04d", index + 1))
-                                    .font(.caption2.monospacedDigit().weight(.semibold))
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 6).padding(.vertical, 4)
-                                    .background(.black.opacity(0.58), in: Capsule())
-                                    .padding(6)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
+                photoGrid
                 Text("点按照片查看详情。编号就是它在相册中的位置。")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            DisclosureGroup("查看详细信息") {
-                Text("相册内部编号").font(.caption).foregroundStyle(.secondary)
-                Text(collection.localIdentifier).font(.caption.monospaced()).textSelection(.enabled)
-                ForEach(Array(assets.enumerated()), id: \.element.localIdentifier) { index, asset in
-                    HStack(alignment: .top) {
-                        Text(String(format: "%04d", index + 1)).font(.caption.monospacedDigit())
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(asset.localIdentifier).font(.caption.monospaced()).textSelection(.enabled)
-                            if let date = asset.creationDate { Text(date, style: .date).font(.caption).foregroundStyle(.secondary) }
-                        }
-                    }.accessibilityElement(children: .combine)
-                }
-            }
+            detailsSection
         }.navigationTitle(collection.localizedTitle ?? "相册详情")
-            .sheet(isPresented: $showOriginalExport) { OriginalExportView(collection: collection) }
+            .sheet(isPresented: $showOriginalExport) {
+                OriginalExportView(source: PhotoSource(id: collection.localIdentifier,
+                                                       name: collection.localizedTitle ?? "未命名相册",
+                                                       isAllPhotos: false, collection: collection))
+            }
             .task { reload() }.onChange(of: mode) { _ in reload() }
             .onChange(of: scene) { if $0 == .active { reload() } }
+    }
+    private var photoGrid: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 4)], spacing: 4) {
+            ForEach(indexedAssets, id: \.element.localIdentifier) { item in
+                NavigationLink {
+                    AssetDetailView(asset: item.element, ordinal: item.offset + 1)
+                } label: {
+                    ZStack(alignment: .bottomLeading) {
+                        AssetThumbnail(asset: item.element)
+                            .frame(height: 104)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        Text(String(format: "%04d", item.offset + 1))
+                            .font(.caption2.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6).padding(.vertical, 4)
+                            .background(.black.opacity(0.58), in: Capsule())
+                            .padding(6)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+    private var detailsSection: some View {
+        DisclosureGroup("查看详细信息") {
+            Text("相册内部编号").font(.caption).foregroundStyle(.secondary)
+            Text(collection.localIdentifier).font(.caption.monospaced()).textSelection(.enabled)
+            ForEach(indexedAssets, id: \.element.localIdentifier) { item in
+                HStack(alignment: .top) {
+                    Text(String(format: "%04d", item.offset + 1)).font(.caption.monospacedDigit())
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.element.localIdentifier).font(.caption.monospaced()).textSelection(.enabled)
+                        if let date = item.element.creationDate { Text(date, style: .date).font(.caption).foregroundStyle(.secondary) }
+                    }
+                }.accessibilityElement(children: .combine)
+            }
+        }
     }
     private func reload() {
         exportURL = nil; error = nil; snapshot = nil; assets = []
