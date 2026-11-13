@@ -109,6 +109,10 @@ final class LibraryProbe: ObservableObject {
         _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
         requestingPermission = false
         reload()
+        if authorization == .notDetermined {
+            openPhotoSettings()
+            message = "请在系统设置中允许 PhotoBridge 访问全部照片"
+        }
     }
     func reloadAuthorization() { authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite) }
     func requestAccessOnly() async {
@@ -117,9 +121,14 @@ final class LibraryProbe: ObservableObject {
         _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
         requestingPermission = false
         reload()
-        if authorization == .denied || authorization == .restricted {
+        if authorization == .notDetermined || authorization == .denied || authorization == .restricted {
+            openPhotoSettings()
             message = "请在系统设置中允许 PhotoBridge 访问全部照片"
         }
+    }
+    private func openPhotoSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
     func reload() {
         authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite)

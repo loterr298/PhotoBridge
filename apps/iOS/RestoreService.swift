@@ -78,7 +78,10 @@ private struct RestoreInboxRequest: Decodable {
         }
         let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
         photoPermission = status
-        if status == .limited {
+        if status == .notDetermined {
+            openPhotoSettings()
+            message = "请在系统设置中允许 PhotoBridge 访问全部照片"
+        } else if status == .limited {
             message = "当前只允许部分照片，请在设置中改为全部照片"
         } else if status == .denied || status == .restricted {
             message = "请在系统设置中允许 PhotoBridge 访问全部照片"
