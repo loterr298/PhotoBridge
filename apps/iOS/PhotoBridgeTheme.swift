@@ -47,11 +47,12 @@ struct BridgeBackground: View {
 struct AppVersionLabel: View {
     var body: some View {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.1"
-        Text("v\(version)")
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "4"
+        Text("v\(version) (\(build))")
             .font(.caption2.monospacedDigit())
             .foregroundStyle(Color.bridgeMuted)
             .frame(maxWidth: .infinity, alignment: .trailing)
-            .accessibilityLabel("版本 \(version)")
+            .accessibilityLabel("版本 \(version)，构建 \(build)")
     }
 }
 
@@ -85,8 +86,9 @@ struct BridgeCard<Content: View>: View {
                     endPoint: .bottom
                 )
                 .clipShape(shape)
+                .allowsHitTesting(false)
             )
-            .overlay(shape.stroke(Color.white.opacity(0.72), lineWidth: 1))
+            .overlay(shape.stroke(Color.white.opacity(0.72), lineWidth: 1).allowsHitTesting(false))
             .shadow(color: Color.black.opacity(0.055), radius: 14, y: 6)
     }
 }
@@ -106,7 +108,7 @@ struct BridgeButtonStyle: ButtonStyle {
             .foregroundStyle(foreground)
             .background(.regularMaterial, in: shape)
             .background(primary ? tint.opacity(tintOpacity) : Color(uiColor: .secondarySystemGroupedBackground).opacity(0.68), in: shape)
-            .overlay(shape.stroke(primary ? tint.opacity(enabled ? 0.30 : 0.12) : Color.white.opacity(0.78), lineWidth: 1))
+            .overlay(shape.stroke(primary ? tint.opacity(enabled ? 0.30 : 0.12) : Color.white.opacity(0.78), lineWidth: 1).allowsHitTesting(false))
             .shadow(color: tint.opacity(enabled && !configuration.isPressed ? 0.12 : 0.03), radius: 7, y: 3)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .opacity(enabled ? (configuration.isPressed ? 0.76 : 1) : 0.45)

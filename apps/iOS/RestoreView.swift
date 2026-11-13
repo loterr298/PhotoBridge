@@ -51,6 +51,7 @@ struct RestoreView: View {
                                     }
                                         .buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeImport, fill: .bridgeImportFill))
                                         .disabled(service.requestingPhotoPermission)
+                                        .accessibilityIdentifier("importPhotoPermission")
                                 }
                             }
                         }

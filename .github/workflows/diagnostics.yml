@@ -69,7 +69,7 @@ jobs:
           import pathlib, plistlib
           app = pathlib.Path('build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app')
           info = plistlib.loads((app / 'Info.plist').read_bytes())
-          expected = {'CFBundleDisplayName': 'PhotoBridge', 'CFBundleShortVersionString': '1.0.1', 'CFBundleVersion': '3', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
+          expected = {'CFBundleDisplayName': 'PhotoBridge', 'CFBundleShortVersionString': '1.0.1', 'CFBundleVersion': '4', 'CFBundleIdentifier': 'com.photobridge.OrderProbe', 'UIFileSharingEnabled': True}
           for key, value in expected.items():
               assert info.get(key) == value, f'Invalid compiled Info.plist: {key}'
           privacy = plistlib.loads((app / 'PrivacyInfo.xcprivacy').read_bytes())
@@ -84,7 +84,6 @@ jobs:
           ditto build/DerivedData/Build/Products/Release-iphoneos/PhotoBridgeOrderProbe.app build/ipa/Payload/PhotoBridgeOrderProbe.app
           ditto -c -k --keepParent build/ipa/Payload build/PhotoBridgeOrderProbe-1.0.1-unsigned.ipa
       - name: Exercise actual iPhone simulator user flows
-        continue-on-error: true
         run: |
           set -o pipefail
           xcrun simctl list devices available -j > build/logs/simulators.json

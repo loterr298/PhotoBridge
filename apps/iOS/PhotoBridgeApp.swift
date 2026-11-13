@@ -12,7 +12,11 @@ struct PhotoBridgeApp: App {
     var body: some Scene {
         WindowGroup {
             TabView(selection: $selectedTab) {
-                MacExportCompanionView().tabItem { Label("导出到 Mac", systemImage: "arrow.down.circle.fill") }.tag(0)
+                NavigationStack {
+                    MacExportCompanionView()
+                        .navigationBarHidden(true)
+                }
+                .tabItem { Label("导出到 Mac", systemImage: "arrow.down.circle.fill") }.tag(0)
                 RestoreView().tabItem { Label("导入到 iPhone", systemImage: "arrow.up.circle.fill") }.tag(1)
                 SettingsView().tabItem { Label("设置", systemImage: "gearshape.fill") }.tag(2)
             }
@@ -34,7 +38,15 @@ struct PhotoBridgeApp: App {
                 selectedTab = 1
                 Task { await runAutomaticImport(request) }
             }
-            .onChange(of: scenePhase) { macControl.setForeground($0 == .active) }
+            .onChange(of: scenePhase) { phase in
+                macControl.setForeground(phase == .active)
+                if phase == .active {
+                    restore.refreshPhotoPermission()
+                    if library.authorization != PHPhotoLibrary.authorizationStatus(for: .readWrite) {
+                        library.reload()
+                    }
+                }
+            }
         }
     }
 

@@ -1171,7 +1171,7 @@ struct MacSoftButtonStyle: ButtonStyle {
             .foregroundStyle(foreground)
             .background(.regularMaterial, in: shape)
             .background(primary ? tint.opacity(tintOpacity) : Color(nsColor: .controlBackgroundColor).opacity(0.66), in: shape)
-            .overlay(shape.stroke(primary ? tint.opacity(enabled ? 0.32 : 0.12) : Color.white.opacity(0.72), lineWidth: 1))
+            .overlay(shape.stroke(primary ? tint.opacity(enabled ? 0.32 : 0.12) : Color.white.opacity(0.72), lineWidth: 1).allowsHitTesting(false))
             .shadow(color: tint.opacity(enabled && !configuration.isPressed ? 0.13 : 0.03), radius: 7, y: 3)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .opacity(enabled ? (configuration.isPressed ? 0.76 : 1) : 0.45)
@@ -1248,8 +1248,9 @@ private struct MacCard<Content: View>: View {
                     endPoint: .bottom
                 )
                 .clipShape(shape)
+                .allowsHitTesting(false)
             )
-            .overlay(shape.stroke(emphasis ? Color.macBridgeBlue.opacity(0.20) : Color.white.opacity(0.72), lineWidth: 1))
+            .overlay(shape.stroke(emphasis ? Color.macBridgeBlue.opacity(0.20) : Color.white.opacity(0.72), lineWidth: 1).allowsHitTesting(false))
             .shadow(color: .black.opacity(emphasis ? 0.08 : 0.05), radius: emphasis ? 16 : 12, y: emphasis ? 7 : 5)
     }
 }

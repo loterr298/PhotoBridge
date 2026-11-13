@@ -312,7 +312,7 @@ struct MacExportCompanionView: View {
                         }
                     } else if library.authorization == .authorized && !library.albums.isEmpty {
                         BridgeCard {
-                            VStack(alignment: .leading, spacing: 14) {
+                            LazyVStack(alignment: .leading, spacing: 14) {
                                 HStack {
                                     Text("选择相册").font(.headline)
                                     Spacer()
@@ -320,7 +320,7 @@ struct MacExportCompanionView: View {
                                         .font(.subheadline.weight(.semibold))
                                         .foregroundStyle(Color.bridgeBlue)
                                 }
-                                ForEach(library.albums.prefix(8)) { item in
+                                ForEach(library.albums) { item in
                                     NavigationLink { OriginalExportView(collection: item.collection) } label: {
                                         AlbumRow(item: item)
                                     }
@@ -348,6 +348,7 @@ struct MacExportCompanionView: View {
                                     }
                                     .buttonStyle(BridgeButtonStyle(primary: true, tint: .bridgeExport, fill: .bridgeExportFill))
                                     .disabled(library.requestingPermission)
+                                    .accessibilityIdentifier("exportPhotoPermission")
                                 }
                             }
                         }
