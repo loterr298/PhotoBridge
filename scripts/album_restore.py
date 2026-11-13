@@ -17,7 +17,7 @@ from album_export import validate_manifest, write_json
 from usb_probe import AFC, inspect
 from transfer_progress import snapshot
 from transfer_control import CancellationRequested, check_cancel
-from backup_layout import local_path, upload_journals, upload_journal_name
+from backup_layout import local_path, storage_root, is_flat, upload_journals, upload_journal_name
 
 GENERIC_IMAGE_EXTENSIONS = {
     'jpg': 'public.jpeg', 'jpeg': 'public.jpeg', 'heic': 'public.heic',
@@ -69,7 +69,7 @@ def prepare_import_backup(local, progress=None):
     local = Path(local)
     if local.is_symlink() or not local.is_dir():
         raise ValueError('导入位置必须是普通文件夹')
-    if ((local / 'album-order.json').is_file() and (local / 'transfer-manifest.json').is_file()) or (local / '.photobridge-layout.json').is_file():
+    if is_flat(local) or ((local / 'album-order.json').is_file() and (local / 'transfer-manifest.json').is_file()):
         return local
     staging = _generic_staging_root(local)
     if staging.exists():
@@ -160,12 +160,19 @@ def prepare_import_backup(local, progress=None):
 
 
 def regular_path(root, relative):
-    current = root
-    relative = str(local_path(root, relative).relative_to(root))
-    parts = Path(relative).parts
-    if Path(relative).is_absolute() or any(p in ('', '.', '..') for p in parts):
+    root = Path(root)
+    mapped = local_path(root, relative)
+    base = storage_root(root)
+    try:
+        relative_path = mapped.relative_to(base)
+    except ValueError:
+        raise ValueError('Unsafe backup path')
+    parts = relative_path.parts
+    if relative_path.is_absolute() or any(p in ('', '.', '..') for p in parts):
         raise ValueError('Unsafe backup path')
     if not stat.S_ISDIR(root.lstat().st_mode): raise ValueError('Backup root must be a real directory')
+    if base.is_symlink() or not base.is_dir() or not stat.S_ISDIR(base.lstat().st_mode): raise ValueError('Backup storage must be a real directory')
+    current = base
     for index, component in enumerate(parts):
         current = current / component
         mode = current.lstat().st_mode

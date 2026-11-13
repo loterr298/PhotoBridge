@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import PhotoBridgeCore
 import Foundation
 import ImageCaptureCore
@@ -283,8 +284,9 @@ final class MacTransferModel: ObservableObject {
                 var arguments = ["live", "--request-id", requestID, "--album-id", album.id,
                                  "--local", folder.path, "--bundle", bundleIdentifier, "--flat"]
                 if let previous { arguments += ["--previous", previous.path] }
+                let layoutRoot = Self.flatLayoutRoot(in: folder)
                 runScript("album_export.py", arguments: arguments,
-                          progressFile: folder.appendingPathComponent(".photobridge-transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
+                          progressFile: layoutRoot.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
                     guard let self else { return }
                     self.output = result.text
                     self.activeExportRequestID = nil; self.pendingExportTask = nil
@@ -386,7 +388,7 @@ final class MacTransferModel: ObservableObject {
         rememberBackup(folder)
         setResumableDirection("TO_MAC")
         userMessage = "正在把照片保存到你选择的文件夹…"
-        runScript("album_export.py", arguments: ["download", "--remote", "Exports/\(selectedSession)", "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
+        runScript("album_export.py", arguments: ["download", "--remote", "Exports/\(selectedSession)", "--local", folder.path, "--bundle", bundleIdentifier, "--flat"], progressFile: Self.flatLayoutRoot(in: folder).appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
             self?.setResumableDirection(result.success ? nil : "TO_MAC")
             self?.completedSuccessfully = result.success
@@ -403,7 +405,7 @@ final class MacTransferModel: ObservableObject {
         rememberBackup(folder)
         setResumableDirection("TO_MAC")
         userMessage = "正在继续保存…"
-        runScript("album_resume.py", arguments: ["--remote", "Exports/\(selectedSession)", "--from-directory", previous.path, "--local", folder.path, "--bundle", bundleIdentifier], progressFile: folder.appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
+        runScript("album_resume.py", arguments: ["--remote", "Exports/\(selectedSession)", "--from-directory", previous.path, "--local", folder.path, "--bundle", bundleIdentifier, "--flat"], progressFile: Self.flatLayoutRoot(in: folder).appendingPathComponent("transfer-progress.json"), controlFile: makeControlFile()) { [weak self] result in
             self?.output = result.text
             self?.setResumableDirection(result.success ? nil : "TO_MAC")
             self?.completedSuccessfully = result.success
@@ -624,16 +626,20 @@ final class MacTransferModel: ObservableObject {
         Self.metadataURL(in: folder, name: name)
     }
     nonisolated private static func metadataURL(in folder: URL, name: String) -> URL {
-        let flat = FileManager.default.fileExists(atPath: folder.appendingPathComponent(".photobridge-layout.json").path)
-        return folder.appendingPathComponent(flat ? ".photobridge-" + name : name)
+        if let flat = flatLayoutRootIfPresent(in: folder) { return flat.appendingPathComponent(name) }
+        let legacy = folder.appendingPathComponent(".photobridge-layout.json")
+        return FileManager.default.fileExists(atPath: legacy.path)
+            ? folder.appendingPathComponent(".photobridge-" + name) : folder.appendingPathComponent(name)
     }
 
     private func uploadJournalDirectory(in folder: URL) -> URL {
-        FileManager.default.fileExists(atPath: folder.appendingPathComponent(".photobridge-layout.json").path)
+        if let flat = Self.flatLayoutRootIfPresent(in: folder) { return flat.appendingPathComponent("restore-uploads", isDirectory: true) }
+        return FileManager.default.fileExists(atPath: folder.appendingPathComponent(".photobridge-layout.json").path)
             ? folder : folder.appendingPathComponent("restore-uploads", isDirectory: true)
     }
     private func uploadProgressFile(in folder: URL, identity: String) -> URL {
-        let knownBackup = FileManager.default.fileExists(atPath: folder.appendingPathComponent(".photobridge-layout.json").path)
+        let flat = Self.flatLayoutRootIfPresent(in: folder)
+        let knownBackup = flat != nil || FileManager.default.fileExists(atPath: folder.appendingPathComponent(".photobridge-layout.json").path)
             || (FileManager.default.fileExists(atPath: folder.appendingPathComponent("album-order.json").path)
                 && FileManager.default.fileExists(atPath: folder.appendingPathComponent("transfer-manifest.json").path))
         if knownBackup {
@@ -687,6 +693,24 @@ final class MacTransferModel: ObservableObject {
         }
     }
 
+    /// The Python transfer scripts use the same SHA-256 path key. Keeping the
+    /// mapping here lets the Mac poll progress and previews without placing
+    /// journals or manifests in the user's photo folder.
+    nonisolated private static func flatLayoutRoot(in folder: URL) -> URL {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("PhotoBridge/FlatSessions", isDirectory: true)
+        let normalized = folder.resolvingSymlinksInPath().standardizedFileURL.path
+        let digest = SHA256.hash(data: Data(normalized.utf8))
+        let key = digest.map { String(format: "%02x", $0) }.joined().prefix(32)
+        return support.appendingPathComponent(String(key), isDirectory: true)
+    }
+
+    nonisolated private static func flatLayoutRootIfPresent(in folder: URL) -> URL? {
+        let root = flatLayoutRoot(in: folder)
+        let layout = root.appendingPathComponent("layout.json")
+        return FileManager.default.fileExists(atPath: layout.path) ? root : nil
+    }
+
     nonisolated private static func orderedMediaURLs(in folder: URL, names: [String]) -> [URL] {
         let supportedExtensions: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "dng", "gif", "mov", "mp4", "m4v"]
         let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey], options: [.skipsHiddenFiles]))?.filter { url in
@@ -705,6 +729,23 @@ final class MacTransferModel: ObservableObject {
         let sourceURL = metadataURL(in: folder, name: "source-order.json")
         if let data = try? Data(contentsOf: sourceURL), let source = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             title = source["albumName"] as? String ?? "已保存的相册"
+        }
+        if let flat = flatLayoutRootIfPresent(in: folder),
+           let data = try? Data(contentsOf: flat.appendingPathComponent("album-order.json")),
+           let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let assets = object["assets"] as? [[String: Any]] {
+            let photos = try assets.enumerated().compactMap { index, asset -> BackupAssetPreview? in
+                try Task.checkCancellation()
+                let resources = asset["resources"] as? [[String: Any]] ?? []
+                let preferred = (asset["mediaType"] as? Int) == 2 ? [6, 2] : [5, 1, 4]
+                let resource = preferred.lazy.compactMap { type in resources.first { ($0["resourceType"] as? Int) == type } }.first ?? resources.first
+                guard let relative = resource?["storedRelativePath"] as? String else { return nil }
+                let file = flat.appendingPathComponent(relative).standardizedFileURL
+                guard file.path.hasPrefix(flat.standardizedFileURL.path + "/"), FileManager.default.fileExists(atPath: file.path) else { return nil }
+                return BackupAssetPreview(id: index, ordinal: (asset["ordinal"] as? NSNumber)?.intValue ?? index + 1,
+                    primaryFilename: resource?["originalFilename"] as? String ?? "照片", mediaURL: file)
+            }
+            return (title, photos)
         }
         if FileManager.default.fileExists(atPath: folder.appendingPathComponent(".photobridge-layout.json").path) {
             let files = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)

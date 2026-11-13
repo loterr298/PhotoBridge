@@ -43,14 +43,14 @@ class BatchScalingChecks(unittest.TestCase):
             self.assertEqual(journal.read_bytes(), b'previous-user-record')
             self.assertEqual(writes, []); self.assertEqual(list(phone.iterdir()), [])
 
-    def test_flat_upload_uses_the_exact_hidden_progress_path_without_subdirectories(self):
+    def test_flat_upload_uses_private_progress_path_without_user_folder_files(self):
         helper = test_upload_resume.UploadContinuationChecks(); helper.setUp()
         with tempfile.TemporaryDirectory() as d:
             source, _, _, _, client, _, _ = helper.setup_files(Path(d)); client.interrupted = False
             flat = Path(d) / 'flat'; album_export.organize_local_album(source, flat)
             identity = 'DD54D37E-4327-4A3F-BDA7-91DC8EE4FDD4'
             result = upload_resume.upload(client, flat, journal_id=identity)
-            expected = flat / ('.photobridge-upload-' + identity + '.json')
+            expected = album_restore.storage_root(flat) / 'restore-uploads' / (identity + '.json')
             self.assertEqual(result['journal'], str(expected))
             self.assertEqual(json.loads(expected.read_bytes())['resourcesVerified'], 2)
             self.assertFalse(any(p.is_dir() for p in flat.iterdir()))

@@ -2,6 +2,10 @@
 
 ## 推荐架构
 
+### 用户目录与应用私有目录边界
+
+用户选择的 Mac 文件夹只承载发布后的照片/视频文件；顺序清单、资源组记录、进度、续传日志和临时 `.part` 文件必须放在 `~/Library/Application Support/PhotoBridge/FlatSessions/<stable-folder-key>/`。`stable-folder-key` 由解析后的文件夹路径 SHA-256 派生，Mac Swift 与 Python 传输脚本使用同一算法。Finder 中看到的文件名不参与排序决策，唯一权威仍是应用私有 `album-order.json`。旧版在用户目录留下的 `.photobridge-*` 文件仅用于只读兼容，不再新建。
+
 ```
             iPhone（SwiftUI + PhotoKit）
          ┌───────────────────────────┐

@@ -47,7 +47,7 @@ struct BridgeBackground: View {
 struct AppVersionLabel: View {
     var body: some View {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.1"
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "4"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "5"
         Text("v\(version) (\(build))")
             .font(.caption2.monospacedDigit())
             .foregroundStyle(Color.bridgeMuted)

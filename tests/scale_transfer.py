@@ -15,7 +15,7 @@ import time
 import uuid
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from album_export import download_live_album, validate_manifest
-from backup_layout import visible_name
+from backup_layout import visible_name, storage_root
 from album_restore import validated_backup
 from upload_resume import upload
 
@@ -135,7 +135,7 @@ def main():
         try:upload(inbox,local)
         except RuntimeError as e:assert str(e)=='SYNTHETIC_UPLOAD_CUT'
         else:raise AssertionError('Expected interruption')
-        journal=list(local.glob('.photobridge-upload-*.json'));assert len(journal)==1
+        journal=list((storage_root(local) / 'restore-uploads').glob('*.json'));assert len(journal)==1
         assert not any(p.endswith('/restore-request.json') for p in inbox.files)
         prior=journal[0].read_bytes();finished=upload(inbox,local,journal[0]);assert journal[0].read_bytes()==prior
         assert finished['state']=='USB_VERIFIED' and inbox.partial_offset==17

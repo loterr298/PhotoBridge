@@ -1,5 +1,14 @@
 # 实施状态记录
 
+## 1.0.1/build 5 用户文件夹纯照片布局与顺序保护（2026-11-13）
+
+- 导出到 Mac 的用户选择文件夹现在只发布照片/视频本身，不再写入 `.photobridge-*`、manifest、asset-records、上传日志或进度临时文件。内部资源、`album-order.json`、断点进度和上传日志统一放在 `~/Library/Application Support/PhotoBridge/FlatSessions/<folder-key>/`，由用户文件夹的解析路径 SHA-256 派生稳定键。
+- Mac 预览、继续上次导出、导入到 iPhone 和恢复上传都读取同一份应用私有 `album-order.json`，因此不会因为 Finder 文件名或目录枚举顺序变化而改变照片顺序。普通照片文件夹导入仍在应用私有 `ImportSessions` 中建立只读暂存，原目录保持不变。
+- 新增 v2 私有布局校验，拒绝符号链接和路径错配；旧版带 `.photobridge-layout.json` 的文件夹只读兼容，后续新建导出不会再写旧标记。原照片字节、EXIF 和相机私有元数据不在本阶段修改。
+- 下载、续传路径也改为 flat 模式，进度文件和属性日志不落入用户选定目录。可见文件仍按原始资源名称发布，重名只加用户可见的 `(2)` 后缀，不改变清单 ordinal。
+- 本地验证：Python 114 项回归通过；新增断言覆盖“用户目录无隐藏 PhotoBridge 文件、无子目录、私有目录保留清单”。Intel macOS `swift build --product PhotoBridgeMac` 通过。`swift test` 在当前命令行工具环境缺少 XCTest，未把该环境错误冒充为通过；GitHub Actions 将继续执行完整 Xcode 测试。
+- build 5 的云编译、iOS 模拟器和 Intel x86_64 产物待本次提交后的 Actions run 完成；真机 USB/PhotoKit 仍需设备证据，不能仅凭模拟器或合成测试标记为已通过。
+
 ## 1.0.1/build 4 照片授权交互修复（2026-11-13）
 
 - build 3 的 run `42828767548` 编译和已有模拟器流程通过。旧 UI 测试只检查页面文字，没有点击照片授权按钮，因此未覆盖用户报告的故障。

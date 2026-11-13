@@ -181,7 +181,7 @@ def copy_resource(client, remote, local, resource, logical):
     return change, actual
 
 
-def download_album(client, remote, local, cancel_file=None):
+def download_album(client, remote, local, cancel_file=None, flat=False):
     remote = session_path(remote); local = Path(local)
     check_cancel(cancel_file)
     if local.exists() or local.is_symlink(): raise FileExistsError(local)
@@ -189,6 +189,7 @@ def download_album(client, remote, local, cancel_file=None):
     m = json.loads(raw.getvalue()); validate_manifest(m)
     if m['sessionID'].lower() != remote.split('/')[1].lower(): raise ValueError('Session identity mismatch')
     local.mkdir(mode=0o700, parents=True, exist_ok=False)
+    if flat: prepare_flat(local)
     resources = [resource for asset in m['assets'] for resource in asset['resources']]
     total_bytes = sum(resource['byteCount'] for resource in resources)
     manifest_digest = hashlib.sha256(raw.getvalue()).hexdigest()
@@ -198,11 +199,13 @@ def download_album(client, remote, local, cancel_file=None):
                         bytes_verified=0, total_bytes=total_bytes)
     progress.update({'sourceManifestSHA256': manifest_digest,
                      'restoration': 'NOT_RUN', 'filesystemAttributeLog': 'filesystem-attributes.jsonl'})
-    journal = local / 'transfer-progress.json'
+    journal = local_path(local, 'transfer-progress.json') if flat else local / 'transfer-progress.json'
     write_json(journal, progress)
     base = dt.datetime.fromisoformat(m['sourceOrder']['capturedAt'].replace('Z', '+00:00'))
     changes = []
-    attribute_log = (local / 'filesystem-attributes.jsonl').open('x')
+    source_order = local_path(local, 'source-order.json') if flat else local / 'source-order.json'
+    source_order.write_bytes(json.dumps(m['sourceOrder'], indent=2, ensure_ascii=False).encode())
+    attribute_log = local_path(local, 'filesystem-attributes.jsonl').open('x')
     try:
         for asset in m['assets']:
             logical = base + dt.timedelta(seconds=(asset['ordinal'] - 1) * 5)
@@ -227,16 +230,17 @@ def download_album(client, remote, local, cancel_file=None):
                 progress['restoration'] = 'NOT_RUN'
                 progress['filesystemAttributeLog'] = 'filesystem-attributes.jsonl'
                 write_json(journal, progress)
+            publish_photo(local, asset)
         # Ensure the phone manifest did not change while copying resources.
         final = io.BytesIO(); client.read(remote + '/album-order.json', final.write, 64 * 1024 * 1024)
         if final.getvalue() != raw.getvalue(): raise ValueError('Source manifest changed during transfer')
-        with (local / 'album-order.json').open('xb') as f:
+        with local_path(local, 'album-order.json').open('xb') as f:
             f.write(raw.getvalue()); f.flush(); os.fsync(f.fileno())
         progress['status'] = 'VERIFIED'; progress['seconds'] = time.monotonic() - start
         progress['MiBPerSecondIncludingVerification'] = progress['bytesVerified'] / 1048576 / progress['seconds']
         write_json(journal, progress)
         result = dict(progress, status='COMMITTED', filesystemAttributeChanges=changes)
-        write_json(local / 'transfer-manifest.json', result, exclusive=True)
+        write_json(local_path(local, 'transfer-manifest.json'), result, exclusive=True)
         return result
     except CancellationRequested as error:
         progress['status'] = 'STOPPED'; progress['error'] = str(error)
@@ -519,7 +523,7 @@ def main():
             result = download_live_album(client, args.request_id, args.album_id, args.local, args.cancel_file, previous=args.previous, flat=args.flat, progress_callback=relay)
         else:
             if not args.remote or args.local is None: raise ValueError('--remote and NEW --local directory required')
-            result = download_album(client, args.remote, args.local, args.cancel_file)
+            result = download_album(client, args.remote, args.local, args.cancel_file, flat=args.flat)
             # Private paths and all detailed media attributes stay in the local report, never CI.
             result = {k: result[k] for k in ['status', 'resourcesVerified', 'bytesVerified', 'seconds', 'MiBPerSecondIncludingVerification']}
         print(json.dumps(result, indent=2)); return 0

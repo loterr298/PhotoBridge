@@ -10,10 +10,10 @@ from album_export import download_album, session_path, validate_manifest, write_
 from album_restore import regular_path
 from usb_probe import AFC, CHUNK, inspect
 from transfer_control import CancellationRequested
-from backup_layout import local_path
+from backup_layout import local_path, storage_root, is_flat
 
 
-def resume_download(client, remote, previous, destination, cancel_file=None):
+def resume_download(client, remote, previous, destination, cancel_file=None, flat=False):
     remote = session_path(remote); previous = Path(previous); destination = Path(destination)
     resolved_previous = previous.resolve(strict=True); resolved_destination = destination.resolve()
     if resolved_destination == resolved_previous or resolved_previous in resolved_destination.parents:
@@ -73,8 +73,9 @@ def resume_download(client, remote, previous, destination, cancel_file=None):
                 client.read(path, receive, maximum)
 
     # Existing downloader retains exclusive output, full hashes, both FS times and final manifest checks.
-    result = download_album(ResumingClient(), remote, destination, cancel_file)
-    write_json(destination / 'resume-report.json', dict(status='VERIFIED', **stats), exclusive=True)
+    result = download_album(ResumingClient(), remote, destination, cancel_file, flat=flat)
+    report_path = local_path(destination, 'resume-report.json') if flat else destination / 'resume-report.json'
+    write_json(report_path, dict(status='VERIFIED', **stats), exclusive=True)
     return dict(result, **stats)
 
 
@@ -82,11 +83,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--remote', required=True); parser.add_argument('--from-directory', type=Path, required=True)
     parser.add_argument('--local', type=Path, required=True); parser.add_argument('--bundle', default='com.photobridge.OrderProbe')
+    parser.add_argument('--flat', action='store_true')
     parser.add_argument('--cancel-file', type=Path)
     args = parser.parse_args(); client = None
     try:
         client = AFC(); client.vend(args.bundle)
-        result = resume_download(client, args.remote, args.from_directory, args.local, args.cancel_file)
+        result = resume_download(client, args.remote, args.from_directory, args.local, args.cancel_file, flat=args.flat)
         keys = ['status', 'resourcesVerified', 'bytesVerified', 'reusedVerifiedResources', 'resumedPartialBytes', 'usbResourceBytesRead', 'previousFilesWritten']
         print(json.dumps({k: result[k] for k in keys}, indent=2)); return 0
     except CancellationRequested as error:
