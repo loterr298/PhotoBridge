@@ -7,7 +7,8 @@
 - 新增 v2 私有布局校验，拒绝符号链接和路径错配；旧版带 `.photobridge-layout.json` 的文件夹只读兼容，后续新建导出不会再写旧标记。原照片字节、EXIF 和相机私有元数据不在本阶段修改。
 - 下载、续传路径也改为 flat 模式，进度文件和属性日志不落入用户选定目录。可见文件仍按原始资源名称发布，重名只加用户可见的 `(2)` 后缀，不改变清单 ordinal。
 - 本地验证：Python 114 项回归通过；新增断言覆盖“用户目录无隐藏 PhotoBridge 文件、无子目录、私有目录保留清单”。Intel macOS `swift build --product PhotoBridgeMac` 通过。`swift test` 在当前命令行工具环境缺少 XCTest，未把该环境错误冒充为通过；GitHub Actions 将继续执行完整 Xcode 测试。
-- build 5 的云编译、iOS 模拟器和 Intel x86_64 产物待本次提交后的 Actions run 完成；真机 USB/PhotoKit 仍需设备证据，不能仅凭模拟器或合成测试标记为已通过。
+- GitHub Actions run `43432987591`（commit `ba499bf`）成功：XcodeGen、iOS unsigned device build、iOS simulator UI、Intel x86_64 构建、114 项 Python 回归和交付门禁全部通过。artifact ID `14042856492`，artifact digest `sha256:9c5d64bcf7b8ff8799083ffa47eb95139793670749dee27b36e26a48303cd4e0`。
+- build 5 iOS IPA SHA-256 `524f7e630031246bbfd1680b142713183aba12945cd64594abb62616198034a1`；Intel Mac ZIP SHA-256 `00d287ff23a5631bd688bd2c9d6694e0ac41624ccd241ba72d75af2dcd335ed5`。两端 Info.plist 均为 `1.0.1 / build 5`。真机 USB/PhotoKit 仍需设备证据，不能仅凭云端模拟器或合成测试标记为已通过。
 
 ## 1.0.1/build 4 照片授权交互修复（2026-11-13）
 
