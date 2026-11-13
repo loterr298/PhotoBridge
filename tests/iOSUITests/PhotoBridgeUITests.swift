@@ -17,7 +17,7 @@ final class PhotoBridgeUITests: XCTestCase {
     }
     @discardableResult
     private func handlePhotoPrompt(_ app: XCUIApplication, allow: Bool) -> NSObjectProtocol {
-        app.addUIInterruptionMonitor(withDescription: "Photos permission") { alert in
+        addUIInterruptionMonitor(withDescription: "Photos permission") { alert in
             let full = alert.buttons.matching(NSPredicate(
                 format: "label CONTAINS[c] 'full' OR label CONTAINS '完全' OR label CONTAINS '全部' OR label CONTAINS '所有'"
             )).firstMatch
