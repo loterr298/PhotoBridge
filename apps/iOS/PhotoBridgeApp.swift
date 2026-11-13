@@ -69,16 +69,28 @@ struct PhotoBridgeApp: App {
 }
 
 struct AlbumItem: Identifiable {
-    var id: String { collection.localIdentifier }
-    let collection: PHAssetCollection
+    var id: String { source.id }
+    let source: PhotoSource
     let count: Int
     let cover: PHAsset?
     let previews: [PHAsset]
 }
 
+/// A selectable Photos source. The system's All Photos view is not an
+/// editable PHAssetCollection, so it is represented as a virtual source and
+/// fetched with PHAsset.fetchAssets(with:options:).
+struct PhotoSource: Identifiable {
+    static let allPhotosIdentifier = "photobridge.all-photos"
+    let id: String
+    let name: String
+    let isAllPhotos: Bool
+    let collection: PHAssetCollection?
+}
+
 private struct AlbumRecord: Sendable {
     let identifier: String
     let name: String
+    let isAllPhotos: Bool
     let count: Int
     let previewIdentifiers: [String]
 }
@@ -145,6 +157,16 @@ final class LibraryProbe: ObservableObject {
         Task { @MainActor in
             let records = await Task.detached(priority: .userInitiated) {
                 var values: [AlbumRecord] = []
+                let allPhotos = PHAsset.fetchAssets(with: nil)
+                var allPreviewIdentifiers: [String] = []
+                allPreviewIdentifiers.reserveCapacity(3)
+                allPhotos.enumerateObjects { asset, index, stop in
+                    if index < 3 { allPreviewIdentifiers.append(asset.localIdentifier) } else { stop.pointee = true }
+                }
+                values.append(AlbumRecord(identifier: PhotoSource.allPhotosIdentifier,
+                                          name: "全部照片", isAllPhotos: true,
+                                          count: allPhotos.count,
+                                          previewIdentifiers: allPreviewIdentifiers))
                 let collections = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil)
                 collections.enumerateObjects { collection, _, _ in
                     autoreleasepool {
@@ -156,6 +178,7 @@ final class LibraryProbe: ObservableObject {
                         }
                         values.append(AlbumRecord(identifier: collection.localIdentifier,
                                                   name: collection.localizedTitle ?? "未命名相册",
+                                                  isAllPhotos: false,
                                                   count: assets.count,
                                                   previewIdentifiers: previewIdentifiers))
                     }
@@ -164,11 +187,14 @@ final class LibraryProbe: ObservableObject {
             }.value
             guard generation == self.reloadGeneration else { return }
             albums = records.compactMap { record in
-                guard let collection = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [record.identifier], options: nil).firstObject else { return nil }
                 let previews = PHAsset.fetchAssets(withLocalIdentifiers: record.previewIdentifiers, options: nil)
                 var previewAssets: [PHAsset] = []
                 previews.enumerateObjects { asset, _, _ in previewAssets.append(asset) }
-                return AlbumItem(collection: collection, count: record.count, cover: previewAssets.first, previews: previewAssets)
+                let collection = record.isAllPhotos ? nil : PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [record.identifier], options: nil).firstObject
+                guard record.isAllPhotos || collection != nil else { return nil }
+                let source = PhotoSource(id: record.identifier, name: record.name,
+                                         isAllPhotos: record.isAllPhotos, collection: collection)
+                return AlbumItem(source: source, count: record.count, cover: previewAssets.first, previews: previewAssets)
             }
             loadingAlbums = false
             message = access == .limited ? "当前只显示你选中的照片" : "相册已准备好"
@@ -242,7 +268,7 @@ struct AlbumsView: View {
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(showAll ? library.albums : Array(library.albums.prefix(3))) { item in
-                                    NavigationLink { OriginalExportView(collection: item.collection) } label: {
+                                    NavigationLink { OriginalExportView(source: item.source) } label: {
                                         AlbumRow(item: item)
                                     }.buttonStyle(.plain)
                                 }
@@ -285,7 +311,7 @@ struct AlbumRow: View {
         HStack(spacing: 14) {
             AssetThumbnail(asset: item.cover).frame(width: 72, height: 72).clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             VStack(alignment: .leading, spacing: 5) {
-                Text(item.collection.localizedTitle ?? "未命名相册").font(.headline).foregroundStyle(Color.bridgeInk)
+                Text(item.source.name).font(.headline).foregroundStyle(Color.bridgeInk)
                 Text("\(item.count) 张照片").font(.subheadline).foregroundStyle(Color.bridgeMuted)
             }
             Spacer()

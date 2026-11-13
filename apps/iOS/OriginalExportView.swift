@@ -5,7 +5,7 @@ import UIKit
 
 /// A calm, single-purpose task screen for saving one iPhone album to the Mac.
 struct OriginalExportView: View {
-    let collection: PHAssetCollection
+    let source: PhotoSource
     @StateObject private var exporter = OriginalExportService()
     @State private var allowNetwork = false
     @State private var memberCount: Int?
@@ -14,7 +14,7 @@ struct OriginalExportView: View {
     @State private var hasStarted = false
     @State private var showMoreOptions = false
 
-    private var albumName: String { collection.localizedTitle ?? "我的相册" }
+    private var albumName: String { source.name }
     private var isFinished: Bool { !exporter.busy && exporter.message.hasPrefix("保存完成") }
     private var needsFullPhotoAccess: Bool { exporter.message.contains("需要全部照片权限") }
     private var failureMessage: String {
@@ -94,7 +94,7 @@ struct OriginalExportView: View {
         VStack(spacing: 12) {
             Button {
                 hasStarted = true
-                Task { await exporter.start(collection: collection, allowNetwork: allowNetwork) }
+                Task { await exporter.start(source: source, allowNetwork: allowNetwork) }
             } label: {
                 HStack(spacing: 10) {
                     Image(systemName: exporter.busy ? "arrow.triangle.2.circlepath" : "arrow.down.to.line.compact")
@@ -221,10 +221,16 @@ struct OriginalExportView: View {
     }
 
     private func loadAlbumInfo() async {
-        let identifier = collection.localIdentifier
+        let identifier = source.id
+        let allPhotos = source.isAllPhotos
         let info = await Task.detached(priority: .utility) {
-            guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [identifier], options: nil).firstObject else { return (count: 0, coverID: Optional<String>.none) }
-            let assets = PHAsset.fetchAssets(in: current, options: nil)
+            let assets: PHFetchResult<PHAsset>
+            if allPhotos {
+                assets = PHAsset.fetchAssets(with: nil)
+            } else {
+                guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [identifier], options: nil).firstObject else { return (count: 0, coverID: Optional<String>.none) }
+                assets = PHAsset.fetchAssets(in: current, options: nil)
+            }
             return (count: assets.count, coverID: assets.firstObject?.localIdentifier)
         }.value
         memberCount = info.count

@@ -110,7 +110,7 @@ struct AlbumTransferPicker: View {
                         }
                     }
                     ForEach(library.albums) { item in
-                        NavigationLink { OriginalExportView(collection: item.collection) } label: { AlbumRow(item: item) }.buttonStyle(.plain)
+                        NavigationLink { OriginalExportView(source: item.source) } label: { AlbumRow(item: item) }.buttonStyle(.plain)
                     }
                 }
                 .padding(20)

@@ -26,7 +26,7 @@ final class BatchExportModel: ObservableObject {
         }
         running = true; result = ""; completedAlbums = 0; totalAlbums = chosen.count
         for item in chosen {
-            current = item.collection.localizedTitle ?? "未命名相簿"
+            current = item.source.name
             resourcesCompleted = 0; bytesCompleted = 0; detail = "准备保存照片…"
             let monitor = Task { @MainActor [weak self] in
                 while let self, self.exporter.busy {
@@ -37,7 +37,7 @@ final class BatchExportModel: ObservableObject {
                     try? await Task.sleep(nanoseconds: 250_000_000)
                 }
             }
-            await exporter.start(collection: item.collection, allowNetwork: allowNetwork)
+            await exporter.start(source: item.source, allowNetwork: allowNetwork)
             monitor.cancel()
             resourcesCompleted = exporter.resourcesCompleted
             bytesCompleted = exporter.bytesCompleted
@@ -84,7 +84,7 @@ struct BatchExportView: View {
                                 .frame(width: 52, height: 52)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(item.collection.localizedTitle ?? "未命名相簿")
+                                Text(item.source.name)
                                 Text("\(item.count) 张照片")
                                     .font(.caption).foregroundStyle(.secondary)
                             }

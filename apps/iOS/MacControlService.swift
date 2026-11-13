@@ -203,17 +203,23 @@ final class MacControlService: ObservableObject {
             try await Task.detached(priority: .utility) {
                 try autoreleasepool {
                     var albums: [[String: Any]] = []
+                    let allPhotos = PHAsset.fetchAssets(with: nil)
+                    albums.append(["id": PhotoSource.allPhotosIdentifier, "name": "全部照片", "count": allPhotos.count, "isAllPhotos": true])
                     PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil).enumerateObjects { collection, _, _ in
                         autoreleasepool { albums.append(["id": collection.localIdentifier, "name": collection.localizedTitle ?? "未命名相册",
-                            "count": PHAsset.fetchAssets(in: collection, options: nil).count]) }
+                            "count": PHAsset.fetchAssets(in: collection, options: nil).count, "isAllPhotos": false]) }
                     }
                     try PhotoOperationChecks.requireFullAccess()
                     try JSONSerialization.data(withJSONObject: ["status": "OK", "albums": albums], options: [.sortedKeys]).write(to: response, options: .atomic)
                 }
             }.value
         case "startExport":
-            guard !active && !exporter.busy && !restoreInProgress, let identifier = request["albumIdentifier"] as? String,
-                  let collection = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [identifier], options: nil).firstObject else {
+            guard !active && !exporter.busy && !restoreInProgress, let identifier = request["albumIdentifier"] as? String else {
+                throw NSError(domain: "PhotoBridge", code: 3, userInfo: [NSLocalizedDescriptionKey: "正在处理照片或相册已不可访问"])
+            }
+            let isAllPhotos = identifier == PhotoSource.allPhotosIdentifier
+            let collection = isAllPhotos ? nil : PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [identifier], options: nil).firstObject
+            guard isAllPhotos || collection != nil else {
                 throw NSError(domain: "PhotoBridge", code: 3, userInfo: [NSLocalizedDescriptionKey: "正在处理照片或相册已不可访问"])
             }
             // Durable acknowledgement precedes PhotoKit work, so relaunch never
@@ -227,7 +233,10 @@ final class MacControlService: ObservableObject {
             let allowNetwork = request["allowNetwork"] as? Bool ?? false
             let fast = request["fast"] as? Bool ?? false
             Task {
-                await exporter.start(collection: collection, allowNetwork: allowNetwork, resumeSession: request["resumeSession"] as? String, fast: fast)
+                let source = PhotoSource(id: identifier,
+                                         name: isAllPhotos ? "全部照片" : (collection?.localizedTitle ?? "未命名相册"),
+                                         isAllPhotos: isAllPhotos, collection: collection)
+                await exporter.start(source: source, allowNetwork: allowNetwork, resumeSession: request["resumeSession"] as? String, fast: fast)
                 active = false
                 publishJob()
             }
@@ -321,7 +330,7 @@ struct MacExportCompanionView: View {
                                         .foregroundStyle(Color.bridgeBlue)
                                 }
                                 ForEach(library.albums) { item in
-                                    NavigationLink { OriginalExportView(collection: item.collection) } label: {
+                                    NavigationLink { OriginalExportView(source: item.source) } label: {
                                         AlbumRow(item: item)
                                     }
                                     .buttonStyle(.plain)

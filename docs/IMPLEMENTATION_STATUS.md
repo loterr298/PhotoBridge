@@ -1,5 +1,12 @@
 # 实施状态记录
 
+## 1.0.1/build 6：新增“全部照片”来源（2026-11-13）
+
+- iPhone 的照片来源现在包含独立的“全部照片”入口。它使用 `PHAsset.fetchAssets(with: nil)` 读取系统照片库的完整资源序列，不把“全部照片”伪装成可编辑相簿。
+- “全部照片”与普通相簿共用原始资源读取、SHA-256、顺序清单、断点续传和 Mac 导出路径；Mac 端来源列表也会显示“全部照片”和真实数量。
+- 普通相簿逻辑保持不变；原始媒体字节、EXIF、MakerNotes、GPS、ICC 和其他相机元数据不改写。
+- iOS 源码已通过 Swift 前端语法解析；现有 Python 回归测试通过。当前本地命令行环境没有完整 Xcode/XCTest，真机 PhotoKit 全库顺序仍需云端构建和设备验证，不能提前标记为真机通过。
+
 ## 1.0.1/build 5 用户文件夹纯照片布局与顺序保护（2026-11-13）
 
 - 导出到 Mac 的用户选择文件夹现在只发布照片/视频本身，不再写入 `.photobridge-*`、manifest、asset-records、上传日志或进度临时文件。内部资源、`album-order.json`、断点进度和上传日志统一放在 `~/Library/Application Support/PhotoBridge/FlatSessions/<folder-key>/`，由用户文件夹的解析路径 SHA-256 派生稳定键。

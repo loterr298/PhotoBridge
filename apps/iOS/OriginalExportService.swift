@@ -80,12 +80,21 @@ private final class StreamingManifestWriter {
             resources: resources.map { StagingResourceSource(resourceType: $0.type.rawValue,
                 originalFilename: $0.originalFilename, uniformTypeIdentifier: $0.uniformTypeIdentifier) })
     }
-    private nonisolated static func capture(localIdentifier: String, cancellation: OperationCancellation, progress: @escaping @Sendable (Int, Int) -> Void) throws -> (name: String, assets: [StagingAssetSource]) {
+    private nonisolated static func capture(localIdentifier: String, sourceName: String?, allPhotos: Bool,
+                                            cancellation: OperationCancellation, progress: @escaping @Sendable (Int, Int) -> Void) throws -> (name: String, assets: [StagingAssetSource]) {
         try PhotoOperationChecks.requireFullAccess()
-        guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [localIdentifier], options: nil).firstObject else {
-            throw ExportError.invalidManifest("来源相簿已不可访问")
+        let result: PHFetchResult<PHAsset>
+        let name: String
+        if allPhotos {
+            result = PHAsset.fetchAssets(with: nil)
+            name = sourceName ?? "全部照片"
+        } else {
+            guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [localIdentifier], options: nil).firstObject else {
+                throw ExportError.invalidManifest("来源相簿已不可访问")
+            }
+            result = PHAsset.fetchAssets(in: current, options: nil)
+            name = current.localizedTitle ?? sourceName ?? "未命名相簿"
         }
-        let result = PHAsset.fetchAssets(in: current, options: nil)
         var sources: [StagingAssetSource] = []
         progress(0, result.count)
         result.enumerateObjects { asset, index, stop in
@@ -94,20 +103,28 @@ private final class StreamingManifestWriter {
             progress(index + 1, result.count)
         }
         try cancellation.check()
-        return (current.localizedTitle ?? "未命名相簿", sources)
+        return (name, sources)
     }
     /// Re-check the source without building a second full album catalog. This keeps
     /// the finalization peak bounded for very large albums.
-    private nonisolated static func validateCurrent(localIdentifier: String, albumName: String,
+    private nonisolated static func validateCurrent(localIdentifier: String, sourceName: String?, allPhotos: Bool,
                                                     expected: [StagingAssetSource], cancellation: OperationCancellation) throws {
         try PhotoOperationChecks.requireFullAccess()
-        guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [localIdentifier], options: nil).firstObject else {
-            throw ExportError.invalidManifest("来源相簿已不可访问")
+        let result: PHFetchResult<PHAsset>
+        let name: String
+        if allPhotos {
+            result = PHAsset.fetchAssets(with: nil)
+            name = sourceName ?? "全部照片"
+        } else {
+            guard let current = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [localIdentifier], options: nil).firstObject else {
+                throw ExportError.invalidManifest("来源相簿已不可访问")
+            }
+            result = PHAsset.fetchAssets(in: current, options: nil)
+            name = current.localizedTitle ?? sourceName ?? "未命名相簿"
         }
-        guard (current.localizedTitle ?? "未命名相簿") == albumName else {
+        guard name == (sourceName ?? name) else {
             throw ExportError.invalidManifest("相簿名称已变化，停止以免混合新旧版本")
         }
-        let result = PHAsset.fetchAssets(in: current, options: nil)
         guard result.count == expected.count else {
             throw ExportError.invalidManifest("相簿照片数量已变化，停止以免混合新旧版本")
         }
@@ -156,6 +173,11 @@ private final class StreamingManifestWriter {
         }.value) ?? []
     }
     func start(collection: PHAssetCollection, allowNetwork: Bool, resumeSession: String? = nil, stopAfterResources: Int? = nil, fast: Bool = false) async {
+        let source = PhotoSource(id: collection.localIdentifier, name: collection.localizedTitle ?? "未命名相册", isAllPhotos: false, collection: collection)
+        await start(source: source, allowNetwork: allowNetwork, resumeSession: resumeSession, stopAfterResources: stopAfterResources, fast: fast)
+    }
+
+    func start(source: PhotoSource, allowNetwork: Bool, resumeSession: String? = nil, stopAfterResources: Int? = nil, fast: Bool = false) async {
         guard !busy else { return }
         fastExport = fast
         busy = true; scanning = true; state = "SCANNING"; scannedAssets = 0; scanTotalAssets = 0; stopRequested = false; resourcesCompleted = 0; totalResources = 0; bytesCompleted = 0
@@ -198,7 +220,9 @@ private final class StreamingManifestWriter {
         }
         do {
             try checkPermission()
-            let collectionIdentifier = collection.localIdentifier
+            let collectionIdentifier = source.id
+            let sourceName = source.name
+            let allPhotos = source.isAllPhotos
             message = "正在读取相册…"
             await Task.yield()
             let latest = LatestPhotoCount()
@@ -211,7 +235,7 @@ private final class StreamingManifestWriter {
             }
             defer { scanUI.cancel() }
             let captured = try await Task.detached(priority: .userInitiated) {
-                try Self.capture(localIdentifier: collectionIdentifier, cancellation: cancellation) { done, total in
+                try Self.capture(localIdentifier: collectionIdentifier, sourceName: sourceName, allPhotos: allPhotos, cancellation: cancellation) { done, total in
                     latest.update(completed: done, total: total)
                 }
             }.value
@@ -224,7 +248,7 @@ private final class StreamingManifestWriter {
             guard !sources.isEmpty else { throw ExportError.invalidManifest("相簿为空或不可访问") }
             totalResources = sources.reduce(0) { $0 + $1.resources.count }
             let name = captured.name
-            var snapshot = OrderSnapshot(albumName: name, albumIdentifier: collection.localIdentifier,
+            var snapshot = OrderSnapshot(albumName: name, albumIdentifier: collectionIdentifier,
                 authorization: "full", fetchMode: "nil-options", identifiers: sources.map(\.identifier),
                 creationDates: sources.map(\.creationDate), systemVersion: UIDevice.current.systemVersion, build: build)
             if !FileManager.default.fileExists(atPath: exports.path) {
@@ -236,14 +260,14 @@ private final class StreamingManifestWriter {
                 guard UUID(uuidString: resumeSession) != nil, !resumeSession.contains("/") else { throw ExportError.invalidManifest("无效暂存会话") }
                 let old = exports.appendingPathComponent(resumeSession)
                 let loaded = try await Task.detached(priority: .utility) { try StagingResume.load(in: old) }.value
-                try loaded.plan.validateCurrent(albumIdentifier: collection.localIdentifier, albumName: name, assets: sources)
+                try loaded.plan.validateCurrent(albumIdentifier: collectionIdentifier, albumName: name, assets: sources)
                 reusable = try await Task.detached(priority: .utility) {
                     try StagingResume.reusable(in: old, plan: loaded.plan, digest: loaded.digest, checkCancellation: cancellation.check)
                 }.value
                 previous = old; previousDigest = loaded.digest; snapshot = loaded.plan.sourceOrder
                 // Source may have changed while hashing the old session.
                 try await Task.detached(priority: .userInitiated) {
-                    try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources, cancellation: cancellation)
+                    try Self.validateCurrent(localIdentifier: collectionIdentifier, sourceName: name, allPhotos: allPhotos, expected: sources, cancellation: cancellation)
                 }.value
             }
             try checkStopAndPermission()
@@ -346,7 +370,7 @@ private final class StreamingManifestWriter {
             // The fast path skips duplicate byte hashing, while the final
             // PhotoKit order and resource-directory check remains mandatory.
             try await Task.detached(priority: .userInitiated) {
-                try Self.validateCurrent(localIdentifier: collectionIdentifier, albumName: name, expected: sources, cancellation: cancellation)
+                try Self.validateCurrent(localIdentifier: collectionIdentifier, sourceName: name, allPhotos: allPhotos, expected: sources, cancellation: cancellation)
             }.value
             try checkStopAndPermission()
             try journal("FINALIZING_MANIFEST")
