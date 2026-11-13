@@ -22,7 +22,7 @@ final class PhotoBridgeUITests: XCTestCase {
                 format: "label CONTAINS[c] 'full' OR label CONTAINS '完全' OR label CONTAINS '全部' OR label CONTAINS '所有'"
             )).firstMatch
             let deny = alert.buttons.matching(NSPredicate(
-                format: "label CONTAINS[c] 'don't' OR label CONTAINS '不允许' OR label CONTAINS '不允許'"
+                format: "label CONTAINS[c] \"Don\" OR label CONTAINS '不允许' OR label CONTAINS '不允許'"
             )).firstMatch
             if allow, full.exists { full.tap(); return true }
             if !allow, deny.exists { deny.tap(); return true }
