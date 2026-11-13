@@ -8,6 +8,8 @@
 - 修复普通 Mac 文件夹预览与导入顺序不一致：如果文件夹来自 PhotoBridge 导出，即使私有清单暂时不可见，也会按导出的 5 秒文件系统逻辑时间恢复顺序；普通文件夹时间无法区分时，预览和发送共同保留目录枚举顺序，不再单独按文件名重排。
 - 私有普通文件夹暂存缓存加入顺序策略与文件修改时间指纹。旧版按文件名建立的缓存会自动失效并重建，避免历史缓存继续把顺序带错。
 - iOS 源码已通过 Swift 前端语法解析；现有 Python 回归测试通过。当前本地命令行环境没有完整 Xcode/XCTest，真机 PhotoKit 全库顺序仍需云端构建和设备验证，不能提前标记为真机通过。
+- GitHub Actions run `43451240197`（commit `b046eb6`）成功：iOS unsigned device build、iOS simulator user flows、Intel x86_64 macOS build、Python 回归和交付门禁全部通过。artifact `14053950670`，digest `sha256:589988543a3120100e42ec1981f753e86d5344341053a3075e36b545e60b717e`。
+- Build 6 iOS IPA SHA-256 `58692e556e8309e8ca4a52c5a44c5bf37dce9ba9bf7321b17603cf6b09284d40`；Intel Mac ZIP SHA-256 `5dc04715f9b574a24228f54887791ce83a758d644b16aea96490ae48dc0a678c`。
 
 ## 1.0.1/build 5 用户文件夹纯照片布局与顺序保护（2026-11-13）
 
