@@ -766,11 +766,24 @@ final class MacTransferModel: ObservableObject {
             return (title, photos)
         }
         let genericExtensions: Set<String> = ["jpg", "jpeg", "heic", "heif", "png", "dng", "raw", "cr2", "nef", "arw", "tif", "tiff", "gif", "webp", "mov", "mp4", "m4v"]
-        let genericFiles = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey], options: .skipsHiddenFiles)
+        var genericFiles = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey, .contentModificationDateKey], options: .skipsHiddenFiles)
             .filter { url in
                 let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
                 return values?.isRegularFile == true && values?.isSymbolicLink != true && genericExtensions.contains(url.pathExtension.lowercased())
             }
+        // PhotoBridge exports encode their source ordinal as a five-second
+        // filesystem time. Prefer that ordering when it is clearly present;
+        // for an ordinary folder whose files have effectively equal times,
+        // retain the directory order used by this preview instead of applying
+        // an unrelated filename sort.
+        let modificationTimes = genericFiles.compactMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate?.timeIntervalSince1970 }
+        if let first = modificationTimes.min(), let last = modificationTimes.max(), last - first >= 1.0 {
+            genericFiles.sort {
+                let left = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate?.timeIntervalSince1970) ?? 0
+                let right = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate?.timeIntervalSince1970) ?? 0
+                return left == right ? $0.lastPathComponent < $1.lastPathComponent : left < right
+            }
+        }
         let hasManifest = FileManager.default.fileExists(atPath: metadataURL(in: folder, name: "album-order.json").path)
         let hasRecords = FileManager.default.fileExists(atPath: folder.appendingPathComponent("asset-records").path)
         if !hasManifest && !hasRecords {

@@ -38,7 +38,7 @@ def _generic_media_files(root):
     if root.is_symlink() or not root.is_dir():
         raise ValueError('导入位置必须是普通文件夹')
     files = []
-    for path in sorted(root.iterdir(), key=lambda value: value.name):
+    for path in root.iterdir():
         if path.name.startswith('.') or path.is_symlink() or not path.is_file():
             continue
         extension = path.suffix.lower().lstrip('.')
@@ -46,6 +46,15 @@ def _generic_media_files(root):
             files.append(path)
     if not files:
         raise ValueError('文件夹内没有可导入的照片或视频')
+    # PhotoBridge exports carry the source ordinal in the filesystem time
+    # (five seconds per asset). Use that when present so a folder remains in
+    # the same order even if its private manifest is unavailable. For an
+    # ordinary folder with indistinguishable times, preserve the directory
+    # enumeration order shown by the Mac preview instead of inventing a
+    # filename sort.
+    times = [path.stat().st_mtime_ns for path in files]
+    if max(times) - min(times) >= 1_000_000_000:
+        files.sort(key=lambda path: (path.stat().st_mtime_ns, path.name))
     return files
 
 
@@ -75,6 +84,9 @@ def prepare_import_backup(local, progress=None):
     if staging.exists():
         try:
             cached = validated_backup(staging)
+            cached_order = cached[1].get('sourceOrder', {}).get('fetchMode')
+            if cached_order != 'mac-folder-visible-order-v2':
+                raise ValueError('cached folder order uses an older policy')
             if progress:
                 progress({'status': 'STAGING_REUSED', 'state': 'STAGING_REUSED',
                           'scannedAssets': len(cached[1]['assets']), 'scanTotalAssets': len(cached[1]['assets']),
@@ -106,7 +118,9 @@ def prepare_import_backup(local, progress=None):
         media_type = 2 if extension_lower in GENERIC_VIDEO_EXTENSIONS else 1
         captured = dt.datetime.fromtimestamp(path.stat().st_mtime, dt.timezone.utc).isoformat().replace('+00:00', 'Z')
         fingerprint.update(path.name.encode('utf-8')); fingerprint.update(b'\0')
-        fingerprint.update(str(byte_count).encode('ascii')); fingerprint.update(b'\0'); fingerprint.update(digest.encode('ascii'))
+        fingerprint.update(str(byte_count).encode('ascii')); fingerprint.update(b'\0')
+        fingerprint.update(str(path.stat().st_mtime_ns).encode('ascii')); fingerprint.update(b'\0')
+        fingerprint.update(digest.encode('ascii'))
         records.append((path, byte_count, digest, extension, uti, media_type, captured))
         if progress:
             progress({'status': 'SCANNING', 'state': 'SCANNING', 'scannedAssets': scanned,
@@ -142,7 +156,7 @@ def prepare_import_backup(local, progress=None):
                        'mediaSubtypes': 0, 'resources': [resource]})
         total += byte_count
     source = {'schemaVersion': '1.0.0', 'albumName': local.name or 'Mac 照片', 'albumIdentifier': album_id,
-              'authorization': 'full', 'fetchMode': 'mac-folder-filename-order', 'capturedAt': captured_at,
+              'authorization': 'full', 'fetchMode': 'mac-folder-visible-order-v2', 'capturedAt': captured_at,
               'systemVersion': 'macOS', 'build': 'generic-folder-import', 'members': members,
               'verification': 'NOT_RUN: order follows Mac filename preview order'}
     manifest = {'schemaVersion': '1.0.0', 'kind': 'PhotoBridgeOriginalExport', 'sessionID': session,

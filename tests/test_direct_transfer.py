@@ -44,6 +44,18 @@ class DirectTransferChecks(unittest.TestCase):
                 ["10.JPG", "01.png", "2.HEIC"],
             )
 
+    def test_unlisted_files_follow_photo_bridge_filesystem_order_when_present(self):
+        from direct_transfer import ordered_media_files
+
+        with tempfile.TemporaryDirectory() as root:
+            folder = pathlib.Path(root)
+            first = folder / "IMG_9000.JPG"; second = folder / "IMG_0001.JPG"
+            first.write_bytes(b"first"); second.write_bytes(b"second")
+            import os
+            os.utime(first, (100, 100)); os.utime(second, (105, 105))
+            self.assertEqual([path.name for path in ordered_media_files(folder)],
+                             ["IMG_9000.JPG", "IMG_0001.JPG"])
+
     def test_batch_runner_reuses_one_usb_client_for_all_items(self):
         from direct_transfer import DirectBatchRunner
 

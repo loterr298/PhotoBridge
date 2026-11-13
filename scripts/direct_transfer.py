@@ -37,6 +37,9 @@ def ordered_media_files(folder: Path, ordered_names: list[str] | None = None) ->
     # When this helper is used without one, preserve the directory enumeration
     # order instead of inventing a filename order that may differ from what the
     # user saw.
+    times = [path.stat().st_mtime_ns for path in files]
+    if files and max(times) - min(times) >= 1_000_000_000:
+        files.sort(key=lambda path: (path.stat().st_mtime_ns, path.name))
     return files
 
 

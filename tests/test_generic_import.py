@@ -13,6 +13,24 @@ import test_upload_resume
 
 
 class GenericFolderImportChecks(unittest.TestCase):
+    def test_plain_folder_uses_exported_filesystem_time_when_manifest_is_missing(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d) / 'Photos'; root.mkdir()
+            first = root / 'IMG_9000.JPG'; second = root / 'IMG_0001.JPG'
+            first.write_bytes(b'first'); second.write_bytes(b'second')
+            # This is the five-second logical time written by PhotoBridge when
+            # a private manifest is unavailable to an older/new install.
+            os.utime(first, (100, 100)); os.utime(second, (105, 105))
+            staging_root = pathlib.Path(d) / 'staging'
+            os.environ['PHOTOBRIDGE_IMPORT_STAGING_ROOT'] = str(staging_root)
+            try:
+                staging = album_restore.prepare_import_backup(root)
+                _, manifest, _, _, _ = album_restore.validated_backup(staging)
+            finally:
+                os.environ.pop('PHOTOBRIDGE_IMPORT_STAGING_ROOT', None)
+            self.assertEqual([a['resources'][0]['originalFilename'] for a in manifest['assets']],
+                             ['IMG_9000.JPG', 'IMG_0001.JPG'])
+
     def test_plain_folder_reports_scan_progress_before_hashing_finishes(self):
         with tempfile.TemporaryDirectory() as d:
             root = pathlib.Path(d) / 'Photos'; root.mkdir()
@@ -81,6 +99,9 @@ class GenericFolderImportChecks(unittest.TestCase):
             os.environ['PHOTOBRIDGE_IMPORT_STAGING_ROOT'] = str(base / 'staging')
             try:
                 import upload_resume
+                # This test covers accepting a plain folder; interruption is
+                # covered by UploadContinuationChecks separately.
+                client.interrupted = False
                 result = upload_resume.upload(client, plain)
             finally:
                 os.environ.pop('PHOTOBRIDGE_IMPORT_STAGING_ROOT', None)
