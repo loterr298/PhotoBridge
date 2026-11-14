@@ -1122,7 +1122,7 @@ final class MacTransferModel: ObservableObject {
         importProgressTask = Task { [weak self] in
             var missedReads = 0
             for _ in 0..<1_800 {
-                try? await Task.sleep(nanoseconds: 500_000_000)
+                try? await Task.sleep(nanoseconds: 100_000_000)
                 guard !Task.isCancelled, let self else { return }
                 let result = try? await self.executeScriptAsync("mac_control.py", arguments: [
                     "read", "--bundle", self.bundleIdentifier, "--path", "Control/direct-import-progress.json"

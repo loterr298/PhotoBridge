@@ -57,20 +57,17 @@ final class NativePhotoImportService: ObservableObject {
                 .appendingPathComponent(session, isDirectory: true)
             var createdIdentifiers: [String] = []
             createdIdentifiers.reserveCapacity(total)
-            for range in DirectImportBatching.ranges(total: total) {
+            // Each PhotoKit transaction contains one asset so the published
+            // count is the number actually committed to the system library,
+            // rather than the end of a large batch.
+            for ordinal in 1...total {
                 try Task.checkCancellation()
-                var items: [PendingItem] = []
-                items.reserveCapacity(range.count)
-                for ordinal in range.map({ $0 + 1 }) {
-                    let marker = root.appendingPathComponent(String(format: "%06d/item.json", ordinal))
-                    let value = try await waitForMarker(at: marker)
-                    items.append(try pendingItem(from: value, session: session, ordinal: ordinal))
-                }
-                createdIdentifiers.append(contentsOf: try await importBatch(items))
-                cleanupImportedItems(items, root: root)
-                for ordinal in items.map(\.ordinal) {
-                    publish(DirectImportProgress(sessionID: session, completed: ordinal, total: total, phase: "IMPORTING"))
-                }
+                let marker = root.appendingPathComponent(String(format: "%06d/item.json", ordinal))
+                let value = try await waitForMarker(at: marker)
+                let item = try pendingItem(from: value, session: session, ordinal: ordinal)
+                createdIdentifiers.append(contentsOf: try await importBatch([item]))
+                cleanupImportedItems([item], root: root)
+                publish(DirectImportProgress(sessionID: session, completed: ordinal, total: total, phase: "IMPORTING"))
             }
             publish(DirectImportProgress(sessionID: session, completed: total, total: total, phase: "VERIFYING"))
             try verifyAlbumOrder(expectedIdentifiers: createdIdentifiers, session: session, total: total)
