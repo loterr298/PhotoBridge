@@ -116,7 +116,11 @@ def prepare_import_backup(local, progress=None):
         extension = path.suffix.lstrip('.')
         uti = GENERIC_VIDEO_EXTENSIONS.get(extension_lower) or GENERIC_IMAGE_EXTENSIONS.get(extension_lower)
         media_type = 2 if extension_lower in GENERIC_VIDEO_EXTENSIONS else 1
-        captured = dt.datetime.fromtimestamp(path.stat().st_mtime, dt.timezone.utc).isoformat().replace('+00:00', 'Z')
+        # A normal Mac folder's mtime is a transfer/filesystem fact, not a
+        # trustworthy camera capture date. Do not copy one shared mtime into
+        # every PHAsset; leave the PhotoKit creation date unset so embedded
+        # EXIF/QuickTime metadata remains authoritative when available.
+        captured = None
         fingerprint.update(path.name.encode('utf-8')); fingerprint.update(b'\0')
         fingerprint.update(str(byte_count).encode('ascii')); fingerprint.update(b'\0')
         fingerprint.update(str(path.stat().st_mtime_ns).encode('ascii')); fingerprint.update(b'\0')
@@ -131,7 +135,7 @@ def prepare_import_backup(local, progress=None):
         shutil.rmtree(staging)
     staging.mkdir(mode=0o700, parents=True, exist_ok=False)
     session = str(uuid.UUID(bytes=hashlib.sha256(fingerprint.digest()).digest()[:16]))
-    captured_at = records[0][6]
+    captured_at = dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00', 'Z')
     album_id = 'mac-folder:' + hashlib.sha256(str(local.resolve()).encode('utf-8')).hexdigest()[:24]
     members = []
     assets = []

@@ -17,7 +17,7 @@ SUPPORTED_EXTENSIONS = {
 }
 
 
-def ordered_media_files(folder: Path, ordered_names: list[str] | None = None) -> list[Path]:
+def ordered_media_files(folder: Path, ordered_names: list[str | dict] | None = None) -> list[Path]:
     """Return regular, supported media in the same order shown by the Mac UI."""
     if folder.is_symlink() or not folder.is_dir():
         raise ValueError("source folder must be a regular directory")
@@ -28,10 +28,11 @@ def ordered_media_files(folder: Path, ordered_names: list[str] | None = None) ->
         if path.suffix.lower().lstrip(".") in SUPPORTED_EXTENSIONS:
             files.append(path)
     if ordered_names is not None:
+        names = [entry if isinstance(entry, str) else entry.get("filename") for entry in ordered_names]
         by_name = {path.name: path for path in files}
-        if len(set(ordered_names)) != len(ordered_names) or set(ordered_names) != set(by_name):
+        if not all(isinstance(name, str) for name in names) or len(set(names)) != len(names) or set(names) != set(by_name):
             raise ValueError("order file does not match source folder")
-        return [by_name[name] for name in ordered_names]
+        return [by_name[name] for name in names]
 
     # The Mac UI writes an explicit order file before starting direct import.
     # When this helper is used without one, preserve the directory enumeration
@@ -71,7 +72,7 @@ class DirectBatchRunner:
         bundle: str,
         progress: Callable[[dict], None] | None = None,
         cancel: Callable[[], None] | None = None,
-        ordered_names: list[str] | None = None,
+        ordered_names: list[str | dict] | None = None,
     ):
         self.source = Path(source)
         self.session = session
@@ -92,6 +93,10 @@ class DirectBatchRunner:
     def run(self) -> dict:
         _validate_session(self.session)
         files = ordered_media_files(self.source, self.ordered_names)
+        entry_by_name = {}
+        for entry in self.ordered_names or []:
+            if isinstance(entry, dict) and isinstance(entry.get("filename"), str):
+                entry_by_name[entry["filename"]] = entry
         client = self.client_factory()
         root = f"DirectInbox/{self.session}"
         started = __import__("time").monotonic()
@@ -147,14 +152,18 @@ class DirectBatchRunner:
                     client.write_new(part, HashingReader(stream))
                 self._check_cancel()
                 client.commit_new(part, final)
-                marker = json.dumps({
+                marker_value = {
                     "sessionID": self.session,
                     "ordinal": ordinal,
                     "filename": name,
                     "relativePath": final,
                     "byteCount": size,
                     "sha256": digest.hexdigest(),
-                }, sort_keys=True).encode()
+                }
+                capture_date = entry_by_name.get(name, {}).get("captureDate")
+                if isinstance(capture_date, str) and capture_date:
+                    marker_value["captureDate"] = capture_date
+                marker = json.dumps(marker_value, sort_keys=True).encode()
                 client.write_new(f"{item}/item.json", io.BytesIO(marker))
                 completed = ordinal
                 self._report({

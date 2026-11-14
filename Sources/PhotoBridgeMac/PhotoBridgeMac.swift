@@ -6,6 +6,7 @@ import ImageCaptureCore
 import SwiftUI
 import QuickLookThumbnailing
 import UniformTypeIdentifiers
+import ImageIO
 
 struct BackupAssetPreview: Identifiable {
     let id: Int
@@ -472,7 +473,14 @@ final class MacTransferModel: ObservableObject {
         let progressFile = directProgressFile(session: session)
         let orderFile = directOrderFile(session: session)
         try? FileManager.default.createDirectory(at: orderFile.deletingLastPathComponent(), withIntermediateDirectories: true)
-        if let data = try? JSONSerialization.data(withJSONObject: supported.map(\.lastPathComponent), options: [.sortedKeys]) {
+        let orderEntries = supported.map { url -> [String: Any] in
+            var entry: [String: Any] = ["filename": url.lastPathComponent]
+            if let captureDate = Self.captureDateString(for: url) {
+                entry["captureDate"] = captureDate
+            }
+            return entry
+        }
+        if let data = try? JSONSerialization.data(withJSONObject: orderEntries, options: [.sortedKeys]) {
             try? data.write(to: orderFile, options: .atomic)
         }
         Task { [weak self] in
@@ -721,6 +729,25 @@ final class MacTransferModel: ObservableObject {
         guard !names.isEmpty, Set(names).count == names.count,
               names.allSatisfy({ byName[$0] != nil }) else { return [] }
         return names.compactMap { byName[$0] }
+    }
+
+    /// Read each file's own capture date without rewriting its bytes. The
+    /// value is carried to PHAssetCreationRequest so PhotoKit does not assign
+    /// one import timestamp to an entire rotated-photo batch.
+    nonisolated private static func captureDateString(for url: URL) -> String? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else { return nil }
+        let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any]
+        let tiff = properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any]
+        let raw = (exif?[kCGImagePropertyExifDateTimeOriginal] as? String)
+            ?? (exif?[kCGImagePropertyExifDateTimeDigitized] as? String)
+            ?? (tiff?[kCGImagePropertyTIFFDateTime] as? String)
+        guard let raw else { return nil }
+        let parser = DateFormatter(); parser.locale = Locale(identifier: "en_US_POSIX"); parser.timeZone = .current
+        parser.dateFormat = "yyyy:MM:dd HH:mm:ss"
+        guard let date = parser.date(from: raw) else { return nil }
+        let encoder = ISO8601DateFormatter(); encoder.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return encoder.string(from: date)
     }
 
     nonisolated private static func readPreview(from folder: URL) throws -> (String, [BackupAssetPreview]) {

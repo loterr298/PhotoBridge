@@ -55,7 +55,10 @@ def cancel() -> None:
 
 try:
     ordered_names = json.loads(args.order_file.read_text(encoding="utf-8"))
-    if not isinstance(ordered_names, list) or not all(isinstance(name, str) for name in ordered_names):
+    if not isinstance(ordered_names, list) or not all(
+        isinstance(name, str) or (isinstance(name, dict) and isinstance(name.get("filename"), str))
+        for name in ordered_names
+    ):
         raise ValueError("invalid order file")
     progress({"status": "CONNECTING", "total": 0, "completed": 0, "elapsedSeconds": 0})
     result = DirectBatchRunner(

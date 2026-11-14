@@ -1,5 +1,13 @@
 # 实施状态记录
 
+## 1.0.1/build 7：逐文件拍摄日期与旋转照片导入保护（2026-11-14）
+
+- Mac 端导入顺序清单现在可携带每个文件独立的 EXIF 拍摄日期；iPhone 直写 PhotoKit 时逐张设置 `PHAssetCreationRequest.creationDate`，不再把整批照片当成同一时间。
+- 读取 EXIF 只用于建立 PhotoKit 日期，不修改源文件字节、EXIF、MakerNotes、ICC、GPS 或旋转后的图像内容。
+- 普通文件夹旧恢复路径不再把统一的文件系统修改时间冒充每张照片的拍摄时间；没有可信日期时留空，让 PhotoKit/嵌入媒体元数据决定显示日期。
+- PhotoRotate 处理后的文件继续复用 PhotoBridge 的预览顺序清单，发送顺序与预览顺序一致。
+- 本地验证：116 项 Python 回归通过，Mac Swift 构建与 Intel release 构建通过；iOS 真机日期和 PhotoKit 回读仍需云端/设备验证。
+
 ## 1.0.1/build 6：新增“全部照片”来源（2026-11-13）
 
 - iPhone 的照片来源现在包含独立的“全部照片”入口。它使用 `PHAsset.fetchAssets(with: nil)` 读取系统照片库的完整资源序列，不把“全部照片”伪装成可编辑相簿。

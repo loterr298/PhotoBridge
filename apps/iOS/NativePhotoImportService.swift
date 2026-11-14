@@ -14,6 +14,7 @@ final class NativePhotoImportService: ObservableObject {
         let filename: String
         let uniformTypeIdentifier: String
         let resourceType: PHAssetResourceType
+        let captureDate: Date?
     }
 
     @Published private(set) var directProgress: DirectImportProgress?
@@ -123,8 +124,16 @@ final class NativePhotoImportService: ObservableObject {
         let pathExtension = URL(fileURLWithPath: filename).pathExtension
         let uti = UTType(filenameExtension: pathExtension)?.identifier ?? "public.data"
         let isVideo = ["mov", "mp4", "m4v"].contains(pathExtension.lowercased())
+        let captureDate: Date?
+        if let raw = value["captureDate"] as? String {
+            let parser = ISO8601DateFormatter(); parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            captureDate = parser.date(from: raw) ?? ISO8601DateFormatter().date(from: raw)
+        } else {
+            captureDate = nil
+        }
         return PendingItem(ordinal: ordinal, relativePath: relativePath, filename: filename,
-                           uniformTypeIdentifier: uti, resourceType: isVideo ? .video : .photo)
+                           uniformTypeIdentifier: uti, resourceType: isVideo ? .video : .photo,
+                           captureDate: captureDate)
     }
 
     private func importBatch(_ items: [PendingItem]) async throws -> [String] {
@@ -152,6 +161,7 @@ final class NativePhotoImportService: ObservableObject {
                 placeholders.reserveCapacity(prepared.count)
                 for (item, file) in prepared {
                     let request = PHAssetCreationRequest.forAsset()
+                    if let captureDate = item.captureDate { request.creationDate = captureDate }
                     let options = PHAssetResourceCreationOptions()
                     options.shouldMoveFile = false
                     options.originalFilename = item.filename
