@@ -7,6 +7,8 @@
 - 普通文件夹旧恢复路径不再把统一的文件系统修改时间冒充每张照片的拍摄时间；没有可信日期时留空，让 PhotoKit/嵌入媒体元数据决定显示日期。
 - PhotoRotate 处理后的文件继续复用 PhotoBridge 的预览顺序清单，发送顺序与预览顺序一致。
 - 本地验证：116 项 Python 回归通过，Mac Swift 构建与 Intel release 构建通过；iOS 真机日期和 PhotoKit 回读仍需云端/设备验证。
+- GitHub Actions run `43557315248`（commit `816f007`）成功：iOS unsigned device build、iOS simulator flows、Intel x86_64 macOS build、116 项 Python 回归和交付门禁全部通过。artifact `14099925033`，digest `sha256:6af2324fc0983035796106a97b16b200a5b5f9fa7716401c98cdcdd2787e430c`。
+- Build 7 iOS IPA SHA-256 `82c2bf06a5bbca731b810e21b691696d572e0d3f3b1205d0e51c71519854e015`；Intel Mac ZIP SHA-256 `24a535c0f8a05030111dc47fd64ce5b8a888f36cfc462c5ac0fcb9b97482df88`。
 
 ## 1.0.1/build 6：新增“全部照片”来源（2026-11-13）
 
