@@ -6,6 +6,8 @@
 - Mac 端直写进度轮询从 500ms 提升到 100ms，显示使用实际 iPhone PhotoKit 提交数量，百分比和计数保持一致。
 - 原有顺序、断点、资源完整性和原图保护逻辑不变。
 - 本地验证：116 项 Python 回归、iOS Swift 语法解析和 Intel Mac 构建通过；真机速度仍需设备验证。
+- GitHub Actions run `43560866630`（commit `bb58564`）成功：iOS unsigned build、iOS simulator flows、Intel macOS build、116 项 Python 回归和交付门禁通过。artifact `14100517081`，digest `sha256:5a9c18414dd3caa480dd1063c036d1d5674cf5077156e754e2cc482500b22a5c`。
+- Build 8 iOS IPA SHA-256 `628f39ef460e5b0b8f1ce44549d1377efe7ad5473af6a38b6bc8982fc02bb065`；Intel Mac ZIP SHA-256 `7b3353dfb31e319f9644caac5ac03336465635a222d174f4fdf70efcb70fa7df`。
 
 ## 1.0.1/build 7：逐文件拍摄日期与旋转照片导入保护（2026-11-14）
 
