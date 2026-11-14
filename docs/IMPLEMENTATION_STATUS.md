@@ -1,5 +1,11 @@
 # 实施状态记录
 
+## 本地 Mac 自动安装流程（2026-11-14）
+
+- `scripts/build-mac.sh` 构建完成后会自动调用 `scripts/install-local-apps.sh`。
+- 该脚本会自动覆盖安装 `/Applications/PhotoBridgeMac.app`，并调用 Photo旋转源码工程的 `install.py` 覆盖安装 `/Applications/Photo旋转.app`。
+- Photo旋转工程的 `build.py` 也默认在构建成功后自动安装；设置 `PHOTO_BRIDGE_AUTO_INSTALL=0` 或 `PHOTO_ROTATE_AUTO_INSTALL=0` 可临时关闭。
+
 ## 1.0.1/build 8：iPhone 写入进度逐张实时更新（2026-11-14）
 
 - 实时导入路径改为每张照片一个 PhotoKit 写入事务；只有该张照片提交成功后才递增进度，因此不会再按 128 张批次跳数。

@@ -16,3 +16,7 @@ lipo -info "$APP/Contents/MacOS/PhotoBridgeMac"
 codesign --verify --strict "$APP"
 ditto -c -k --keepParent "$APP" build/PhotoBridgeMac-Intel.zip
 shasum -a 256 build/PhotoBridgeMac-Intel.zip
+
+if [[ "${PHOTO_BRIDGE_AUTO_INSTALL:-1}" == "1" && -d /Applications ]]; then
+  scripts/install-local-apps.sh
+fi
